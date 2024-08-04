@@ -1,0 +1,9 @@
+SELECTOR
+inner white -> fill -> 50/255 opacity
+outline -> fill white OUTSIDE of mask -> gaussian 5 -> 155/255 opacity
+
+
+SELECTOR BIG
+inner white -> fill -> 50/255 opacity
+outline -> fill white OUTSIDE of mask -> gaussian 30 -> 155/255 opacity
+outline highlight -> fill white OUTSIDE of mask -> gaussian 5 -> 255/255 opacity
