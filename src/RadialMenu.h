@@ -24,12 +24,11 @@
 ///----------------------------------------------------------------------------------------------------
 typedef struct RadialItem
 {
-	unsigned int		Color;
-	unsigned int		ColorHover;
-	const char*			IconIdentifier;
-	Texture*			Icon;
-	ERadialItemAction	ActionType;
-	const char*			ActionIdentifier;
+	unsigned int			Color;
+	unsigned int			ColorHover;
+	std::string				IconIdentifier;
+	Texture*				Icon;
+	std::vector<Action*>	Actions;
 } RadialMenuItem;
 
 ///----------------------------------------------------------------------------------------------------

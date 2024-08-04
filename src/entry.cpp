@@ -48,7 +48,7 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef()
 	AddonDef.Version.Build = V_BUILD;
 	AddonDef.Version.Revision = V_REVISION;
 	AddonDef.Author = "Raidcore";
-	AddonDef.Description = "Adds a Radial Menu API for other addons to use.";
+	AddonDef.Description = "Adds highly customisable radial menus.";
 	AddonDef.Load = AddonLoad;
 	AddonDef.Unload = AddonUnload;
 
@@ -74,7 +74,7 @@ void AddonLoad(AddonAPI* aApi)
 	//APIDefs->RegisterWndProc(AddonWndProc);
 
 	APIDefs->InputBinds.RegisterWithString("KB_RADIALS", ProcessKeybind, "CTRL+R");
-	APIDefs->Localization.Set("KB_RADIALS", "en", "Radial translate test");
+	APIDefs->Localization.Set("KB_RADIALS", "en", "All Radials");
 
 	MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 	NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
@@ -87,38 +87,94 @@ void AddonLoad(AddonAPI* aApi)
 	item1->Color = col;
 	item1->ColorHover = colHov;
 	item1->IconIdentifier = "ICON_RAPTOR";
+	item1->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SquadMarkerPlaceWorld1
+							 });
 	RadialItem* item2 = new RadialItem();
 	item2->Color = col;
 	item2->ColorHover = colHov;
 	item2->IconIdentifier = "ICON_SPRINGER";
+	item2->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM02
+							 });
+	item2->Actions.push_back(new ActionDelay{
+		ERadialItemActionType::Delay,
+		1500
+							 });
+	item2->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SkillUtility2
+							 });
 	RadialItem* item3 = new RadialItem();
 	item3->Color = col;
 	item3->ColorHover = colHov;
 	item3->IconIdentifier = "ICON_SKIMMER";
+	item3->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM03
+							 });
 	RadialItem* item4 = new RadialItem();
 	item4->Color = col;
 	item4->ColorHover = colHov;
 	item4->IconIdentifier = "ICON_JACKAL";
+	item4->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM04
+							 });
 	RadialItem* item5 = new RadialItem();
 	item5->Color = col;
 	item5->ColorHover = colHov;
 	item5->IconIdentifier = "ICON_GRIFFON";
+	item5->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM05
+							 });
 	RadialItem* item6 = new RadialItem();
 	item6->Color = col;
 	item6->ColorHover = colHov;
 	item6->IconIdentifier = "ICON_ROLLERBEETLE";
+	item6->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM06
+							 });
 	RadialItem* item7 = new RadialItem();
 	item7->Color = col;
 	item7->ColorHover = colHov;
 	item7->IconIdentifier = "ICON_WARCLAW";
+	item7->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM07
+							 });
 	RadialItem* item8 = new RadialItem();
 	item8->Color = col;
 	item8->ColorHover = colHov;
 	item8->IconIdentifier = "ICON_SKYSCALE";
+	item8->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM08
+							 });
+	item8->Actions.push_back(new ActionGeneric{
+		ERadialItemActionType::InputBind,
+		"KB_MUMBLEOVERLAY"
+	});
+	item8->Actions.push_back(new ActionDelay{
+		ERadialItemActionType::Delay,
+		1000
+	 });
+	item8->Actions.push_back(new ActionGeneric{
+		ERadialItemActionType::InputBind,
+		"KB_MUMBLEOVERLAY"
+	});
 	RadialItem* item9 = new RadialItem();
 	item9->Color = col;
 	item9->ColorHover = colHov;
 	item9->IconIdentifier = "ICON_SIEGETURTLE";
+	item9->Actions.push_back(new ActionGameInputBind{
+		ERadialItemActionType::GameInputBind,
+		EGameBinds::EGameBinds_SpumoniMAM09
+	});
 	menu1->AddItem(item1);
 	menu1->AddItem(item2);
 	menu1->AddItem(item3);

@@ -1,12 +1,37 @@
 #ifndef ERADIALITEMACTION_H
 #define ERADIALITEMACTION_H
 
-enum class ERadialItemAction
+#include "Nexus/Nexus.h"
+
+enum class ERadialItemActionType
 {
 	None,
-	Keybind,
-	GameKeybind,
-	Event
+	InputBind,
+	GameInputBind,
+	GameInputBindPress,
+	GameInputBindRelease,
+	Event,
+	Delay
+};
+
+struct Action
+{
+	ERadialItemActionType Type;
+};
+
+struct ActionGeneric : Action
+{
+	const char* Identifier;
+};
+
+struct ActionGameInputBind : Action
+{
+	EGameBinds Identifier;
+};
+
+struct ActionDelay : Action
+{
+	int Duration;
 };
 
 #endif

@@ -133,7 +133,7 @@ void CRadialMenu::Render()
 				}
 				else
 				{
-					item->Icon = APIDefs->Textures.GetOrCreateFromFile(item->IconIdentifier, "0.png");
+					item->Icon = APIDefs->Textures.GetOrCreateFromFile(item->IconIdentifier.c_str(), "0.png");
 				}
 			}
 		}
@@ -187,6 +187,50 @@ bool CRadialMenu::ShouldRender()
 	else if (this->IsActive && GetAsyncKeyState(VK_CONTROL))
 	{
 		return true;
+	}
+	else if (this->IsActive && !GetAsyncKeyState(VK_CONTROL))
+	{
+		/* BIND RELEASE */
+		int idx = this->GetHoveredIndex();
+		if (idx > -1)
+		{
+			RadialItem* item = this->Items[idx];
+			std::thread([item]() {
+				/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
+
+				for (Action* act : item->Actions)
+				{
+					switch (act->Type)
+					{
+						case ERadialItemActionType::InputBind:
+						{
+							ActionGeneric* action = (ActionGeneric*)act;
+							APIDefs->InputBinds.Invoke(action->Identifier, false);
+							APIDefs->InputBinds.Invoke(action->Identifier, true);
+							break;
+						}
+						case ERadialItemActionType::GameInputBind:
+						{
+							ActionGameInputBind* action = (ActionGameInputBind*)act;
+							APIDefs->GameBinds.InvokeAsync(action->Identifier, 100);
+							break;
+						}
+						case ERadialItemActionType::Event:
+						{
+							ActionGeneric* action = (ActionGeneric*)act;
+							APIDefs->Events.Raise(action->Identifier, nullptr);
+							break;
+						}
+						case ERadialItemActionType::Delay:
+						{
+							ActionDelay* action = (ActionDelay*)act;
+							Sleep(action->Duration);
+							break;
+						}
+					}
+				}
+			}).detach();
+		}
 	}
 
 	this->IsActive = false;
