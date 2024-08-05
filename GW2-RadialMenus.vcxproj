@@ -102,8 +102,8 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\ERadialItemAction.h" />
-    <ClInclude Include="src\ERadialMenuType.h" />
+    <ClInclude Include="src\Core\ERadialItemAction.h" />
+    <ClInclude Include="src\Core\ERadialMenuType.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui_internal.h" />
@@ -113,7 +113,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\imgui_extensions.h" />
     <ClInclude Include="src\thirdparty\Mumble\Mumble.h" />
     <ClInclude Include="src\thirdparty\Nexus\Nexus.h" />
-    <ClInclude Include="src\RadialMenu.h" />
+    <ClInclude Include="src\Core\RadialMenu.h" />
     <ClInclude Include="src\Remote.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Shared.h" />
@@ -126,7 +126,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\thirdparty\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="src\RadialMenu.cpp" />
+    <ClCompile Include="src\Core\RadialMenu.cpp" />
     <ClCompile Include="src\Shared.cpp" />
   </ItemGroup>
   <ItemGroup>

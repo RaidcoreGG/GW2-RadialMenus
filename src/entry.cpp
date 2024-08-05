@@ -59,7 +59,7 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef()
 }
 
 #include <vector>
-#include "RadialMenu.h"
+#include "Core\RadialMenu.h"
 std::vector<CRadialMenu*> Radials;
 
 void AddonLoad(AddonAPI* aApi)
