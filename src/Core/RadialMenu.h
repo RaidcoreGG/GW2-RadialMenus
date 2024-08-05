@@ -13,8 +13,9 @@
 #include <mutex>
 #include <vector>
 
-#include "ERadialMenuType.h"
-#include "ERadialItemAction.h"
+#include "ERadialType.h"
+#include "EActionType.h"
+#include "Action.h"
 
 #include "Nexus/Nexus.h"
 #include "imgui/imgui.h"
@@ -24,11 +25,11 @@
 ///----------------------------------------------------------------------------------------------------
 typedef struct RadialItem
 {
-	unsigned int			Color;
-	unsigned int			ColorHover;
-	std::string				IconIdentifier;
-	Texture*				Icon;
-	std::vector<Action*>	Actions;
+	unsigned int				Color;
+	unsigned int				ColorHover;
+	std::string					IconIdentifier;
+	Texture*					Icon;
+	std::vector<ActionBase*>	Actions;
 } RadialMenuItem;
 
 ///----------------------------------------------------------------------------------------------------

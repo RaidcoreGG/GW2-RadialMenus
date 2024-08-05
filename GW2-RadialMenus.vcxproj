@@ -102,8 +102,9 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\Core\ERadialItemAction.h" />
-    <ClInclude Include="src\Core\ERadialMenuType.h" />
+    <ClInclude Include="src\Core\EActionType.h" />
+    <ClInclude Include="src\Core\ERadialType.h" />
+    <ClInclude Include="src\Core\Action.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui_internal.h" />

@@ -88,7 +88,7 @@ void AddonLoad(AddonAPI* aApi)
 	item1->ColorHover = colHov;
 	item1->IconIdentifier = "ICON_RAPTOR";
 	item1->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SquadMarkerPlaceWorld1
 							 });
 	RadialItem* item2 = new RadialItem();
@@ -96,15 +96,15 @@ void AddonLoad(AddonAPI* aApi)
 	item2->ColorHover = colHov;
 	item2->IconIdentifier = "ICON_SPRINGER";
 	item2->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM02
 							 });
 	item2->Actions.push_back(new ActionDelay{
-		ERadialItemActionType::Delay,
+		EActionType::Delay,
 		1500
 							 });
 	item2->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SkillUtility2
 							 });
 	RadialItem* item3 = new RadialItem();
@@ -112,7 +112,7 @@ void AddonLoad(AddonAPI* aApi)
 	item3->ColorHover = colHov;
 	item3->IconIdentifier = "ICON_SKIMMER";
 	item3->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM03
 							 });
 	RadialItem* item4 = new RadialItem();
@@ -120,7 +120,7 @@ void AddonLoad(AddonAPI* aApi)
 	item4->ColorHover = colHov;
 	item4->IconIdentifier = "ICON_JACKAL";
 	item4->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM04
 							 });
 	RadialItem* item5 = new RadialItem();
@@ -128,7 +128,7 @@ void AddonLoad(AddonAPI* aApi)
 	item5->ColorHover = colHov;
 	item5->IconIdentifier = "ICON_GRIFFON";
 	item5->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM05
 							 });
 	RadialItem* item6 = new RadialItem();
@@ -136,7 +136,7 @@ void AddonLoad(AddonAPI* aApi)
 	item6->ColorHover = colHov;
 	item6->IconIdentifier = "ICON_ROLLERBEETLE";
 	item6->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM06
 							 });
 	RadialItem* item7 = new RadialItem();
@@ -144,7 +144,7 @@ void AddonLoad(AddonAPI* aApi)
 	item7->ColorHover = colHov;
 	item7->IconIdentifier = "ICON_WARCLAW";
 	item7->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM07
 							 });
 	RadialItem* item8 = new RadialItem();
@@ -152,19 +152,19 @@ void AddonLoad(AddonAPI* aApi)
 	item8->ColorHover = colHov;
 	item8->IconIdentifier = "ICON_SKYSCALE";
 	item8->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM08
 							 });
 	item8->Actions.push_back(new ActionGeneric{
-		ERadialItemActionType::InputBind,
+		EActionType::InputBind,
 		"KB_MUMBLEOVERLAY"
 	});
 	item8->Actions.push_back(new ActionDelay{
-		ERadialItemActionType::Delay,
+		EActionType::Delay,
 		1000
 	 });
 	item8->Actions.push_back(new ActionGeneric{
-		ERadialItemActionType::InputBind,
+		EActionType::InputBind,
 		"KB_MUMBLEOVERLAY"
 	});
 	RadialItem* item9 = new RadialItem();
@@ -172,7 +172,7 @@ void AddonLoad(AddonAPI* aApi)
 	item9->ColorHover = colHov;
 	item9->IconIdentifier = "ICON_SIEGETURTLE";
 	item9->Actions.push_back(new ActionGameInputBind{
-		ERadialItemActionType::GameInputBind,
+		EActionType::GameInputBind,
 		EGameBinds::EGameBinds_SpumoniMAM09
 	});
 	menu1->AddItem(item1);

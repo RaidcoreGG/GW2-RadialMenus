@@ -198,30 +198,30 @@ bool CRadialMenu::ShouldRender()
 			std::thread([item]() {
 				/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
 
-				for (Action* act : item->Actions)
+				for (ActionBase* act : item->Actions)
 				{
 					switch (act->Type)
 					{
-						case ERadialItemActionType::InputBind:
+						case EActionType::InputBind:
 						{
 							ActionGeneric* action = (ActionGeneric*)act;
 							APIDefs->InputBinds.Invoke(action->Identifier, false);
 							APIDefs->InputBinds.Invoke(action->Identifier, true);
 							break;
 						}
-						case ERadialItemActionType::GameInputBind:
+						case EActionType::GameInputBind:
 						{
 							ActionGameInputBind* action = (ActionGameInputBind*)act;
 							APIDefs->GameBinds.InvokeAsync(action->Identifier, 100);
 							break;
 						}
-						case ERadialItemActionType::Event:
+						case EActionType::Event:
 						{
 							ActionGeneric* action = (ActionGeneric*)act;
 							APIDefs->Events.Raise(action->Identifier, nullptr);
 							break;
 						}
-						case ERadialItemActionType::Delay:
+						case EActionType::Delay:
 						{
 							ActionDelay* action = (ActionDelay*)act;
 							Sleep(action->Duration);

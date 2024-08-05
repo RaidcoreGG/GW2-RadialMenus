@@ -34,6 +34,12 @@
     <Filter Include="_GLOBALS">
       <UniqueIdentifier>{f382df3e-fa19-46a5-833c-e3e9df523593}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Enums">
+      <UniqueIdentifier>{995a4968-50bf-442f-bd54-2ac7774c8164}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Structs">
+      <UniqueIdentifier>{c3bebf30-8ba0-4f1a-ab18-72dbf3601d70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thirdparty\imgui\imconfig.h">
@@ -78,11 +84,14 @@
     <ClInclude Include="src\Core\RadialMenu.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ERadialMenuType.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\EActionType.h">
+      <Filter>Core\Enums</Filter>
     </ClInclude>
-    <ClInclude Include="src\Core\ERadialItemAction.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="src\Core\ERadialType.h">
+      <Filter>Core\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Action.h">
+      <Filter>Core\Structs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
