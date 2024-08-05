@@ -47,11 +47,13 @@
     <OutDir>$(SolutionDir)$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)$(Platform)\</IntDir>
     <TargetName>radials</TargetName>
+    <IncludePath>$(ProjectDir)src\;$(ProjectDir)src\thirdparty;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Platform)\</OutDir>
     <IntDir>$(SolutionDir)$(Platform)\</IntDir>
     <TargetName>radials</TargetName>
+    <IncludePath>$(ProjectDir)src\;$(ProjectDir)src\thirdparty;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -102,15 +104,15 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
   <ItemGroup>
     <ClInclude Include="src\ERadialItemAction.h" />
     <ClInclude Include="src\ERadialMenuType.h" />
-    <ClInclude Include="src\imgui\imconfig.h" />
-    <ClInclude Include="src\imgui\imgui.h" />
-    <ClInclude Include="src\imgui\imgui_internal.h" />
-    <ClInclude Include="src\imgui\imstb_rectpack.h" />
-    <ClInclude Include="src\imgui\imstb_textedit.h" />
-    <ClInclude Include="src\imgui\imstb_truetype.h" />
+    <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
+    <ClInclude Include="src\thirdparty\imgui\imgui.h" />
+    <ClInclude Include="src\thirdparty\imgui\imgui_internal.h" />
+    <ClInclude Include="src\thirdparty\imgui\imstb_rectpack.h" />
+    <ClInclude Include="src\thirdparty\imgui\imstb_textedit.h" />
+    <ClInclude Include="src\thirdparty\imgui\imstb_truetype.h" />
     <ClInclude Include="src\imgui_extensions.h" />
-    <ClInclude Include="src\Mumble\Mumble.h" />
-    <ClInclude Include="src\Nexus\Nexus.h" />
+    <ClInclude Include="src\thirdparty\Mumble\Mumble.h" />
+    <ClInclude Include="src\thirdparty\Nexus\Nexus.h" />
     <ClInclude Include="src\RadialMenu.h" />
     <ClInclude Include="src\Remote.h" />
     <ClInclude Include="src\resource.h" />
@@ -119,11 +121,11 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\entry.cpp" />
-    <ClCompile Include="src\imgui\imgui.cpp" />
-    <ClCompile Include="src\imgui\imgui_demo.cpp" />
-    <ClCompile Include="src\imgui\imgui_draw.cpp" />
-    <ClCompile Include="src\imgui\imgui_tables.cpp" />
-    <ClCompile Include="src\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="src\thirdparty\imgui\imgui.cpp" />
+    <ClCompile Include="src\thirdparty\imgui\imgui_demo.cpp" />
+    <ClCompile Include="src\thirdparty\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\thirdparty\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\thirdparty\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\RadialMenu.cpp" />
     <ClCompile Include="src\Shared.cpp" />
   </ItemGroup>

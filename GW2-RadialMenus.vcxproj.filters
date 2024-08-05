@@ -19,7 +19,10 @@
     <Filter Include="Resource Files\MWS">
       <UniqueIdentifier>{bdccecef-e195-419d-bc69-3e6cbd25b526}</UniqueIdentifier>
     </Filter>
-    <Filter Include="imgui">
+    <Filter Include="_EXTERNAL">
+      <UniqueIdentifier>{18943b63-72b2-4304-b3a1-13e8e1f27f4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_EXTERNAL\imgui">
       <UniqueIdentifier>{06a6e934-c07f-4732-9e4f-509a3a04fc55}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -36,29 +39,23 @@
     <ClInclude Include="src\Shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Mumble\Mumble.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imconfig.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\Nexus\Nexus.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imgui.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imconfig.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imgui_internal.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imstb_rectpack.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imgui_internal.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imstb_textedit.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="src\imgui\imstb_rectpack.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imstb_textedit.h">
-      <Filter>imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\imgui\imstb_truetype.h">
-      <Filter>imgui</Filter>
+    <ClInclude Include="src\thirdparty\imgui\imstb_truetype.h">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\RadialMenu.h">
       <Filter>Header Files</Filter>
@@ -72,6 +69,12 @@
     <ClInclude Include="src\ERadialItemAction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\thirdparty\Nexus\Nexus.h">
+      <Filter>_EXTERNAL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thirdparty\Mumble\Mumble.h">
+      <Filter>_EXTERNAL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\entry.cpp">
@@ -80,20 +83,20 @@
     <ClCompile Include="src\Shared.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_demo.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="src\thirdparty\imgui\imgui_demo.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_draw.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="src\thirdparty\imgui\imgui_draw.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_tables.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="src\thirdparty\imgui\imgui_tables.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
+    <ClCompile Include="src\thirdparty\imgui\imgui_widgets.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\RadialMenu.cpp">
       <Filter>Source Files</Filter>
