@@ -1,15 +1,16 @@
-﻿#include <Windows.h>
-#include <math.h>
+﻿#include <math.h>
 #include <string>
+#include <Windows.h>
 
-#include "Shared.h"
+#include "Language.h"
 #include "Remote.h"
-#include "Version.h"
 #include "resource.h"
+#include "Shared.h"
+#include "Version.h"
 
-#include "Nexus/Nexus.h"
-#include "Mumble/Mumble.h"
 #include "imgui/imgui.h"
+#include "Mumble/Mumble.h"
+#include "Nexus/Nexus.h"
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
 {
@@ -74,7 +75,8 @@ void AddonLoad(AddonAPI* aApi)
 	//APIDefs->RegisterWndProc(AddonWndProc);
 
 	APIDefs->InputBinds.RegisterWithString("KB_RADIALS", ProcessKeybind, "CTRL+R");
-	APIDefs->Localization.Set("KB_RADIALS", "en", "All Radials");
+
+	Lang::Init(APIDefs->Localization.Set);
 
 	MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 	NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");

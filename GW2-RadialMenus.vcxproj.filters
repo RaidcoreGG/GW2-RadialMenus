@@ -93,6 +93,9 @@
     <ClInclude Include="src\Core\Action.h">
       <Filter>Core\Structs</Filter>
     </ClInclude>
+    <ClInclude Include="src\Language.h">
+      <Filter>_GLOBALS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shared.cpp">

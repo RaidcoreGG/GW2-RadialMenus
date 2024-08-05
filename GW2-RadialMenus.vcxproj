@@ -105,6 +105,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\Core\EActionType.h" />
     <ClInclude Include="src\Core\ERadialType.h" />
     <ClInclude Include="src\Core\Action.h" />
+    <ClInclude Include="src\Language.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui_internal.h" />
