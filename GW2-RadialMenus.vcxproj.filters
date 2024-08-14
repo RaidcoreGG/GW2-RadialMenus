@@ -25,9 +25,6 @@
     <Filter Include="_EXTERNAL\imgui">
       <UniqueIdentifier>{06a6e934-c07f-4732-9e4f-509a3a04fc55}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UI">
-      <UniqueIdentifier>{ee227413-6d51-4d4a-8edb-6ef95215be74}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Core">
       <UniqueIdentifier>{b0b91f8f-f214-4413-8e05-bad05dc31d90}</UniqueIdentifier>
     </Filter>
@@ -96,6 +93,15 @@
     <ClInclude Include="src\Language.h">
       <Filter>_GLOBALS</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\RadialContext.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Addon.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Shared.cpp">
@@ -121,6 +127,15 @@
     </ClCompile>
     <ClCompile Include="src\Core\RadialMenu.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\Addon.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\RadialContext.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Util.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

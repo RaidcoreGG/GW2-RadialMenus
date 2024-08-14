@@ -8,59 +8,58 @@
 
 #include "RadialMenu.h"
 
-#include "Shared.h"
-#include "resource.h"
 #include "imgui_extensions.h"
 
-CRadialMenu::CRadialMenu(std::string aIdentifier, ERadialType aRadialMenuType)
+#include "resource.h"
+#include "Util.h"
+
+CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType)
 {
+	this->API = aAPI;
+	this->Module = aModule;
+	this->NexusLink = (NexusLinkData*)this->API->DataLink.Get("DL_NEXUS_LINK");
+	this->MumbleLink = (Mumble::Data*)this->API->DataLink.Get("DL_MUMBLE_LINK");
+	this->MumbleIdentity = (Mumble::Identity*)this->API->DataLink.Get("DL_MUMBLE_LINK_IDENTITY");
+
+	this->ID = aID;
 	this->Identifier = aIdentifier;
 	this->Type = aRadialMenuType;
-
-	switch (this->Type)
-	{
-	default:
-	case ERadialType::None:
-		this->ItemsCapacity = 0;
-		this->Size = ImVec2(0, 0);
-		this->MinimalMouseMoveDistance = 0;
-		this->SegmentContentDistance = 0;
-		this->SegmentContentSize = ImVec2(0, 0);
-		break;
-	case ERadialType::Normal:
-		this->ItemsCapacity = 12;
-		this->Size = ImVec2(520.0f, 520.0f);
-		this->MinimalMouseMoveDistance = 150.0f;
-		this->SegmentContentDistance = 200.0f;
-		this->SegmentContentSize = ImVec2(128.0f, 128.0f);
-		break;
-	case ERadialType::Small:
-		this->ItemsCapacity = 8;
-		this->Size = ImVec2(112.0f, 112.0f);
-		this->MinimalMouseMoveDistance = 18.0f;
-		this->SegmentContentDistance = 36.0f;
-		this->SegmentContentSize = ImVec2(32.0f, 32.0f);
-		break;
-	}
-
-	this->SegmentRadius = 0;
-
-	this->IsActive = false;
-	this->Origin = ImVec2(-1, -1);
+	this->SelectionMode = ESelectionMode::Release;
 
 	this->Invalidate();
+}
+
+CRadialMenu::~CRadialMenu()
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+	
+	while (this->Items.size() > 0)
+	{
+		RadialItem* item = this->Items.front();
+		
+		while (item->Actions.size() > 0)
+		{
+			ActionBase* action = item->Actions.front();
+
+			delete action;
+			item->Actions.erase(item->Actions.begin());
+		}
+		delete item;
+		this->Items.erase(this->Items.begin());
+	}
 }
 
 void CRadialMenu::Render()
 {
 	if (this->Type == ERadialType::None) { return; }
+	if (this->Items.size() > this->ItemsCapacity) { return; }
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
 	int amtItems = this->Items.size();
 
 	if (amtItems < 2) { return; }
-	if (!this->ShouldRender()) { return; }
+	if (!this->IsActive) { return; }
 
 	ImVec2 size = ImVec2(this->Size.x * NexusLink->Scaling, this->Size.y * NexusLink->Scaling);
 	ImVec2 sizeHalf = ImVec2((size.x / 2.0f), (size.y / 2.0f));
@@ -81,11 +80,11 @@ void CRadialMenu::Render()
 		{
 			if (this->Type == ERadialType::Normal)
 			{
-				this->BaseTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_BASE", TEX_MW_BASE, SelfModule);
+				this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_BASE", TEX_MW_BASE, this->Module);
 			}
 			else if (this->Type == ERadialType::Small)
 			{
-				this->BaseTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_BASE", TEX_MWS_BASE, SelfModule);
+				this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_BASE", TEX_MWS_BASE, this->Module);
 			}
 		}
 
@@ -100,7 +99,7 @@ void CRadialMenu::Render()
 			}
 			else
 			{
-				this->DividerTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_DIVIDER", TEX_MWS_DIVIDER, SelfModule);
+				this->DividerTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_DIVIDER", TEX_MWS_DIVIDER, this->Module);
 			}
 		}
 
@@ -120,7 +119,7 @@ void CRadialMenu::Render()
 				float segmentStart = (SegmentRadius * i);
 				ImGui::ImageRotated(this->SegmentTexture->Resource, Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
 				
-				if (item->Icon)
+				if (item->Icon.Texture)
 				{
 					float deg = (segmentStart + (SegmentRadius / 2)) - 90.0f; // center of segment and correct for 0 up
 					float degRad = deg * 3.14159f / 180.0f;
@@ -129,11 +128,11 @@ void CRadialMenu::Render()
 					float y = contentDistance * sin(degRad) + center.y;
 
 					ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x, y - contentSizeHalf.y));
-					ImGui::Image(item->Icon->Resource, contentSize);
+					ImGui::Image(item->Icon.Texture->Resource, contentSize);
 				}
 				else
 				{
-					item->Icon = APIDefs->Textures.GetOrCreateFromFile(item->IconIdentifier.c_str(), "0.png");
+					item->Icon.Texture = this->API->Textures.Get(item->Icon.Value.c_str());
 				}
 			}
 		}
@@ -143,6 +142,100 @@ void CRadialMenu::Render()
 		}
 	}
 	ImGui::End();
+}
+
+void CRadialMenu::Activate()
+{
+	if (this->IsActive) { return; }
+
+	this->Origin = this->MousePos = ImGui::GetMousePos();
+
+	/* override origin if draw in center */
+	if (DrawInCenter)
+	{
+		this->Origin.x = NexusLink->Width / 2;
+		this->Origin.y = NexusLink->Height / 2;
+
+		/* winapi set cursor */
+		SetCursorPos(this->Origin.x, this->Origin.y);
+		ImGui::GetIO().MousePos = this->Origin;
+	}
+
+	// fix for weird rendering/cutoff
+	this->Origin.x += 1.0f;
+	this->Origin.y += 1.0f;
+
+	this->IsActive = true;
+}
+
+void CRadialMenu::Release(bool aIsCancel)
+{
+	/* if is cancel, directly set it to -1 to not trigger any release */
+	int idx = aIsCancel ? -1 : this->GetHoveredIndex();
+
+	/* winapi set cursor */
+	if (this->RestoreCursor)
+	{
+		SetCursorPos(this->MousePos.x, this->MousePos.y);
+		ImGui::GetIO().MousePos = this->MousePos;
+		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+	}
+
+	if (idx > -1)
+	{
+		RadialItem* item = this->Items[idx];
+		std::thread([this, item]() {
+			/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
+
+			for (ActionBase* act : item->Actions)
+			{
+				switch (act->Type)
+				{
+					case EActionType::InputBind:
+					{
+						ActionGeneric* action = (ActionGeneric*)act;
+						this->API->InputBinds.Invoke(action->Identifier.c_str(), false);
+						this->API->InputBinds.Invoke(action->Identifier.c_str(), true);
+						break;
+					}
+					case EActionType::GameInputBind:
+					{
+						ActionGameInputBind* action = (ActionGameInputBind*)act;
+						this->API->GameBinds.InvokeAsync(action->Identifier, 100);
+						break;
+					}
+					case EActionType::GameInputBindPress:
+					{
+						ActionGameInputBind* action = (ActionGameInputBind*)act;
+						this->API->GameBinds.Press(action->Identifier);
+						break;
+					}
+					case EActionType::GameInputBindRelease:
+					{
+						ActionGameInputBind* action = (ActionGameInputBind*)act;
+						this->API->GameBinds.Release(action->Identifier);
+						break;
+					}
+					case EActionType::Event:
+					{
+						ActionGeneric* action = (ActionGeneric*)act;
+						this->API->Events.Raise(action->Identifier.c_str(), nullptr);
+						break;
+					}
+					case EActionType::Delay:
+					{
+						ActionDelay* action = (ActionDelay*)act;
+						Sleep(action->Duration);
+						break;
+					}
+				}
+			}
+		}).detach();
+	}
+
+	this->Origin = this->MousePos = ImVec2(-1, -1);
+
+	this->IsActive = false;
 }
 
 void CRadialMenu::AddItem(RadialItem* aMenuItem)
@@ -161,6 +254,16 @@ void CRadialMenu::AddItem(RadialItem* aMenuItem)
 		if (this->Items.size() >= ItemsCapacity) { return; }
 		break;
 	}
+	
+	switch (aMenuItem->Icon.Type)
+	{
+		case EIconType::File:
+			this->API->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), aMenuItem->Icon.Value.c_str(), nullptr);
+			break;
+		case EIconType::URL:
+			this->API->Textures.LoadFromURL(aMenuItem->Icon.Value.c_str(), URL::GetBase(aMenuItem->Icon.Value).c_str(), URL::GetEndpoint(aMenuItem->Icon.Value).c_str(), nullptr);
+			break;
+	}
 
 	this->Items.push_back(aMenuItem);
 
@@ -171,81 +274,83 @@ void CRadialMenu::AddItem(RadialItem* aMenuItem)
 	this->Invalidate();
 }
 
-bool CRadialMenu::ShouldRender()
+void CRadialMenu::RemoveItem(std::string aIdentifier)
 {
-	/* check custom conditions here or use keybinds */
-	if (!this->IsActive && GetAsyncKeyState(VK_CONTROL))
-	{
-		this->IsActive = true;
-		Origin = ImGui::GetMousePos();
+	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-		// fix for weird rendering/cutoff
-		Origin.x += 1.0f;
-		Origin.y += 1.0f;
-		return true;
-	}
-	else if (this->IsActive && GetAsyncKeyState(VK_CONTROL))
+	auto it = std::find_if(this->Items.begin(), this->Items.end(), [aIdentifier](RadialItem* item) { return item->Identifier == aIdentifier; });
+
+	if (it != this->Items.end())
 	{
-		return true;
-	}
-	else if (this->IsActive && !GetAsyncKeyState(VK_CONTROL))
-	{
-		/* BIND RELEASE */
-		int idx = this->GetHoveredIndex();
-		if (idx > -1)
+		for (ActionBase* action : (*it)->Actions)
 		{
-			RadialItem* item = this->Items[idx];
-			std::thread([item]() {
-				/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
-
-				for (ActionBase* act : item->Actions)
-				{
-					switch (act->Type)
-					{
-						case EActionType::InputBind:
-						{
-							ActionGeneric* action = (ActionGeneric*)act;
-							APIDefs->InputBinds.Invoke(action->Identifier, false);
-							APIDefs->InputBinds.Invoke(action->Identifier, true);
-							break;
-						}
-						case EActionType::GameInputBind:
-						{
-							ActionGameInputBind* action = (ActionGameInputBind*)act;
-							APIDefs->GameBinds.InvokeAsync(action->Identifier, 100);
-							break;
-						}
-						case EActionType::Event:
-						{
-							ActionGeneric* action = (ActionGeneric*)act;
-							APIDefs->Events.Raise(action->Identifier, nullptr);
-							break;
-						}
-						case EActionType::Delay:
-						{
-							ActionDelay* action = (ActionDelay*)act;
-							Sleep(action->Duration);
-							break;
-						}
-					}
-				}
-			}).detach();
+			delete action;
 		}
+		delete (*it);
+		this->Items.erase(it);
 	}
-
-	this->IsActive = false;
-	Origin = ImVec2(-1, -1);
-	return false;
 }
 
-void CRadialMenu::Invalidate()
+RadialItem* CRadialMenu::GetItem(std::string aIdentifier)
 {
-	this->BaseTexture		= nullptr;
-	this->DividerTexture	= nullptr;
-	this->SegmentTexture	= nullptr;
+	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	this->IsActive = false;
-	this->Origin = ImVec2(-1, -1);
+	auto it = std::find_if(this->Items.begin(), this->Items.end(), [aIdentifier](RadialItem* item) { return item->Identifier == aIdentifier; });
+
+	if (it != this->Items.end())
+	{
+		return (*it);
+	}
+
+	return nullptr;
+}
+
+const std::vector<RadialItem*>& CRadialMenu::GetItems()
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+	
+	return this->Items;
+}
+
+const std::string& CRadialMenu::GetName()
+{
+	return this->Identifier;
+}
+
+void CRadialMenu::SetName(std::string aName)
+{
+	this->Identifier = aName;
+}
+
+ERadialType CRadialMenu::GetType()
+{
+	return this->Type;
+}
+
+void CRadialMenu::SetType(ERadialType aType)
+{
+	this->Type = aType;
+	this->Invalidate();
+}
+
+ESelectionMode CRadialMenu::GetSelectionMode()
+{
+	return this->SelectionMode;
+}
+
+void CRadialMenu::SetSelectionMode(ESelectionMode aSelectionMode)
+{
+	this->SelectionMode = aSelectionMode;
+}
+
+int CRadialMenu::GetCapacity()
+{
+	return this->ItemsCapacity;
+}
+
+std::string CRadialMenu::GetInputBind()
+{
+	return "KB_RADIAL" + std::to_string(this->ID);
 }
 
 int CRadialMenu::GetHoveredIndex()
@@ -265,11 +370,49 @@ int CRadialMenu::GetHoveredIndex()
 	return hoverIndex;
 }
 
-RadialItem* CRadialMenu::GetHovered()
+void CRadialMenu::Invalidate()
 {
-	return this->GetHoveredIndex() > -1 
-		? this->Items[this->GetHoveredIndex()] 
-		: nullptr;
+	this->BaseTexture		= nullptr;
+	this->DividerTexture	= nullptr;
+	this->SegmentTexture	= nullptr;
+
+	switch (this->Type)
+	{
+		default:
+		case ERadialType::None:
+			this->ItemsCapacity = 0;
+			this->Size = ImVec2(0, 0);
+			this->MinimalMouseMoveDistance = 0;
+			this->SegmentContentDistance = 0;
+			this->SegmentContentSize = ImVec2(0, 0);
+			break;
+		case ERadialType::Normal:
+			this->ItemsCapacity = 12;
+			this->Size = ImVec2(520.0f, 520.0f);
+			this->MinimalMouseMoveDistance = 150.0f;
+			this->SegmentContentDistance = 200.0f;
+			this->SegmentContentSize = ImVec2(128.0f, 128.0f);
+			break;
+		case ERadialType::Small:
+			this->ItemsCapacity = 8;
+			this->Size = ImVec2(112.0f, 112.0f);
+			this->MinimalMouseMoveDistance = 18.0f;
+			this->SegmentContentDistance = 36.0f;
+			this->SegmentContentSize = ImVec2(32.0f, 32.0f);
+			break;
+	}
+
+	if (this->Items.size() == 0)
+	{
+		this->SegmentRadius = 0;
+	}
+	else
+	{
+		this->SegmentRadius = 360.0f / this->Items.size();
+	}
+
+	this->IsActive = false;
+	this->Origin = ImVec2(-1, -1);
 }
 
 void CRadialMenu::LoadSegmentTexture()
@@ -281,37 +424,37 @@ void CRadialMenu::LoadSegmentTexture()
 		switch (amtItems)
 		{
 		case 2:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR2", TEX_MW_SELECTOR2, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR2", TEX_MW_SELECTOR2, this->Module);
 			break;
 		case 3:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR3", TEX_MW_SELECTOR3, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR3", TEX_MW_SELECTOR3, this->Module);
 			break;
 		case 4:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR4", TEX_MW_SELECTOR4, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR4", TEX_MW_SELECTOR4, this->Module);
 			break;
 		case 5:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR5", TEX_MW_SELECTOR5, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR5", TEX_MW_SELECTOR5, this->Module);
 			break;
 		case 6:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR6", TEX_MW_SELECTOR6, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR6", TEX_MW_SELECTOR6, this->Module);
 			break;
 		case 7:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR7", TEX_MW_SELECTOR7, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR7", TEX_MW_SELECTOR7, this->Module);
 			break;
 		case 8:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR8", TEX_MW_SELECTOR8, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR8", TEX_MW_SELECTOR8, this->Module);
 			break;
 		case 9:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR9", TEX_MW_SELECTOR9, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR9", TEX_MW_SELECTOR9, this->Module);
 			break;
 		case 10:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR10", TEX_MW_SELECTOR10, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR10", TEX_MW_SELECTOR10, this->Module);
 			break;
 		case 11:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR11", TEX_MW_SELECTOR11, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR11", TEX_MW_SELECTOR11, this->Module);
 			break;
 		case 12:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR12", TEX_MW_SELECTOR12, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR12", TEX_MW_SELECTOR12, this->Module);
 			break;
 		}
 	}
@@ -320,25 +463,25 @@ void CRadialMenu::LoadSegmentTexture()
 		switch (amtItems)
 		{
 		case 2:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR2", TEX_MWS_SELECTOR2, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR2", TEX_MWS_SELECTOR2, this->Module);
 			break;
 		case 3:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR3", TEX_MWS_SELECTOR3, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR3", TEX_MWS_SELECTOR3, this->Module);
 			break;
 		case 4:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR4", TEX_MWS_SELECTOR4, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR4", TEX_MWS_SELECTOR4, this->Module);
 			break;
 		case 5:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR5", TEX_MWS_SELECTOR5, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR5", TEX_MWS_SELECTOR5, this->Module);
 			break;
 		case 6:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR6", TEX_MWS_SELECTOR6, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR6", TEX_MWS_SELECTOR6, this->Module);
 			break;
 		case 7:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR7", TEX_MWS_SELECTOR7, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR7", TEX_MWS_SELECTOR7, this->Module);
 			break;
 		case 8:
-			this->SegmentTexture = APIDefs->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR8", TEX_MWS_SELECTOR8, SelfModule);
+			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR8", TEX_MWS_SELECTOR8, this->Module);
 			break;
 		}
 	}

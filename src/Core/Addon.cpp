@@ -1,0 +1,109 @@
+///----------------------------------------------------------------------------------------------------
+/// Copyright (c) Raidcore.GG - All rights reserved.
+///
+/// Name         :  Addon.cpp
+/// Description  :  Core addon logic.
+/// Authors      :  K. Bieniek
+///----------------------------------------------------------------------------------------------------
+
+#include "Addon.h"
+
+#include "imgui/imgui.h"
+
+#include "Language.h"
+#include "Shared.h"
+
+namespace Addon
+{
+	void Load(AddonAPI* aApi)
+	{
+		APIDefs = aApi;
+
+		/* If you are using ImGui you will need to set these. */
+		ImGui::SetCurrentContext((ImGuiContext*)APIDefs->ImguiContext);
+		ImGui::SetAllocatorFunctions((void* (*)(size_t, void*))APIDefs->ImguiMalloc, (void(*)(void*, void*))APIDefs->ImguiFree);
+
+		APIDefs->Renderer.Register(ERenderType_Render, Addon::Render);
+		APIDefs->Renderer.Register(ERenderType_OptionsRender, Addon::RenderOptions);
+		APIDefs->WndProc.Register(Addon::WndProc);
+
+		APIDefs->InputBinds.RegisterWithString("KB_RADIALS", OnInputBind, "CTRL+R");
+
+		MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
+		NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
+
+		Lang::Init(APIDefs->Localization.Set);
+		RadialCtx = new CRadialContext();
+
+		unsigned int col = ImColor(255, 255, 255, 255);
+		unsigned int colHov = ImColor(255, 64, 0, 255);
+
+		RadialCtx->Add("Mounts", ERadialType::Normal);
+
+		RadialCtx->AddItem("Mounts", "Raptor", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_RAPTOR.png");
+		RadialCtx->AddItemAction("Mounts", "Raptor", EActionType::GameInputBind, EGameBinds_SquadMarkerPlaceWorld1);
+
+		RadialCtx->AddItem("Mounts", "Springer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SPRINGER.png");
+		RadialCtx->AddItemAction("Mounts", "Springer", EActionType::GameInputBind, EGameBinds_SpumoniMAM02);
+		RadialCtx->AddItemAction("Mounts", "Springer", 1500);
+		RadialCtx->AddItemAction("Mounts", "Springer", EActionType::GameInputBind, EGameBinds_SkillUtility2);
+
+		RadialCtx->AddItem("Mounts", "Skimmer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKIMMER.png");
+		RadialCtx->AddItemAction("Mounts", "Skimmer", EActionType::GameInputBind, EGameBinds_SpumoniMAM03);
+
+		RadialCtx->AddItem("Mounts", "Jackal", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_JACKAL.png");
+		RadialCtx->AddItemAction("Mounts", "Jackal", EActionType::GameInputBind, EGameBinds_SpumoniMAM04);
+
+		RadialCtx->AddItem("Mounts", "Griffon", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_GRIFFON.png");
+		RadialCtx->AddItemAction("Mounts", "Griffon", EActionType::GameInputBind, EGameBinds_SpumoniMAM05);
+
+		RadialCtx->AddItem("Mounts", "Roller Beetle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_ROLLERBEETLE.png");
+		RadialCtx->AddItemAction("Mounts", "Roller Beetle", EActionType::GameInputBind, EGameBinds_SpumoniMAM06);
+
+		RadialCtx->AddItem("Mounts", "Warclaw", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_WARCLAW.png");
+		RadialCtx->AddItemAction("Mounts", "Warclaw", EActionType::GameInputBind, EGameBinds_SpumoniMAM07);
+
+		RadialCtx->AddItem("Mounts", "Skyscale", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKYSCALE.png");
+		RadialCtx->AddItemAction("Mounts", "Skyscale", EActionType::GameInputBind, EGameBinds_SpumoniMAM08);
+		RadialCtx->AddItemAction("Mounts", "Skyscale", EActionType::InputBind, "KB_MUMBLEOVERLAY");
+		RadialCtx->AddItemAction("Mounts", "Skyscale", 1000);
+		RadialCtx->AddItemAction("Mounts", "Skyscale", EActionType::InputBind, "KB_MUMBLEOVERLAY");
+
+		RadialCtx->AddItem("Mounts", "Siege Turtle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SIEGETURTLE.png");
+		RadialCtx->AddItemAction("Mounts", "Siege Turtle", EActionType::GameInputBind, EGameBinds_SpumoniMAM09);
+	}
+
+	void Unload()
+	{
+		APIDefs->InputBinds.Deregister("KB_RADIALS");
+		APIDefs->Renderer.Deregister(Addon::Render);
+		APIDefs->Renderer.Deregister(Addon::RenderOptions);
+		APIDefs->WndProc.Deregister(Addon::WndProc);
+
+		delete RadialCtx;
+	}
+
+	void Render()
+	{
+		assert(RadialCtx);
+		RadialCtx->Render();
+	}
+
+	void RenderOptions()
+	{
+		assert(RadialCtx);
+		RadialCtx->RenderOptions();
+	}
+
+	void OnInputBind(const char* aIdentifier, bool aIsRelease)
+	{
+		assert(RadialCtx);
+		RadialCtx->OnInputBind(aIdentifier, aIsRelease);
+	}
+
+	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		assert(RadialCtx);
+		return RadialCtx->WndProc(hWnd, uMsg, wParam, lParam);
+	}
+}
