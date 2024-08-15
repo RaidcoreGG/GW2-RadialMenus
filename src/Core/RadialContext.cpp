@@ -257,6 +257,25 @@ std::string GameBindToString(EGameBinds aGameBind)
 	return LookupTable[aGameBind];
 }
 
+std::string Replace(const std::string& aString, const std::string& aOld, const std::string& aNew, size_t aPosition)
+{
+	std::string retStr = aString;
+	if (aOld.empty())
+	{
+		return retStr;
+	}
+
+	size_t pos = aPosition;
+	while ((pos = retStr.find(aOld, pos)) != std::string::npos)
+	{
+		retStr.replace(pos, aOld.length(), aNew);
+		pos += aNew.length();
+	}
+
+	return retStr;
+}
+
+
 void CRadialContext::Activate(CRadialMenu* aRadial)
 {
 	if (!aRadial) { return; }
@@ -269,7 +288,6 @@ void CRadialContext::Activate(CRadialMenu* aRadial)
 		{
 			this->Release(ESelectionMode::Escape);
 		}
-		return;
 	}
 	else
 	{
@@ -321,117 +339,48 @@ bool CRadialContext::Release(ESelectionMode aMode)
 void CRadialContext::Add(std::string aIdentifier, ERadialType aType)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, 1, aIdentifier, aType);
-	std::string bind = radial->GetInputBind();
-	this->RadialIBMap[bind] = radial;
-	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
-	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());
-	this->Radials.push_back(radial);
+	this->AddInternal(aIdentifier, aType);
 }
 
 void CRadialContext::Remove(std::string aIdentifier)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aIdentifier](CRadialMenu* menu) { return menu->GetName() == aIdentifier; });
-	
-	if (it != this->Radials.end())
-	{
-		delete (*it);
-		this->Radials.erase(it);
-	}
+	this->RemoveInternal(aIdentifier);
 }
 
 void CRadialContext::AddItem(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = new RadialItem();
-		item->Identifier = aItemId;
-		item->Color = aColor;
-		item->ColorHover = aColorHover;
-		item->Icon.Type = aIconType;
-		item->Icon.Value = aIconValue;
-		(*it)->AddItem(item);
-	}
+	this->AddItemInternal(aRadialId, aItemId, aColor, aColorHover, aIconType, aIconValue);
 }
 
 void CRadialContext::RemoveItem(std::string aRadialId, std::string aItemId)
 {
-
+	this->RemoveItemInternal(aRadialId, aItemId);
 }
 
 void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-	
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionGeneric* action = new ActionGeneric();
-			action->Type = aType;
-			action->Identifier = _strdup(aValue.c_str());
-
-			item->Actions.push_back(action);
-		}
-	}
+	this->AddItemActionInternal(aRadialId, aItemId, aType, aValue);
 }
 
 void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionGameInputBind* action = new ActionGameInputBind();
-			action->Type = aType;
-			action->Identifier = aValue;
-
-			item->Actions.push_back(action);
-		}
-	}
+	this->AddItemActionInternal(aRadialId, aItemId, aType, aValue);
 }
 
 void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, int aValue)
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
-
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionDelay* action = new ActionDelay();
-			action->Type = EActionType::Delay;
-			action->Duration = aValue;
-
-			item->Actions.push_back(action);
-		}
-	}
+	this->AddItemActionInternal(aRadialId, aItemId, aValue);
 }
 
-void CRadialContext::RemoveItemAction(std::string aRadialId, std::string aItemId)
+void CRadialContext::RemoveItemAction(std::string aRadialId, std::string aItemId, int aIndex)
 {
-
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+	this->RemoveItemActionInternal(aRadialId, aItemId, aIndex);
 }
 
 void CRadialContext::Render()
@@ -459,10 +408,22 @@ void CRadialContext::RenderOptions()
 
 	ImGui::BeginChild("##radialitemselector", ImVec2(width / 4, 0));
 	ImGui::TextDisabled("Select Radial Menu:");
+	std::string radDel;
 	for (CRadialMenu* radial : this->Radials)
 	{
 		if (ImGui::TreeNode(radial->GetName().c_str()))
 		{
+			std::string popupName = "RadialCtxMenu#" + radial->GetName();
+			if (ImGui::BeginPopupContextItem(popupName.c_str()))
+			{
+				if (ImGui::Button("Delete"))
+				{
+					radDel = radial->GetName();
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
+
 			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), EditingMenu == radial))
 			{
 				EditingMenu = radial;
@@ -474,7 +435,7 @@ void CRadialContext::RenderOptions()
 			std::vector<RadialItem*> items = radial->GetItems();
 
 			int i = 0;
-
+			std::string radItemDel;
 			for (RadialItem* item : items)
 			{
 				i++;
@@ -494,13 +455,32 @@ void CRadialContext::RenderOptions()
 				{
 					ImGui::PopStyleColor();
 				}
+
+				std::string popupNameItem = "RadialItemCtxMenu#" + item->Identifier;
+				if (ImGui::BeginPopupContextItem(popupNameItem.c_str()))
+				{
+					if (ImGui::Button("Delete"))
+					{
+						radItemDel = item->Identifier;
+					}
+					ImGui::EndPopup();
+				}
+				ImGui::OpenPopupOnItemClick(popupNameItem.c_str(), 1);
+			}
+
+			if (!radItemDel.empty())
+			{
+				this->Release(ESelectionMode::Escape);
+				this->RemoveItemInternal(radial->GetName(), radItemDel);
+				EditingItem = nullptr;
+				EditingMenu = nullptr;
 			}
 
 			if (capacity > items.size())
 			{
 				if (ImGui::Button(("Add##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
 				{
-
+					this->AddItemInternal(radial->GetName(), "New Item " + std::to_string(radial->GetItems().size() + 1), ImColor(0, 0, 0, 255), ImColor(245, 192, 67, 255), EIconType::None, "");
 				}
 			}
 			else if (capacity < items.size())
@@ -510,10 +490,32 @@ void CRadialContext::RenderOptions()
 
 			ImGui::TreePop();
 		}
+		else
+		{
+			std::string popupName = "RadialCtxMenu#" + radial->GetName();
+			if (ImGui::BeginPopupContextItem(popupName.c_str()))
+			{
+				if (ImGui::Button("Delete"))
+				{
+					radDel = radial->GetName();
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
+		}
 	}
+
+	if (!radDel.empty())
+	{
+		this->Release(ESelectionMode::Escape);
+		this->RemoveInternal(radDel);
+		EditingItem = nullptr;
+		EditingMenu = nullptr;
+	}
+
 	if (ImGui::Button("New##radial", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
 	{
-
+		this->AddInternal("New Radial " + std::to_string(this->Radials.size() + 1), ERadialType::Normal);
 	}
 	ImGui::EndChild();
 
@@ -665,6 +667,10 @@ void CRadialContext::RenderOptions()
 			}
 		}
 
+		ImGui::BeginTable("##radialcolours", 2, ImGuiTableFlags_SizingFixedFit);
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
 		ImGui::TextDisabled("Color");
 		ImGui::ColorEdit4U32("Color", &EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
@@ -695,6 +701,7 @@ void CRadialContext::RenderOptions()
 			}
 		}
 
+		ImGui::TableSetColumnIndex(1);
 		ImGui::TextDisabled("Color Hover");
 		ImGui::ColorEdit4U32("Color Hover", &EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
@@ -725,6 +732,8 @@ void CRadialContext::RenderOptions()
 			}
 		}
 
+		ImGui::EndTable();
+		
 		ImGui::TextDisabled("Icon");
 
 		std::string iconType;
@@ -769,8 +778,17 @@ void CRadialContext::RenderOptions()
 					EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
 					if (!EditingItem->Icon.Value.empty())
 					{
+						EditingItem->Icon.Value = Replace(EditingItem->Icon.Value, GW2Root.string() + "\\", "", 0);
 						EditingItem->Icon.Texture = nullptr;
-						APIDefs->Textures.LoadFromFile(EditingItem->Icon.Value.c_str(), EditingItem->Icon.Value.c_str(), nullptr);
+						std::filesystem::path iconPath = EditingItem->Icon.Value;
+						if (iconPath.is_relative())
+						{
+							APIDefs->Textures.LoadFromFile(EditingItem->Icon.Value.c_str(), (GW2Root / EditingItem->Icon.Value).string().c_str(), nullptr);
+						}
+						else
+						{
+							APIDefs->Textures.LoadFromFile(EditingItem->Icon.Value.c_str(), EditingItem->Icon.Value.c_str(), nullptr);
+						}
 					}
 				}
 			}
@@ -801,6 +819,8 @@ void CRadialContext::RenderOptions()
 				}
 			}
 		}
+
+		ImGui::TextDisabled("Conditions");
 
 		ImGui::TextDisabled("Actions");
 
@@ -1187,6 +1207,14 @@ void CRadialContext::RenderOptions()
 		}
 		ImGui::EndTable();
 
+		if (ImGui::Button("Add Action"))
+		{
+			/* can't use actionaddinternal here because we don't have the radialid */
+			ActionGeneric* action = new ActionGeneric();
+			action->Type = EActionType::InputBind;
+			EditingItem->Actions.push_back(action);
+		}
+
 		if (idxDel != -1)
 		{
 			delete EditingItem->Actions[idxDel];
@@ -1233,4 +1261,153 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 
 	return uMsg;
+}
+
+void CRadialContext::AddInternal(std::string aIdentifier, ERadialType aType)
+{
+	/* iterate over radials until an unused ID is found */
+	int lowestUnusedId = 1;
+	bool collision = false;
+	do
+	{
+		/* reset collision check */
+		collision = false;
+
+		for (CRadialMenu* r : this->Radials)
+		{
+			if (r->GetID() == lowestUnusedId)
+			{
+				/* id is used, set collision to true to loop again and increment id */
+				collision = true;
+				lowestUnusedId++;
+				break;
+			}
+		}
+	} while (collision);
+
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, this->Radials.size() + 1, aIdentifier, aType);
+	std::string bind = radial->GetInputBind();
+	this->RadialIBMap[bind] = radial;
+	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
+	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());
+	this->Radials.push_back(radial);
+}
+
+void CRadialContext::RemoveInternal(std::string aIdentifier)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aIdentifier](CRadialMenu* menu) { return menu->GetName() == aIdentifier; });
+
+	if (it != this->Radials.end())
+	{
+		if (this->ActiveRadial == (*it))
+		{
+			this->Release(ESelectionMode::Escape);
+		}
+
+		auto mapit = this->RadialIBMap.find((*it)->GetInputBind());
+
+		if (mapit != this->RadialIBMap.end())
+		{
+			this->RadialIBMap.erase(mapit);
+		}
+
+		delete (*it);
+
+		this->Radials.erase(it);
+	}
+}
+
+void CRadialContext::AddItemInternal(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		RadialItem* item = new RadialItem();
+		item->Identifier = aItemId;
+		item->Color = aColor;
+		item->ColorHover = aColorHover;
+		item->Icon.Type = aIconType;
+		item->Icon.Value = aIconValue;
+		(*it)->AddItem(item);
+	}
+}
+
+void CRadialContext::RemoveItemInternal(std::string aRadialId, std::string aItemId)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		(*it)->RemoveItem(aItemId);
+	}
+}
+
+void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		RadialItem* item = (*it)->GetItem(aItemId);
+
+		if (item)
+		{
+			ActionGeneric* action = new ActionGeneric();
+			action->Type = aType;
+			action->Identifier = _strdup(aValue.c_str());
+
+			item->Actions.push_back(action);
+		}
+	}
+}
+
+void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		RadialItem* item = (*it)->GetItem(aItemId);
+
+		if (item)
+		{
+			ActionGameInputBind* action = new ActionGameInputBind();
+			action->Type = aType;
+			action->Identifier = aValue;
+
+			item->Actions.push_back(action);
+		}
+	}
+}
+
+void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, int aValue)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		RadialItem* item = (*it)->GetItem(aItemId);
+
+		if (item)
+		{
+			ActionDelay* action = new ActionDelay();
+			action->Type = EActionType::Delay;
+			action->Duration = aValue;
+
+			item->Actions.push_back(action);
+		}
+	}
+}
+
+void CRadialContext::RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
+
+	if (it != this->Radials.end())
+	{
+		RadialItem* item = (*it)->GetItem(aItemId);
+		delete item->Actions[aIndex];
+		item->Actions.erase(item->Actions.begin() + aIndex);
+	}
 }

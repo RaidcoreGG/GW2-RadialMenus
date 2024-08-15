@@ -8,10 +8,13 @@
 
 #include "RadialMenu.h"
 
+#include <filesystem>
+
 #include "imgui_extensions.h"
 
 #include "resource.h"
 #include "Util.h"
+#include "Shared.h"
 
 CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType)
 {
@@ -258,16 +261,26 @@ void CRadialMenu::AddItem(RadialItem* aMenuItem)
 	switch (aMenuItem->Icon.Type)
 	{
 		case EIconType::File:
-			this->API->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), aMenuItem->Icon.Value.c_str(), nullptr);
+		{
+			std::filesystem::path iconPath = aMenuItem->Icon.Value;
+			if (iconPath.is_relative())
+			{
+				APIDefs->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), (GW2Root / aMenuItem->Icon.Value).string().c_str(), nullptr);
+			}
+			else
+			{
+				APIDefs->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), aMenuItem->Icon.Value.c_str(), nullptr);
+			}
 			break;
+		}
 		case EIconType::URL:
+		{
 			this->API->Textures.LoadFromURL(aMenuItem->Icon.Value.c_str(), URL::GetBase(aMenuItem->Icon.Value).c_str(), URL::GetEndpoint(aMenuItem->Icon.Value).c_str(), nullptr);
 			break;
+		}
 	}
 
 	this->Items.push_back(aMenuItem);
-
-	this->SegmentRadius = 360.0f / this->Items.size();
 
 	/* recalculate positions/offsets */
 
@@ -289,6 +302,8 @@ void CRadialMenu::RemoveItem(std::string aIdentifier)
 		delete (*it);
 		this->Items.erase(it);
 	}
+
+	this->Invalidate();
 }
 
 RadialItem* CRadialMenu::GetItem(std::string aIdentifier)
@@ -368,6 +383,11 @@ int CRadialMenu::GetHoveredIndex()
 	}
 
 	return hoverIndex;
+}
+
+int CRadialMenu::GetID()
+{
+	return this->ID;
 }
 
 void CRadialMenu::Invalidate()

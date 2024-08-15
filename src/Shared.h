@@ -2,6 +2,7 @@
 #define SHARED_H
 
 #include <Windows.h>
+#include <filesystem>
 
 #include "Nexus/Nexus.h"
 #include "Mumble/Mumble.h"
@@ -16,5 +17,7 @@ extern Mumble::Identity* MumbleIdentity;
 extern NexusLinkData* NexusLink;
 
 extern CRadialContext* RadialCtx;
+extern std::filesystem::path GW2Root;
+extern std::filesystem::path AddonDirectory;
 
 #endif

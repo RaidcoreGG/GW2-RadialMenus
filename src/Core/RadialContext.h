@@ -53,7 +53,7 @@ class CRadialContext
 	void AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue);
 	void AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue);
 	void AddItemAction(std::string aRadialId, std::string aItemId, int aValue);
-	void RemoveItemAction(std::string aRadialId, std::string aItemId);
+	void RemoveItemAction(std::string aRadialId, std::string aItemId, int aIndex);
 
 	void Render();
 	void RenderOptions();
@@ -66,6 +66,17 @@ class CRadialContext
 	std::vector<CRadialMenu*>						Radials;
 	std::unordered_map<std::string, CRadialMenu*>	RadialIBMap;
 	CRadialMenu*									ActiveRadial = nullptr;
+
+	void AddInternal(std::string aIdentifier, ERadialType aType);
+	void RemoveInternal(std::string aIdentifier);
+
+	void AddItemInternal(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue);
+	void RemoveItemInternal(std::string aRadialId, std::string aItemId);
+
+	void AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue);
+	void AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue);
+	void AddItemActionInternal(std::string aRadialId, std::string aItemId, int aValue);
+	void RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex);
 };
 
 #endif
