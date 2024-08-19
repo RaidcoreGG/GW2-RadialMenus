@@ -204,7 +204,9 @@ void CRadialMenu::Release(bool aIsCancel)
 					case EActionType::GameInputBind:
 					{
 						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						this->API->GameBinds.InvokeAsync(action->Identifier, 100);
+						this->API->GameBinds.Press(action->Identifier);
+						Sleep(100);
+						this->API->GameBinds.Release(action->Identifier);
 						break;
 					}
 					case EActionType::GameInputBindPress:

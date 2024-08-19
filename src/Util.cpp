@@ -50,3 +50,24 @@ namespace URL
 		return aUrl.substr(idx);
 	}
 }
+
+namespace String
+{
+	std::string Replace(const std::string& aString, const std::string& aOld, const std::string& aNew, size_t aPosition)
+	{
+		std::string retStr = aString;
+		if (aOld.empty())
+		{
+			return retStr;
+		}
+
+		size_t pos = aPosition;
+		while ((pos = retStr.find(aOld, pos)) != std::string::npos)
+		{
+			retStr.replace(pos, aOld.length(), aNew);
+			pos += aNew.length();
+		}
+
+		return retStr;
+	}
+}

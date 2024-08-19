@@ -103,10 +103,15 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Addon.h" />
+    <ClInclude Include="src\Core\Conditions.h" />
     <ClInclude Include="src\Core\EActionType.h" />
+    <ClInclude Include="src\Core\EIconType.h" />
     <ClInclude Include="src\Core\ERadialType.h" />
     <ClInclude Include="src\Core\Action.h" />
+    <ClInclude Include="src\Core\ESelectionMode.h" />
+    <ClInclude Include="src\Core\Icon.h" />
     <ClInclude Include="src\Core\RadialContext.h" />
+    <ClInclude Include="src\Core\RadialItem.h" />
     <ClInclude Include="src\Language.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui.h" />
@@ -128,6 +133,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\Core\Addon.cpp" />
     <ClCompile Include="src\Core\RadialContext.cpp" />
     <ClCompile Include="src\entry.cpp" />
+    <ClCompile Include="src\imgui_extensions.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_draw.cpp" />

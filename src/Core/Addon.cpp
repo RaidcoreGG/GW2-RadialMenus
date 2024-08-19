@@ -27,8 +27,6 @@ namespace Addon
 		APIDefs->Renderer.Register(ERenderType_OptionsRender, Addon::RenderOptions);
 		APIDefs->WndProc.Register(Addon::WndProc);
 
-		APIDefs->InputBinds.RegisterWithString("KB_RADIALS", OnInputBind, "CTRL+R");
-
 		MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 		NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
 
@@ -39,7 +37,6 @@ namespace Addon
 		AddonDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus");
 
 		//if (!std::filesystem::exists(AddonDirectory))
-		
 		{
 			std::filesystem::create_directory(AddonDirectory);
 			unsigned int col = ImColor(255, 255, 255, 255);
@@ -78,7 +75,6 @@ namespace Addon
 
 	void Unload()
 	{
-		APIDefs->InputBinds.Deregister("KB_RADIALS");
 		APIDefs->Renderer.Deregister(Addon::Render);
 		APIDefs->Renderer.Deregister(Addon::RenderOptions);
 		APIDefs->WndProc.Deregister(Addon::WndProc);

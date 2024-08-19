@@ -17,57 +17,9 @@
 #include "Mumble/Mumble.h"
 #include "Nexus/Nexus.h"
 
-#include "Action.h"
-#include "EActionType.h"
+#include "RadialItem.h"
+#include "ESelectionMode.h"
 #include "ERadialType.h"
-
-///----------------------------------------------------------------------------------------------------
-/// EIconType Enumeration
-///----------------------------------------------------------------------------------------------------
-enum class EIconType
-{
-	None,
-	File,
-	URL
-};
-
-///----------------------------------------------------------------------------------------------------
-/// ESelectionMode Enumeration
-///----------------------------------------------------------------------------------------------------
-enum class ESelectionMode
-{
-	None,
-	Click,
-	Release,
-	ReleaseOrClick,
-	Hover,
-
-	Escape /* internal */
-};
-
-///----------------------------------------------------------------------------------------------------
-/// Icon Struct
-///----------------------------------------------------------------------------------------------------
-struct Icon
-{
-	EIconType Type;
-	std::string Value;
-
-	/* runtime */
-	Texture* Texture;
-};
-
-///----------------------------------------------------------------------------------------------------
-/// RadialItem Struct
-///----------------------------------------------------------------------------------------------------
-typedef struct RadialItem
-{
-	std::string					Identifier;
-	unsigned int				Color;
-	unsigned int				ColorHover;
-	Icon						Icon;
-	std::vector<ActionBase*>	Actions;
-} RadialMenuItem;
 
 ///----------------------------------------------------------------------------------------------------
 /// CRadialMenu Class
@@ -75,8 +27,8 @@ typedef struct RadialItem
 class CRadialMenu
 {
 	public:
-	bool							DrawInCenter;
-	bool							RestoreCursor;
+	bool                        DrawInCenter;
+	bool                        RestoreCursor;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
@@ -190,34 +142,34 @@ class CRadialMenu
 	int GetID();
 
 	private:
-	AddonAPI*						API;
-	HMODULE							Module;
-	NexusLinkData*					NexusLink;
-	Mumble::Data*					MumbleLink;
-	Mumble::Identity*				MumbleIdentity;
+	AddonAPI*                   API;
+	HMODULE                     Module;
+	NexusLinkData*              NexusLink;
+	Mumble::Data*               MumbleLink;
+	Mumble::Identity*           MumbleIdentity;
 
-	int								ID;
-	std::string						Identifier;
-	ERadialType						Type;
-	ImVec2							Size;
-	ESelectionMode					SelectionMode;
+	int                         ID;
+	std::string                 Identifier;
+	ERadialType                 Type;
+	ImVec2                      Size;
+	ESelectionMode              SelectionMode;
 
-	std::mutex						Mutex;
-	std::vector<RadialItem*>		Items;
-	int								ItemsCapacity;
+	std::mutex                  Mutex;
+	std::vector<RadialItem*>    Items;
+	int                         ItemsCapacity;
 
-	Texture* BaseTexture;
-	Texture* DividerTexture;
-	Texture* SegmentTexture;
+	Texture*                    BaseTexture;
+	Texture*                    DividerTexture;
+	Texture*                    SegmentTexture;
 
-	float							MinimalMouseMoveDistance;
-	float							SegmentContentDistance;
-	ImVec2							SegmentContentSize;
-	float							SegmentRadius;
+	float                       MinimalMouseMoveDistance;
+	float                       SegmentContentDistance;
+	ImVec2                      SegmentContentSize;
+	float                       SegmentRadius;
 
-	bool							IsActive;
-	ImVec2							Origin;
-	ImVec2							MousePos;
+	bool                        IsActive;
+	ImVec2                      Origin;
+	ImVec2                      MousePos;
 
 	///----------------------------------------------------------------------------------------------------
 	/// Invalidate:

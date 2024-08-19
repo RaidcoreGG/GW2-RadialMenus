@@ -100,13 +100,25 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="src\Util.h">
-      <Filter>Header Files</Filter>
+      <Filter>_GLOBALS</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\EIconType.h">
+      <Filter>Core\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Icon.h">
+      <Filter>Core\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\RadialItem.h">
+      <Filter>Core\Structs</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\ESelectionMode.h">
+      <Filter>Core\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Core\Conditions.h">
+      <Filter>Core\Structs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Shared.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
       <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
@@ -134,8 +146,14 @@
     <ClCompile Include="src\Core\RadialContext.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Shared.cpp">
+      <Filter>_GLOBALS</Filter>
+    </ClCompile>
     <ClCompile Include="src\Util.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>_GLOBALS</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_extensions.cpp">
+      <Filter>_EXTERNAL\imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

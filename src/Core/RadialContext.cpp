@@ -11,32 +11,13 @@
 #include <map>
 
 #include "imgui/imgui_internal.h"
+#include "imgui_extensions.h"
 
 #include "Addon.h"
 #include "Shared.h"
 #include "Util.h"
 
-/* helper */
-namespace ImGui
-{
-	bool ColorEdit4U32(const char* label, ImU32* color, ImGuiColorEditFlags flags = 0) {
-		float col[4];
-		col[0] = (float)((*color >> 0) & 0xFF) / 255.0f;
-		col[1] = (float)((*color >> 8) & 0xFF) / 255.0f;
-		col[2] = (float)((*color >> 16) & 0xFF) / 255.0f;
-		col[3] = (float)((*color >> 24) & 0xFF) / 255.0f;
-
-		bool result = ColorEdit4(label, col, flags);
-
-		*color = ((ImU32)(col[0] * 255.0f)) |
-			((ImU32)(col[1] * 255.0f) << 8) |
-			((ImU32)(col[2] * 255.0f) << 16) |
-			((ImU32)(col[3] * 255.0f) << 24);
-
-		return result;
-	}
-}
-
+/* helpers start */
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
 {
 	if (ImGui::Selectable(APIDefs->Localization.Translate(aLabel)))
@@ -256,25 +237,7 @@ std::string GameBindToString(EGameBinds aGameBind)
 
 	return LookupTable[aGameBind];
 }
-
-std::string Replace(const std::string& aString, const std::string& aOld, const std::string& aNew, size_t aPosition)
-{
-	std::string retStr = aString;
-	if (aOld.empty())
-	{
-		return retStr;
-	}
-
-	size_t pos = aPosition;
-	while ((pos = retStr.find(aOld, pos)) != std::string::npos)
-	{
-		retStr.replace(pos, aOld.length(), aNew);
-		pos += aNew.length();
-	}
-
-	return retStr;
-}
-
+/* helpers end */
 
 void CRadialContext::Activate(CRadialMenu* aRadial)
 {
@@ -778,7 +741,7 @@ void CRadialContext::RenderOptions()
 					EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
 					if (!EditingItem->Icon.Value.empty())
 					{
-						EditingItem->Icon.Value = Replace(EditingItem->Icon.Value, GW2Root.string() + "\\", "", 0);
+						EditingItem->Icon.Value = String::Replace(EditingItem->Icon.Value, GW2Root.string() + "\\", "");
 						EditingItem->Icon.Texture = nullptr;
 						std::filesystem::path iconPath = EditingItem->Icon.Value;
 						if (iconPath.is_relative())
