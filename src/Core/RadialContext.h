@@ -77,6 +77,8 @@ class CRadialContext
 	void AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue);
 	void AddItemActionInternal(std::string aRadialId, std::string aItemId, int aValue);
 	void RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex);
+
+	int GetLowestUnusedID();
 };
 
 #endif

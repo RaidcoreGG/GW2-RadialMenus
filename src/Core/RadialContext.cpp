@@ -483,7 +483,7 @@ void CRadialContext::RenderOptions()
 
 	if (ImGui::Button("New##radial", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
 	{
-		this->AddInternal("New Radial " + std::to_string(this->Radials.size() + 1), ERadialType::Normal);
+		this->AddInternal("New Radial " + std::to_string(this->GetLowestUnusedID()), ERadialType::Normal);
 	}
 	ImGui::EndChild();
 
@@ -1222,27 +1222,7 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 void CRadialContext::AddInternal(std::string aIdentifier, ERadialType aType)
 {
-	/* iterate over radials until an unused ID is found */
-	int lowestUnusedId = 1;
-	bool collision = false;
-	do
-	{
-		/* reset collision check */
-		collision = false;
-
-		for (CRadialMenu* r : this->Radials)
-		{
-			if (r->GetID() == lowestUnusedId)
-			{
-				/* id is used, set collision to true to loop again and increment id */
-				collision = true;
-				lowestUnusedId++;
-				break;
-			}
-		}
-	} while (collision);
-
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, this->Radials.size() + 1, aIdentifier, aType);
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, this->GetLowestUnusedID(), aIdentifier, aType);
 	std::string bind = radial->GetInputBind();
 	this->RadialIBMap[bind] = radial;
 	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
@@ -1367,4 +1347,28 @@ void CRadialContext::RemoveItemActionInternal(std::string aRadialId, std::string
 		delete item->Actions[aIndex];
 		item->Actions.erase(item->Actions.begin() + aIndex);
 	}
+}
+
+int CRadialContext::GetLowestUnusedID()
+{
+	/* iterate over radials until an unused ID is found */
+	int lowestUnusedId = 1;
+	bool collision = false;
+	do
+	{
+		/* reset collision check */
+		collision = false;
+
+		for (CRadialMenu* r : this->Radials)
+		{
+			if (r->GetID() == lowestUnusedId)
+			{
+				/* id is used, set collision to true to loop again and increment id */
+				collision = true;
+				lowestUnusedId++;
+			}
+		}
+	} while (collision);
+
+	return lowestUnusedId;
 }
