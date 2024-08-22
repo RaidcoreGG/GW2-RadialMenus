@@ -17,6 +17,9 @@ struct Conditions
 	EObserveState IsMapOpen;
 	EObserveState IsTextboxActive;
 
+	/* derived game states */
+	EObserveState IsGameplay;
+	
 	/* derived positional states */
 	EObserveState IsUnderwater;
 	EObserveState IsOnWaterSurface;

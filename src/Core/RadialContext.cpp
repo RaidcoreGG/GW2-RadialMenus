@@ -20,9 +20,22 @@
 /* helpers start */
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
 {
+	bool isBound = APIDefs->GameBinds.IsBound(aGameBind);
+
+	if (!isBound)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(255, 255, 0, 255));
+	}
+
 	if (ImGui::Selectable(APIDefs->Localization.Translate(aLabel)))
 	{
 		((ActionGameInputBind*)aAction)->Identifier = aGameBind;
+	}
+
+	if (!isBound)
+	{
+		ImGui::PopStyleColor();
+		ImGui::TooltipGeneric("Bind this Game InputBind via the Nexus options in order to be able to use it.\nIt must match the game.");
 	}
 }
 
@@ -387,7 +400,7 @@ void CRadialContext::RenderOptions()
 			}
 			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
 
-			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), EditingMenu == radial))
+			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), EditingMenu == radial && EditingItem == nullptr))
 			{
 				EditingMenu = radial;
 				EditingItem = nullptr;
@@ -412,7 +425,7 @@ void CRadialContext::RenderOptions()
 
 				if (ImGui::Selectable(item->Identifier.c_str(), EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
 				{
-					EditingMenu = nullptr;
+					EditingMenu = radial;
 					EditingItem = item;
 				}
 				ImGui::SameLine();
@@ -490,7 +503,7 @@ void CRadialContext::RenderOptions()
 	ImGui::SameLine();
 
 	ImGui::BeginChild("##radialitemeditor", ImVec2(width / 6 * 4, 0));
-	if (EditingMenu) /* editing general menu settings */
+	if (EditingMenu && !EditingItem) /* editing general menu settings */
 	{
 		ImGui::TextDisabled("Input Bind");
 		ImGui::Text(EditingMenu->GetInputBind().c_str());
@@ -622,31 +635,9 @@ void CRadialContext::RenderOptions()
 		ImGui::TextDisabled("Color");
 		ImGui::ColorEdit4U32("Color", &EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Apply to all##color"))
+		if (ImGui::Button("Apply to all##color"))
 		{
-			unsigned int colorCopy = EditingItem->Color;
-			std::string name = EditingItem->Identifier;
-
-			auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [name](CRadialMenu* menu)
-			{
-				bool found = false;
-				for (RadialItem* item : menu->GetItems())
-				{
-					if (item->Identifier == name)
-					{
-						found = true;
-					}
-				}
-				return found;
-			});
-
-			if (it != this->Radials.end())
-			{
-				for (RadialItem* item : (*it)->GetItems())
-				{
-					item->Color = colorCopy;
-				}
-			}
+			this->ApplyColorToAll(EditingMenu, EditingItem->Color, false);
 		}
 		ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
 
@@ -654,31 +645,9 @@ void CRadialContext::RenderOptions()
 		ImGui::TextDisabled("Color Hover");
 		ImGui::ColorEdit4U32("Color Hover", &EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Apply to all##colorhover"))
+		if (ImGui::Button("Apply to all##colorhover"))
 		{
-			unsigned int colorCopy = EditingItem->ColorHover;
-			std::string name = EditingItem->Identifier;
-
-			auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [name](CRadialMenu* menu)
-			{
-				bool found = false;
-				for (RadialItem* item : menu->GetItems())
-				{
-					if (item->Identifier == name)
-					{
-						found = true;
-					}
-				}
-				return found;
-			});
-
-			if (it != this->Radials.end())
-			{
-				for (RadialItem* item : (*it)->GetItems())
-				{
-					item->ColorHover = colorCopy;
-				}
-			}
+			this->ApplyColorToAll(EditingMenu, EditingItem->ColorHover, true);
 		}
 		ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
 
@@ -1358,4 +1327,21 @@ int CRadialContext::GetLowestUnusedID()
 	} while (collision);
 
 	return lowestUnusedId;
+}
+
+void CRadialContext::ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor)
+{
+	if (!aRadial) { return; }
+
+	for (RadialItem* item : aRadial->GetItems())
+	{
+		if (aHoverColor)
+		{
+			item->ColorHover = aColor;
+		}
+		else
+		{
+			item->Color = aColor;
+		}
+	}
 }

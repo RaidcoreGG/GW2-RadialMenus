@@ -79,6 +79,8 @@ class CRadialContext
 	void RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex);
 
 	int GetLowestUnusedID();
+
+	void ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor = false);
 };
 
 #endif

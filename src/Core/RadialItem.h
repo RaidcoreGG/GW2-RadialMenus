@@ -4,19 +4,23 @@
 #include <string>
 #include <vector>
 
-#include "Icon.h"
 #include "Action.h"
+#include "Conditions.h"
+#include "Icon.h"
 
 ///----------------------------------------------------------------------------------------------------
 /// RadialItem Struct
 ///----------------------------------------------------------------------------------------------------
 typedef struct RadialItem
 {
-	std::string                 Identifier;
-	unsigned int                Color;
-	unsigned int                ColorHover;
-	Icon                        Icon;
-	std::vector<ActionBase*>    Actions;
+	std::string              Identifier;
+	unsigned int             Color;
+	unsigned int             ColorHover;
+	Icon                     Icon;
+	Conditions               Visibility;
+	Conditions               Activation;
+	int                      ActivationTimeout;
+	std::vector<ActionBase*> Actions;
 } RadialMenuItem;
 
 #endif

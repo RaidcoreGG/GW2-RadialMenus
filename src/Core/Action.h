@@ -1,6 +1,9 @@
 #ifndef RADIALACTION_H
 #define RADIALACTION_H
 
+#include <string>
+
+#include "Conditions.h"
 #include "EActionType.h"
 #include "Nexus/Nexus.h"
 
@@ -10,6 +13,7 @@
 struct ActionBase
 {
 	EActionType Type;
+	Conditions  Activation;
 };
 
 ///----------------------------------------------------------------------------------------------------
