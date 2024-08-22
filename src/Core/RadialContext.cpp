@@ -369,7 +369,7 @@ void CRadialContext::RenderOptions()
 
 	float width = ImGui::GetWindowContentRegionWidth();
 
-	ImGui::BeginChild("##radialitemselector", ImVec2(width / 4, 0));
+	ImGui::BeginChild("##radialitemselector", ImVec2(width / 6 * 2, 0));
 	ImGui::TextDisabled("Select Radial Menu:");
 	std::string radDel;
 	for (CRadialMenu* radial : this->Radials)
@@ -398,45 +398,50 @@ void CRadialContext::RenderOptions()
 			std::vector<RadialItem*> items = radial->GetItems();
 
 			int i = 0;
-			std::string radItemDel;
 			for (RadialItem* item : items)
 			{
-				i++;
-
 				ImGui::TextDisabled("Item");
 				ImGui::SameLine();
-				if (i > capacity)
+				if (i + 1 > capacity) /* max capacity reached colour override */
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(255, 255, 0, 255));
 				}
-				if (ImGui::Selectable(item->Identifier.c_str(), EditingItem == item))
+
+				float btnSz = ImGui::GetFrameHeight();
+				float btnPad = ImGui::GetStyle().ItemSpacing.x;
+
+				if (ImGui::Selectable(item->Identifier.c_str(), EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
 				{
 					EditingMenu = nullptr;
 					EditingItem = item;
 				}
-				if (i > capacity)
+				ImGui::SameLine();
+				if (ImGui::ArrowButtonCondDisabled(("up_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
+				{
+					radial->MoveItemUp(item->Identifier);
+				}
+				ImGui::SameLine();
+				if (ImGui::ArrowButtonCondDisabled(("dn_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == items.size() - 1))
+				{
+					radial->MoveItemDown(item->Identifier);
+				}
+				ImGui::SameLine();
+				if (ImGui::CrossButton(("x_radialitem##" + std::to_string(i)).c_str()))
+				{
+					this->Release(ESelectionMode::Escape);
+					radial->RemoveItem(item->Identifier);
+					if (EditingItem == item)
+					{
+						EditingItem = nullptr;
+					}
+				}
+
+				if (i + 1 > capacity) /* max capacity reached colour override */
 				{
 					ImGui::PopStyleColor();
 				}
 
-				std::string popupNameItem = "RadialItemCtxMenu#" + item->Identifier;
-				if (ImGui::BeginPopupContextItem(popupNameItem.c_str()))
-				{
-					if (ImGui::Button("Delete"))
-					{
-						radItemDel = item->Identifier;
-					}
-					ImGui::EndPopup();
-				}
-				ImGui::OpenPopupOnItemClick(popupNameItem.c_str(), 1);
-			}
-
-			if (!radItemDel.empty())
-			{
-				this->Release(ESelectionMode::Escape);
-				this->RemoveItemInternal(radial->GetName(), radItemDel);
-				EditingItem = nullptr;
-				EditingMenu = nullptr;
+				i++;
 			}
 
 			if (capacity > items.size())
@@ -484,7 +489,7 @@ void CRadialContext::RenderOptions()
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild("##radialitemeditor", ImVec2(width / 4 * 3, 0));
+	ImGui::BeginChild("##radialitemeditor", ImVec2(width / 6 * 4, 0));
 	if (EditingMenu) /* editing general menu settings */
 	{
 		ImGui::TextDisabled("Input Bind");
@@ -1124,44 +1129,21 @@ void CRadialContext::RenderOptions()
 			}
 
 			ImGui::TableSetColumnIndex(2);
-			if (i != 0)
+			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
 			{
-				if (ImGui::ArrowButton(("up##" + std::to_string(i)).c_str(), ImGuiDir_Up))
-				{
-					ActionBase* tmp = EditingItem->Actions[i - 1];
-					EditingItem->Actions[i - 1] = EditingItem->Actions[i];
-					EditingItem->Actions[i] = tmp;
-				}
-			}
-			else
-			{
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-				ImGui::ArrowButton(("up##" + std::to_string(i)).c_str(), ImGuiDir_Up);
-				ImGui::PopItemFlag();
-				ImGui::PopStyleVar();
+				ActionBase* tmp = EditingItem->Actions[i - 1];
+				EditingItem->Actions[i - 1] = EditingItem->Actions[i];
+				EditingItem->Actions[i] = tmp;
 			}
 			ImGui::SameLine();
-			if (i != EditingItem->Actions.size() - 1)
+			if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == EditingItem->Actions.size() - 1))
 			{
-				if (ImGui::ArrowButton(("dn##" + std::to_string(i)).c_str(), ImGuiDir_Down))
-				{
-					ActionBase* tmp = EditingItem->Actions[i + 1];
-					EditingItem->Actions[i + 1] = EditingItem->Actions[i];
-					EditingItem->Actions[i] = tmp;
-				}
-			}
-			else
-			{
-				ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-				ImGui::ArrowButton(("dn##" + std::to_string(i)).c_str(), ImGuiDir_Down);
-				ImGui::PopItemFlag();
-				ImGui::PopStyleVar();
+				ActionBase* tmp = EditingItem->Actions[i + 1];
+				EditingItem->Actions[i + 1] = EditingItem->Actions[i];
+				EditingItem->Actions[i] = tmp;
 			}
 			ImGui::SameLine();
-			float sz = ImGui::GetFrameHeight();
-			if (ImGui::Button(("X##" + std::to_string(i)).c_str(), ImVec2(sz, sz)))
+			if (ImGui::CrossButton(("x_action##" + std::to_string(i)).c_str()))
 			{
 				idxDel = i;
 			}
@@ -1208,6 +1190,18 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
+		case WM_MOUSEMOVE:
+		{
+			/* this WM_MOUSEMOVE handler should be added into nexus */
+			CURSORINFO curInfo{};
+			curInfo.cbSize = sizeof(CURSORINFO);
+			GetCursorInfo(&curInfo);
+			if (!(curInfo.flags & CURSOR_SHOWING))
+			{
+				return 0;
+			}
+			break;
+		}
 		case WM_KEYDOWN:
 		{
 			if (wParam == VK_ESCAPE)

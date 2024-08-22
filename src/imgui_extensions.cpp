@@ -64,7 +64,8 @@ namespace ImGui
 		draw_list->AddImageQuad(aTextureIdentifier, pos[0], pos[1], pos[2], pos[3], uvs[0], uvs[1], uvs[2], uvs[3], aColor);
 	}
 
-	bool ColorEdit4U32(const char* label, ImU32* color, ImGuiColorEditFlags flags) {
+	bool ColorEdit4U32(const char* label, ImU32* color, ImGuiColorEditFlags flags)
+	{
 		float col[4];
 		col[0] = (float)((*color >> 0) & 0xFF) / 255.0f;
 		col[1] = (float)((*color >> 8) & 0xFF) / 255.0f;
@@ -79,5 +80,63 @@ namespace ImGui
 			((ImU32)(col[3] * 255.0f) << 24);
 
 		return result;
+	}
+
+	bool ArrowButtonCondDisabled(const char* aName, ImGuiDir aDir, bool aDisabled)
+	{
+		if (aDisabled)
+		{
+			PushItemFlag(ImGuiItemFlags_Disabled, true);
+			PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			ArrowButton(aName, aDir);
+			PopItemFlag();
+			PopStyleVar();
+			return false;
+		}
+		
+		return ImGui::ArrowButton(aName, aDir);
+	}
+
+	bool CrossButton(const char* aName)
+	{
+		float sz = GetFrameHeight();
+		ImVec2 size = ImVec2(sz, sz);
+
+		ImGuiButtonFlags flags = ImGuiButtonFlags_None;
+
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems)
+			return false;
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiID id = window->GetID(aName);
+		const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size);
+		const float default_size = GetFrameHeight();
+		ItemSize(size, (size.y >= default_size) ? g.Style.FramePadding.y : -1.0f);
+		if (!ItemAdd(bb, id))
+			return false;
+
+		if (window->DC.ItemFlags & ImGuiItemFlags_ButtonRepeat)
+			flags |= ImGuiButtonFlags_Repeat;
+
+		bool hovered, held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
+
+		// Render
+		const ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+		const ImU32 text_col = GetColorU32(ImGuiCol_Text);
+		RenderNavHighlight(bb, id);
+		RenderFrame(bb.Min, bb.Max, bg_col, true, g.Style.FrameRounding);
+		
+		ImU32 col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
+		ImVec2 center = bb.GetCenter();
+
+		float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
+		ImU32 cross_col = GetColorU32(ImGuiCol_Text);
+		center -= ImVec2(0.5f, 0.5f);
+		window->DrawList->AddLine(center + ImVec2(+cross_extent, +cross_extent), center + ImVec2(-cross_extent, -cross_extent), cross_col, 1.0f);
+		window->DrawList->AddLine(center + ImVec2(+cross_extent, -cross_extent), center + ImVec2(-cross_extent, +cross_extent), cross_col, 1.0f);
+
+		return pressed;
 	}
 }

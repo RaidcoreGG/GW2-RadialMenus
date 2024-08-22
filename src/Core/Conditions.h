@@ -15,6 +15,7 @@ struct Conditions
 	EObserveState IsCommander;
 	EObserveState IsCompetitive;
 	EObserveState IsMapOpen;
+	EObserveState IsTextboxActive;
 
 	/* derived positional states */
 	EObserveState IsUnderwater;

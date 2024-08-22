@@ -152,9 +152,13 @@ void CRadialMenu::Activate()
 	if (this->IsActive) { return; }
 
 	this->Origin = this->MousePos = ImGui::GetMousePos();
+	CURSORINFO curInfo{};
+	curInfo.cbSize = sizeof(CURSORINFO);
+	GetCursorInfo(&curInfo);
+	this->WasActionCamActive = !(curInfo.flags & CURSOR_SHOWING);
 
 	/* override origin if draw in center */
-	if (DrawInCenter)
+	if (this->DrawInCenter)
 	{
 		this->Origin.x = NexusLink->Width / 2;
 		this->Origin.y = NexusLink->Height / 2;
@@ -162,6 +166,19 @@ void CRadialMenu::Activate()
 		/* winapi set cursor */
 		SetCursorPos(this->Origin.x, this->Origin.y);
 		ImGui::GetIO().MousePos = this->Origin;
+	}
+
+	if (this->WasActionCamActive)
+	{
+		std::thread([this]() {
+
+			this->API->GameBinds.Press(EGameBinds_CameraActionMode);
+			Sleep(10);
+			this->API->GameBinds.Release(EGameBinds_CameraActionMode);
+			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
+			SetCursorPos(this->Origin.x, this->Origin.y);
+			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+		}).detach();
 	}
 
 	// fix for weird rendering/cutoff
@@ -183,6 +200,13 @@ void CRadialMenu::Release(bool aIsCancel)
 		ImGui::GetIO().MousePos = this->MousePos;
 		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 	}
+
+	if (this->WasActionCamActive)
+	{
+		this->API->GameBinds.InvokeAsync(EGameBinds_CameraActionMode, 10);
+	}
+
+	this->WasActionCamActive = false;
 
 	if (idx > -1)
 	{
@@ -327,6 +351,50 @@ const std::vector<RadialItem*>& CRadialMenu::GetItems()
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 	
 	return this->Items;
+}
+
+void CRadialMenu::MoveItemUp(std::string aIdentifier)
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	for (size_t i = 0; i < this->Items.size(); i++)
+	{
+		if (this->Items[i]->Identifier == aIdentifier)
+		{
+			if (i == 0)
+			{
+				return;
+			}
+
+			RadialItem* tmp = this->Items[i - 1];
+			this->Items[i - 1] = this->Items[i];
+			this->Items[i] = tmp;
+
+			break;
+		}
+	}
+}
+
+void CRadialMenu::MoveItemDown(std::string aIdentifier)
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	for (size_t i = 0; i < this->Items.size(); i++)
+	{
+		if (this->Items[i]->Identifier == aIdentifier)
+		{
+			if (i == this->Items.size() - 1)
+			{
+				return;
+			}
+
+			RadialItem* tmp = this->Items[i + 1];
+			this->Items[i + 1] = this->Items[i];
+			this->Items[i] = tmp;
+
+			break;
+		}
+	}
 }
 
 const std::string& CRadialMenu::GetName()

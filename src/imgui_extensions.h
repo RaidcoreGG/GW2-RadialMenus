@@ -36,6 +36,18 @@ namespace ImGui
 	/// 	ColorEdit widget that takes a 32bit integer as its input.
 	///----------------------------------------------------------------------------------------------------
 	bool ColorEdit4U32(const char* label, ImU32* color, ImGuiColorEditFlags flags = 0);
+
+	///----------------------------------------------------------------------------------------------------
+	/// ArrowButtonCondDisabled:
+	/// 	Arrow button, that is conditionally disabled.
+	///----------------------------------------------------------------------------------------------------
+	bool ArrowButtonCondDisabled(const char* aName, ImGuiDir aDir, bool aDisabled);
+
+	///----------------------------------------------------------------------------------------------------
+	/// CrossButton:
+	/// 	Cross button.
+	///----------------------------------------------------------------------------------------------------
+	bool CrossButton(const char* aName);
 }
 
 #endif
