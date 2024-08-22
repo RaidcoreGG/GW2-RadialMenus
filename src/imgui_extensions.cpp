@@ -139,4 +139,26 @@ namespace ImGui
 
 		return pressed;
 	}
+
+	bool Tooltip()
+	{
+		bool hovered = ImGui::IsItemHovered();
+		if (hovered)
+		{
+			ImGui::BeginTooltip();
+		}
+		return hovered;
+	}
+
+	void TooltipGeneric(const char* fmt, ...)
+	{
+		if (ImGui::Tooltip())
+		{
+			va_list args;
+			va_start(args, fmt);
+			ImGui::TextV(fmt, args);
+			va_end(args);
+			ImGui::EndTooltip();
+		}
+	}
 }

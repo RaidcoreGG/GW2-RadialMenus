@@ -566,45 +566,25 @@ void CRadialContext::RenderOptions()
 			{
 				EditingMenu->SetSelectionMode(ESelectionMode::Click);
 			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::Text("Left mouse button will select the element.");
-				ImGui::EndTooltip();
-			}
+			ImGui::TooltipGeneric("Left mouse button will select the element.");
 
 			if (ImGui::Selectable("Release"))
 			{
 				EditingMenu->SetSelectionMode(ESelectionMode::Release);
 			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::Text("Releasing the input bind will select the element.");
-				ImGui::EndTooltip();
-			}
+			ImGui::TooltipGeneric("Releasing the input bind will select the element.");
 
 			if (ImGui::Selectable("Release / Click"))
 			{
 				EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
 			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::Text("Releasing the input bind or left mouse button will select the element.");
-				ImGui::EndTooltip();
-			}
+			ImGui::TooltipGeneric("Releasing the input bind or left mouse button will select the element.");
 
 			if (ImGui::Selectable("Hover"))
 			{
 				EditingMenu->SetSelectionMode(ESelectionMode::Hover);
 			}
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				ImGui::Text("Hovering over an element will immediately select it.");
-				ImGui::EndTooltip();
-			}
+			ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
 
 			ImGui::EndCombo();
 		}
@@ -668,6 +648,7 @@ void CRadialContext::RenderOptions()
 				}
 			}
 		}
+		ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::TextDisabled("Color Hover");
@@ -699,6 +680,7 @@ void CRadialContext::RenderOptions()
 				}
 			}
 		}
+		ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
 
 		ImGui::EndTable();
 		
@@ -788,9 +770,14 @@ void CRadialContext::RenderOptions()
 			}
 		}
 
-		ImGui::TextDisabled("Conditions");
+		ImGui::TextDisabled("Visibility [?]");
+		ImGui::TooltipGeneric("These conditions control when this item is visible.");
 
-		ImGui::TextDisabled("Actions");
+		ImGui::TextDisabled("Conditions [?]");
+		ImGui::TooltipGeneric("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
+
+		ImGui::TextDisabled("Actions [?]");
+		ImGui::TooltipGeneric("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
 
 		ImGui::BeginTable("##radialitemactions", 3);
 		int i = 0;
