@@ -17,6 +17,11 @@
 #include "Shared.h"
 #include "Util.h"
 
+#define NORMAL_ITEM_COLOR ImColor(255, 255, 255, 255)
+#define NORMAL_ITEM_COLOR_HOVER ImColor(245, 192, 67, 255)
+#define SMALL_ITEM_COLOR ImColor(255, 255, 255, 0)
+#define SMALL_ITEM_COLOR_HOVER ImColor(255, 255, 255, 255)
+
 /* helpers start */
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
 {
@@ -252,6 +257,84 @@ std::string GameBindToString(EGameBinds aGameBind)
 }
 /* helpers end */
 
+void ConditionSelectable(std::string aName, EObserveState* aState)
+{
+	ImGui::TableNextRow();
+	ImGui::TableSetColumnIndex(0);
+	float width = ImGui::GetColumnWidth();
+	ImGui::Text(aName.c_str());
+
+	ImGui::TableSetColumnIndex(1);
+	std::string state;
+	switch (*aState)
+	{
+		case EObserveState::None:
+			state = "Either";
+			break;
+		case EObserveState::MustEqualFalse:
+			state = "Must be false";
+			break;
+		case EObserveState::MustEqualTrue:
+			state = "Must be true";
+			break;
+	}
+	ImGui::PushItemWidth(width);
+	if (ImGui::BeginCombo(("##observestate" + aName).c_str(), state.c_str()))
+	{
+		if (ImGui::Selectable("Either"))
+		{
+			*aState = EObserveState::None;
+		}
+		if (ImGui::Selectable("Must be false"))
+		{
+			*aState = EObserveState::MustEqualFalse;
+		}
+		if (ImGui::Selectable("Must be true"))
+		{
+			*aState = EObserveState::MustEqualTrue;
+		}
+		ImGui::EndCombo();
+	}
+}
+
+void ConditionEditor(std::string aName, Conditions* aConditions)
+{
+	std::string popupName = "ConditionEditor##" + aName;
+
+	if (ImGui::Button(aName.c_str()))
+	{
+		ImGui::OpenPopup(popupName.c_str());
+	}
+
+	if (ImGui::BeginPopupContextItem(popupName.c_str()))
+	{
+		ImGui::BeginTable("##conditioneditortable", 2);
+		/* direct states */
+		ConditionSelectable("Is in combat", &aConditions->IsCombat);
+		ConditionSelectable("Is mounted", &aConditions->IsMounted);
+		ConditionSelectable("Is commander", &aConditions->IsCommander);
+		ConditionSelectable("Is in PvP/WvW", &aConditions->IsCompetitive);
+		ConditionSelectable("Is map open", &aConditions->IsMapOpen);
+		ConditionSelectable("Is textbox active", &aConditions->IsTextboxActive);
+
+		/* derived game states */
+		ConditionSelectable("Is gameplay", &aConditions->IsGameplay);
+
+		/* derived positional states */
+		ConditionSelectable("Is underwater", &aConditions->IsUnderwater);
+		ConditionSelectable("Is on water surface", &aConditions->IsOnWaterSurface);
+		ConditionSelectable("Is airborne", &aConditions->IsAirborne);
+		ImGui::EndTable();
+
+		if (ImGui::Button("Done##ConditionEditor"))
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
 void CRadialContext::Activate(CRadialMenu* aRadial)
 {
 	if (!aRadial) { return; }
@@ -461,7 +544,7 @@ void CRadialContext::RenderOptions()
 			{
 				if (ImGui::Button(("Add##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
 				{
-					this->AddItemInternal(radial->GetName(), "New Item " + std::to_string(radial->GetItems().size() + 1), ImColor(0, 0, 0, 255), ImColor(245, 192, 67, 255), EIconType::None, "");
+					this->AddItemInternal(radial->GetName(), "New Item " + std::to_string(radial->GetItems().size() + 1), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
 				}
 			}
 			else if (capacity < items.size())
@@ -538,9 +621,13 @@ void CRadialContext::RenderOptions()
 		{
 			case ERadialType::Small:
 				type = "Small";
+				this->ApplyColorToAll(EditingMenu, SMALL_ITEM_COLOR, false);
+				this->ApplyColorToAll(EditingMenu, SMALL_ITEM_COLOR_HOVER, true);
 				break;
 			case ERadialType::Normal:
 				type = "Normal";
+				this->ApplyColorToAll(EditingMenu, NORMAL_ITEM_COLOR, false);
+				this->ApplyColorToAll(EditingMenu, NORMAL_ITEM_COLOR_HOVER, true);
 				break;
 		}
 		if (ImGui::BeginCombo("##radialtype", type.c_str()))
@@ -739,16 +826,20 @@ void CRadialContext::RenderOptions()
 			}
 		}
 
-		ImGui::TextDisabled("Visibility [?]");
-		ImGui::TooltipGeneric("These conditions control when this item is visible.");
+		ImGui::TextDisabled("Visibility");
+		ConditionEditor("Edit Conditions##visibility", &EditingItem->Visibility);
+		ImGui::HelpMarker("These conditions control when this item is visible.");
 
-		ImGui::TextDisabled("Conditions [?]");
-		ImGui::TooltipGeneric("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
+		ImGui::TextDisabled("Activation");
+		ConditionEditor("Edit Conditions##activation", &EditingItem->Activation);
+		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
+		ImGui::InputInt("Timeout (seconds)", &EditingItem->ActivationTimeout);
+		ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
 
-		ImGui::TextDisabled("Actions [?]");
-		ImGui::TooltipGeneric("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
+		ImGui::TextDisabled("Actions");
+		ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
 
-		ImGui::BeginTable("##radialitemactions", 3);
+		ImGui::BeginTable("##radialitemactions", 4);
 		int i = 0;
 		int idxDel = -1;
 		for (ActionBase* action : EditingItem->Actions)
@@ -1085,6 +1176,10 @@ void CRadialContext::RenderOptions()
 			}
 
 			ImGui::TableSetColumnIndex(2);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+			ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation);
+
+			ImGui::TableSetColumnIndex(3);
 			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
 			{
 				ActionBase* tmp = EditingItem->Actions[i - 1];
@@ -1222,6 +1317,7 @@ void CRadialContext::AddItemInternal(std::string aRadialId, std::string aItemId,
 		item->ColorHover = aColorHover;
 		item->Icon.Type = aIconType;
 		item->Icon.Value = aIconValue;
+		item->ActivationTimeout = 30; /* 30s timeout */
 		(*it)->AddItem(item);
 	}
 }

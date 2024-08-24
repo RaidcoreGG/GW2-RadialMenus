@@ -62,10 +62,11 @@ class CRadialContext
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-	std::mutex                                      Mutex;
-	std::vector<CRadialMenu*>                       Radials;
-	std::unordered_map<std::string, CRadialMenu*>   RadialIBMap;
-	CRadialMenu*                                    ActiveRadial = nullptr;
+	std::mutex                                    Mutex;
+	std::vector<CRadialMenu*>                     Radials;
+	std::unordered_map<std::string, CRadialMenu*> RadialIBMap;
+	CRadialMenu*                                  ActiveRadial = nullptr;
+	RadialItem*                                   QueuedItem = nullptr;
 
 	void AddInternal(std::string aIdentifier, ERadialType aType);
 	void RemoveInternal(std::string aIdentifier);

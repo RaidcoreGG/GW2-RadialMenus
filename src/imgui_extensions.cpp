@@ -150,13 +150,27 @@ namespace ImGui
 		return hovered;
 	}
 
-	void TooltipGeneric(const char* fmt, ...)
+	void TooltipGeneric(const char* aFmt, ...)
 	{
 		if (ImGui::Tooltip())
 		{
 			va_list args;
-			va_start(args, fmt);
-			ImGui::TextV(fmt, args);
+			va_start(args, aFmt);
+			ImGui::TextV(aFmt, args);
+			va_end(args);
+			ImGui::EndTooltip();
+		}
+	}
+
+	void HelpMarker(const char* aFmt, ...)
+	{
+		ImGui::SameLine();
+		ImGui::TextDisabled("(?)");
+		if (ImGui::Tooltip())
+		{
+			va_list args;
+			va_start(args, aFmt);
+			ImGui::TextV(aFmt, args);
 			va_end(args);
 			ImGui::EndTooltip();
 		}
