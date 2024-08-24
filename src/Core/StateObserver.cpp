@@ -111,8 +111,8 @@ namespace StateObserver
 		/* derived positional states */
 		CurrentState.IsUnderwater     = MumbleLink->AvatarPosition.Y < -1.2f                                                        ? EObserveState::True : EObserveState::False;
 		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y < 0.0f) ||
-										(MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
-										 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)            ? EObserveState::True : EObserveState::False;
+		                                (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
+		                                 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)              ? EObserveState::True : EObserveState::False;
 		CurrentState.IsAirborne       = IsFalling || IsGliding || IsAscending || IsJumping                                          ? EObserveState::True : EObserveState::False;
 	}
 
@@ -120,21 +120,21 @@ namespace StateObserver
 	{
 		bool isMatch = true;
 
-		isMatch = aConditions->IsCombat == EObserveState::None ? true : aConditions->IsCombat == CurrentState.IsCombat;
-		isMatch = aConditions->IsMounted == EObserveState::None ? true : aConditions->IsMounted == CurrentState.IsMounted;
-		isMatch = aConditions->IsCommander == EObserveState::None ? true : aConditions->IsCommander == CurrentState.IsCommander;
-		isMatch = aConditions->IsCompetitive == EObserveState::None ? true : aConditions->IsCompetitive == CurrentState.IsCompetitive;
-		isMatch = aConditions->IsMapOpen == EObserveState::None ? true : aConditions->IsMapOpen == CurrentState.IsMapOpen;
-		isMatch = aConditions->IsTextboxActive == EObserveState::None ? true : aConditions->IsTextboxActive == CurrentState.IsTextboxActive;
-		isMatch = aConditions->IsInstance == EObserveState::None ? true : aConditions->IsInstance == CurrentState.IsInstance;
+		isMatch = aConditions->IsCombat == EObserveState::None         ? true : aConditions->IsCombat == CurrentState.IsCombat;
+		isMatch = aConditions->IsMounted == EObserveState::None        ? true : aConditions->IsMounted == CurrentState.IsMounted;
+		isMatch = aConditions->IsCommander == EObserveState::None      ? true : aConditions->IsCommander == CurrentState.IsCommander;
+		isMatch = aConditions->IsCompetitive == EObserveState::None    ? true : aConditions->IsCompetitive == CurrentState.IsCompetitive;
+		isMatch = aConditions->IsMapOpen == EObserveState::None        ? true : aConditions->IsMapOpen == CurrentState.IsMapOpen;
+		isMatch = aConditions->IsTextboxActive == EObserveState::None  ? true : aConditions->IsTextboxActive == CurrentState.IsTextboxActive;
+		isMatch = aConditions->IsInstance == EObserveState::None       ? true : aConditions->IsInstance == CurrentState.IsInstance;
 
 		/* derived game states */
-		isMatch = aConditions->IsGameplay == EObserveState::None ? true : aConditions->IsGameplay == CurrentState.IsGameplay;
+		isMatch = aConditions->IsGameplay == EObserveState::None       ? true : aConditions->IsGameplay == CurrentState.IsGameplay;
 
 		/* derived positional states */
-		isMatch = aConditions->IsUnderwater == EObserveState::None ? true : aConditions->IsUnderwater == CurrentState.IsUnderwater;
+		isMatch = aConditions->IsUnderwater == EObserveState::None     ? true : aConditions->IsUnderwater == CurrentState.IsUnderwater;
 		isMatch = aConditions->IsOnWaterSurface == EObserveState::None ? true : aConditions->IsOnWaterSurface == CurrentState.IsOnWaterSurface;
-		isMatch = aConditions->IsAirborne == EObserveState::None ? true : aConditions->IsAirborne == CurrentState.IsAirborne;
+		isMatch = aConditions->IsAirborne == EObserveState::None       ? true : aConditions->IsAirborne == CurrentState.IsAirborne;
 
 		return isMatch;
 	}
