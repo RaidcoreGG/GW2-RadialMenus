@@ -12,9 +12,19 @@
 
 #include "Language.h"
 #include "Shared.h"
+#include "StateObserver.h"
 
 namespace Addon
 {
+	// FIXME: TEMPORARY UNTIL NEXUS ADDS DATALINK
+	void OnMumbleIdentityUpdated(void* aEventArgs)
+	{
+		MumbleIdentity = (Mumble::Identity*)aEventArgs;
+		std::thread([]() {
+			APIDefs->Events.Unsubscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
+		}).detach();
+	}
+
 	void Load(AddonAPI* aApi)
 	{
 		APIDefs = aApi;
@@ -29,6 +39,9 @@ namespace Addon
 
 		MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 		NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
+		MumbleIdentity = (Mumble::Identity*)APIDefs->DataLink.Get("DL_MUMBLE_LINK_IDENTITY");
+
+		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
 
 		Lang::Init(APIDefs->Localization.Set);
 		RadialCtx = new CRadialContext();
@@ -84,6 +97,7 @@ namespace Addon
 
 	void Render()
 	{
+		StateObserver::Advance();
 		assert(RadialCtx);
 		RadialCtx->Render();
 	}
@@ -92,6 +106,7 @@ namespace Addon
 	{
 		assert(RadialCtx);
 		RadialCtx->RenderOptions();
+		StateObserver::RenderDebug();
 	}
 
 	void OnInputBind(const char* aIdentifier, bool aIsRelease)
@@ -102,6 +117,7 @@ namespace Addon
 
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
+		StateObserver::WndProc(hWnd, uMsg, wParam, lParam);
 		assert(RadialCtx);
 		return RadialCtx->WndProc(hWnd, uMsg, wParam, lParam);
 	}

@@ -117,6 +117,9 @@
     <ClInclude Include="src\Core\Conditions.h">
       <Filter>Core\Structs</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\StateObserver.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
@@ -154,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="src\imgui_extensions.cpp">
       <Filter>_EXTERNAL\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\StateObserver.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

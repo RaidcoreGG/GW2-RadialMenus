@@ -271,10 +271,10 @@ void ConditionSelectable(std::string aName, EObserveState* aState)
 		case EObserveState::None:
 			state = "Either";
 			break;
-		case EObserveState::MustEqualFalse:
+		case EObserveState::False:
 			state = "Must be false";
 			break;
-		case EObserveState::MustEqualTrue:
+		case EObserveState::True:
 			state = "Must be true";
 			break;
 	}
@@ -287,11 +287,11 @@ void ConditionSelectable(std::string aName, EObserveState* aState)
 		}
 		if (ImGui::Selectable("Must be false"))
 		{
-			*aState = EObserveState::MustEqualFalse;
+			*aState = EObserveState::False;
 		}
 		if (ImGui::Selectable("Must be true"))
 		{
-			*aState = EObserveState::MustEqualTrue;
+			*aState = EObserveState::True;
 		}
 		ImGui::EndCombo();
 	}
@@ -316,6 +316,7 @@ void ConditionEditor(std::string aName, Conditions* aConditions)
 		ConditionSelectable("Is in PvP/WvW", &aConditions->IsCompetitive);
 		ConditionSelectable("Is map open", &aConditions->IsMapOpen);
 		ConditionSelectable("Is textbox active", &aConditions->IsTextboxActive);
+		ConditionSelectable("Is in instance", &aConditions->IsInstance);
 
 		/* derived game states */
 		ConditionSelectable("Is gameplay", &aConditions->IsGameplay);

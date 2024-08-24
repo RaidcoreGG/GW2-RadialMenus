@@ -1,5 +1,7 @@
 #include "Util.h"
 
+#include <chrono>
+
 namespace URL
 {
 	std::string GetBase(const std::string& aUrl)
@@ -69,5 +71,13 @@ namespace String
 		}
 
 		return retStr;
+	}
+}
+
+namespace Time
+{
+	unsigned long long GetTimestampMillis()
+	{
+		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	}
 }

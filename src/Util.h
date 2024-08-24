@@ -15,4 +15,9 @@ namespace String
 	std::string Replace(const std::string& aString, const std::string& aOld, const std::string& aNew, size_t aPosition = 0);
 }
 
+namespace Time
+{
+	unsigned long long GetTimestampMillis();
+}
+
 #endif

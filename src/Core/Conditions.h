@@ -1,13 +1,19 @@
 #ifndef CONDITIONS_H
 #define CONDITIONS_H
 
+///----------------------------------------------------------------------------------------------------
+/// EObserveState Enumeration
+///----------------------------------------------------------------------------------------------------
 enum class EObserveState
 {
 	None,
-	MustEqualFalse,
-	MustEqualTrue
+	False,
+	True
 };
 
+///----------------------------------------------------------------------------------------------------
+/// Conditions Struct
+///----------------------------------------------------------------------------------------------------
 struct Conditions
 {
 	EObserveState IsCombat;
@@ -16,6 +22,7 @@ struct Conditions
 	EObserveState IsCompetitive;
 	EObserveState IsMapOpen;
 	EObserveState IsTextboxActive;
+	EObserveState IsInstance;
 
 	/* derived game states */
 	EObserveState IsGameplay;
