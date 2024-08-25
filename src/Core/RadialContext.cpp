@@ -255,6 +255,33 @@ std::string GameBindToString(EGameBinds aGameBind)
 
 	return LookupTable[aGameBind];
 }
+
+std::string ConditionsToString(Conditions* aConditions)
+{
+	std::string str;
+	if (aConditions->IsCombat         != EObserveState::None) { str.append(aConditions->IsCombat == EObserveState::True ? "- Is in combat\n" : "- Is out of combat\n"); }
+	if (aConditions->IsMounted        != EObserveState::None) { str.append(aConditions->IsMounted == EObserveState::True ? "- Is mounted\n" : "- Is not mounted\n"); }
+	if (aConditions->IsCommander      != EObserveState::None) { str.append(aConditions->IsCommander == EObserveState::True ? "- Has commander tag\n" : "- Does not have commander tag\n"); }
+	if (aConditions->IsCompetitive    != EObserveState::None) { str.append(aConditions->IsCompetitive == EObserveState::True ? "- Is in WvW/PvP\n" : "- Is in PvE\n"); }
+	if (aConditions->IsMapOpen        != EObserveState::None) { str.append(aConditions->IsMapOpen == EObserveState::True ? "- Map is open\n" : "- Map is closed\n"); }
+	if (aConditions->IsTextboxActive  != EObserveState::None) { str.append(aConditions->IsTextboxActive == EObserveState::True ? "- Textbox focused\n" : "- Textbox not focused\n"); }
+	if (aConditions->IsInstance       != EObserveState::None) { str.append(aConditions->IsInstance == EObserveState::True ? "- Is in instance\n" : "- Is not in instance\n"); }
+
+	/* derived game states */
+	if (aConditions->IsGameplay       != EObserveState::None) { str.append(aConditions->IsGameplay == EObserveState::True ? "- Is gameplay\n" : "- Is loading screen/cutscene/character select\n"); }
+
+	/* derived positional states */
+	if (aConditions->IsUnderwater     != EObserveState::None) { str.append(aConditions->IsUnderwater == EObserveState::True ? "- Is underwater\n" : "- Is terrestrial\n"); }
+	if (aConditions->IsOnWaterSurface != EObserveState::None) { str.append(aConditions->IsOnWaterSurface == EObserveState::True ? "- Is on water surface\n" : "- Is not on water surface\n"); }
+	if (aConditions->IsAirborne       != EObserveState::None) { str.append(aConditions->IsAirborne == EObserveState::True ? "- Is airborne" : "- Is not airborne"); }
+
+	if (!str.empty())
+	{
+		str = "Required conditions:\n" + str;
+	}
+
+	return str;
+}
 /* helpers end */
 
 void ConditionSelectable(std::string aName, EObserveState* aState, const char* aHelpTooltip = nullptr)
@@ -840,10 +867,12 @@ void CRadialContext::RenderOptions()
 
 		ImGui::TextDisabled("Visibility");
 		ConditionEditor("Edit Conditions##visibility", &EditingItem->Visibility);
+		ImGui::TooltipGeneric(ConditionsToString(&EditingItem->Visibility).c_str());
 		ImGui::HelpMarker("These conditions control when this item is visible.");
 
 		ImGui::TextDisabled("Activation");
 		ConditionEditor("Edit Conditions##activation", &EditingItem->Activation);
+		ImGui::TooltipGeneric(ConditionsToString(&EditingItem->Activation).c_str());
 		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
 		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
 		ImGui::InputInt("Timeout (seconds)", &EditingItem->ActivationTimeout);
@@ -1191,6 +1220,7 @@ void CRadialContext::RenderOptions()
 			ImGui::TableSetColumnIndex(2);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
 			ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, &action->OnlyExecuteIfPrevious);
+			ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
 
 			ImGui::TableSetColumnIndex(3);
 			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))

@@ -15,7 +15,8 @@ namespace StateObserver
 {
 	static Conditions CurrentState;
 
-	static long long LastJumpTimestamp;
+	static unsigned long long LastJumpTimestamp;
+	static unsigned long long LastDismountTimestamp;
 	
 	static float LastDeltaY;
 	static Vector3 LastPosition;
@@ -24,6 +25,8 @@ namespace StateObserver
 	static bool IsGliding = false; // const deltaY : -0.1145
 	static bool IsAscending = false; // deltaY > 2.5
 	static bool IsJumping = false;
+	static bool IsDismounting = false;
+	static bool WasMounted = false;
 
 	bool operator==(const Vector3& lhs, const Vector3& rhs)
 	{
@@ -50,7 +53,6 @@ namespace StateObserver
 		/* only when the position is updated */
 		if (MumbleLink->AvatarPosition != LastPosition)
 		{
-			
 			float deltaY = MumbleLink->AvatarPosition.Y - LastPosition.Y;
 
 			LastPosition = MumbleLink->AvatarPosition;
@@ -97,6 +99,24 @@ namespace StateObserver
 			IsJumping = false;
 		}
 
+		/* if previous frame we were mounted, but not anymore */
+		if (WasMounted && MumbleLink->Context.MountIndex == Mumble::EMountIndex::None)
+		{
+			LastDismountTimestamp = timestampNow;
+		}
+
+		if (timestampNow - LastDismountTimestamp <= 700)
+		{
+			IsDismounting = true;
+		}
+		else
+		{
+			LastDismountTimestamp = -1;
+			IsDismounting = false;
+		}
+
+		WasMounted = MumbleLink->Context.MountIndex != Mumble::EMountIndex::None;
+
 		CurrentState.IsCombat         = MumbleLink->Context.IsInCombat                                                              ? EObserveState::True : EObserveState::False;
 		CurrentState.IsMounted        = MumbleLink->Context.MountIndex != Mumble::EMountIndex::None                                 ? EObserveState::True : EObserveState::False;
 		CurrentState.IsCommander      = MumbleIdentity->IsCommander                                                                 ? EObserveState::True : EObserveState::False;
@@ -113,7 +133,7 @@ namespace StateObserver
 		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y <= -1.0f)/* ||
 		                                (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
 		                                 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/            ? EObserveState::True : EObserveState::False;
-		CurrentState.IsAirborne       = IsFalling || IsGliding || IsAscending || IsJumping                                          ? EObserveState::True : EObserveState::False;
+		CurrentState.IsAirborne       = IsFalling || IsGliding || IsAscending || IsJumping || IsDismounting                         ? EObserveState::True : EObserveState::False;
 	}
 
 	bool IsMatch(Conditions* aConditions)
@@ -187,6 +207,7 @@ namespace StateObserver
 			ImGui::Text("Gliding: %s", IsGliding ? "true" : "false");
 			ImGui::Text("Ascending: %s", IsAscending ? "true" : "false");
 			ImGui::Text("Jumping: %s", IsJumping ? "true" : "false");
+			ImGui::Text("Dismounting: %s", IsDismounting ? "true" : "false");
 
 			ImGui::Separator();
 

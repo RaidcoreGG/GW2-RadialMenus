@@ -152,6 +152,8 @@ namespace ImGui
 
 	void TooltipGeneric(const char* aFmt, ...)
 	{
+		if (strlen(aFmt) == 0) { return; }
+
 		if (ImGui::Tooltip())
 		{
 			va_list args;
