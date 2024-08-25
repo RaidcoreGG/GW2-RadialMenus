@@ -169,6 +169,7 @@ class CRadialMenu
 	std::mutex                  Mutex;
 	std::vector<RadialItem*>    Items;
 	int                         ItemsCapacity;
+	std::vector<RadialItem*>    DrawnItems;
 
 	Texture*                    BaseTexture;
 	Texture*                    DividerTexture;

@@ -15,6 +15,7 @@
 #include "resource.h"
 #include "Util.h"
 #include "Shared.h"
+#include "StateObserver.h"
 
 CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType)
 {
@@ -55,21 +56,26 @@ CRadialMenu::~CRadialMenu()
 void CRadialMenu::Render()
 {
 	if (this->Type == ERadialType::None) { return; }
-	if (this->Items.size() > this->ItemsCapacity) { return; }
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	int amtItems = this->Items.size();
-
-	if (amtItems < 2) { return; }
+	if (this->DrawnItems.size() > this->ItemsCapacity) { return; }
+	if (this->DrawnItems.size() < 2) { return; }
 	if (!this->IsActive) { return; }
 
 	ImVec2 size = ImVec2(this->Size.x * NexusLink->Scaling, this->Size.y * NexusLink->Scaling);
 	ImVec2 sizeHalf = ImVec2((size.x / 2.0f), (size.y / 2.0f));
 
-	ImGui::SetNextWindowPos(ImVec2(this->Origin.x - sizeHalf.x, this->Origin.y - sizeHalf.y), ImGuiCond_Appearing);
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImVec2 safePad = style.DisplaySafeAreaPadding;
+	style.DisplaySafeAreaPadding = ImVec2(0, 0);
+
+	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
+	ImGui::SetNextWindowSize(ImVec2(NexusLink->Width, NexusLink->Height), ImGuiCond_Appearing);
 	if (ImGui::Begin(("RADIAL##" + this->Identifier).c_str(), (bool*)0, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar)))
 	{
+		ImGui::SetCursorPos(ImVec2(this->Origin.x - sizeHalf.x, this->Origin.y - sizeHalf.y));
+		ImGui::BeginChild(("RADIALINNER##" + this->Identifier).c_str());
 		ImVec2 initialPos = ImVec2(1, 1);
 
 		int hoverIndex = this->GetHoveredIndex();
@@ -95,7 +101,7 @@ void CRadialMenu::Render()
 		{
 			if (this->DividerTexture)
 			{
-				for (size_t i = 0; i < amtItems; i++)
+				for (size_t i = 0; i < this->DrawnItems.size(); i++)
 				{
 					ImGui::ImageRotated(this->DividerTexture->Resource, Origin, size, SegmentRadius * i);
 				}
@@ -116,9 +122,10 @@ void CRadialMenu::Render()
 
 		if (this->SegmentTexture)
 		{
-			for (size_t i = 0; i < amtItems; i++)
+			for (size_t i = 0; i < this->DrawnItems.size(); i++)
 			{
-				RadialItem* item = this->Items[i];
+				RadialItem* item = this->DrawnItems[i];
+
 				float segmentStart = (SegmentRadius * i);
 				ImGui::ImageRotated(this->SegmentTexture->Resource, Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
 				
@@ -143,13 +150,36 @@ void CRadialMenu::Render()
 		{
 			this->LoadSegmentTexture();
 		}
+		ImGui::EndChild();
 	}
 	ImGui::End();
+
+	style.DisplaySafeAreaPadding = safePad;
 }
 
 void CRadialMenu::Activate()
 {
 	if (this->IsActive) { return; }
+
+	this->DrawnItems.clear();
+	for (RadialItem* item : this->Items)
+	{
+		if (StateObserver::IsMatch(&item->Visibility))
+		{
+			this->DrawnItems.push_back(item);
+		}
+	}
+
+	if (this->DrawnItems.size() == 0)
+	{
+		this->SegmentRadius = 0;
+	}
+	else
+	{
+		this->SegmentRadius = 360.0f / this->DrawnItems.size();
+	}
+
+	this->SegmentTexture = nullptr;
 
 	this->Origin = this->MousePos = ImGui::GetMousePos();
 	CURSORINFO curInfo{};
@@ -210,9 +240,24 @@ void CRadialMenu::Release(bool aIsCancel)
 
 	if (idx > -1)
 	{
-		RadialItem* item = this->Items[idx];
+		RadialItem* item = this->DrawnItems[idx];
+		
 		std::thread([this, item]() {
 			/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
+			int msWaited = 0;
+			while (!StateObserver::IsMatch(&item->Activation))
+			{
+				msWaited += 100;
+				Sleep(100);
+
+				if (msWaited > item->ActivationTimeout * 1000) { break; }
+			}
+
+			if (msWaited > item->ActivationTimeout * 1000)
+			{
+				this->API->UI.SendAlert("Cancelled after waiting for timeout.");
+				return;
+			}
 
 			for (ActionBase* act : item->Actions)
 			{
@@ -492,14 +537,14 @@ void CRadialMenu::Invalidate()
 			break;
 	}
 
-	if (this->Items.size() == 0)
+	/*if (this->Items.size() == 0)
 	{
 		this->SegmentRadius = 0;
 	}
 	else
 	{
 		this->SegmentRadius = 360.0f / this->Items.size();
-	}
+	}*/
 
 	this->IsActive = false;
 	this->Origin = ImVec2(-1, -1);
@@ -507,11 +552,9 @@ void CRadialMenu::Invalidate()
 
 void CRadialMenu::LoadSegmentTexture()
 {
-	int amtItems = this->Items.size();
-
 	if (this->Type == ERadialType::Normal)
 	{
-		switch (amtItems)
+		switch (this->DrawnItems.size())
 		{
 		case 2:
 			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR2", TEX_MW_SELECTOR2, this->Module);
@@ -550,7 +593,7 @@ void CRadialMenu::LoadSegmentTexture()
 	}
 	else if (this->Type == ERadialType::Small)
 	{
-		switch (amtItems)
+		switch (this->DrawnItems.size())
 		{
 		case 2:
 			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MWS_SELECTOR2", TEX_MWS_SELECTOR2, this->Module);

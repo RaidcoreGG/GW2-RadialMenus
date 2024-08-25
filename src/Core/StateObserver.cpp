@@ -118,25 +118,25 @@ namespace StateObserver
 
 	bool IsMatch(Conditions* aConditions)
 	{
-		bool isMatch = true;
+		int isMatch = 0;
 
-		isMatch = aConditions->IsCombat == EObserveState::None         ? true : aConditions->IsCombat == CurrentState.IsCombat;
-		isMatch = aConditions->IsMounted == EObserveState::None        ? true : aConditions->IsMounted == CurrentState.IsMounted;
-		isMatch = aConditions->IsCommander == EObserveState::None      ? true : aConditions->IsCommander == CurrentState.IsCommander;
-		isMatch = aConditions->IsCompetitive == EObserveState::None    ? true : aConditions->IsCompetitive == CurrentState.IsCompetitive;
-		isMatch = aConditions->IsMapOpen == EObserveState::None        ? true : aConditions->IsMapOpen == CurrentState.IsMapOpen;
-		isMatch = aConditions->IsTextboxActive == EObserveState::None  ? true : aConditions->IsTextboxActive == CurrentState.IsTextboxActive;
-		isMatch = aConditions->IsInstance == EObserveState::None       ? true : aConditions->IsInstance == CurrentState.IsInstance;
+		isMatch += aConditions->IsCombat         == EObserveState::None ? true : aConditions->IsCombat         == CurrentState.IsCombat;
+		isMatch += aConditions->IsMounted        == EObserveState::None ? true : aConditions->IsMounted        == CurrentState.IsMounted;
+		isMatch += aConditions->IsCommander      == EObserveState::None ? true : aConditions->IsCommander      == CurrentState.IsCommander;
+		isMatch += aConditions->IsCompetitive    == EObserveState::None ? true : aConditions->IsCompetitive    == CurrentState.IsCompetitive;
+		isMatch += aConditions->IsMapOpen        == EObserveState::None ? true : aConditions->IsMapOpen        == CurrentState.IsMapOpen;
+		isMatch += aConditions->IsTextboxActive  == EObserveState::None ? true : aConditions->IsTextboxActive  == CurrentState.IsTextboxActive;
+		isMatch += aConditions->IsInstance       == EObserveState::None ? true : aConditions->IsInstance       == CurrentState.IsInstance;
 
 		/* derived game states */
-		isMatch = aConditions->IsGameplay == EObserveState::None       ? true : aConditions->IsGameplay == CurrentState.IsGameplay;
+		isMatch += aConditions->IsGameplay       == EObserveState::None ? true : aConditions->IsGameplay       == CurrentState.IsGameplay;
 
 		/* derived positional states */
-		isMatch = aConditions->IsUnderwater == EObserveState::None     ? true : aConditions->IsUnderwater == CurrentState.IsUnderwater;
-		isMatch = aConditions->IsOnWaterSurface == EObserveState::None ? true : aConditions->IsOnWaterSurface == CurrentState.IsOnWaterSurface;
-		isMatch = aConditions->IsAirborne == EObserveState::None       ? true : aConditions->IsAirborne == CurrentState.IsAirborne;
+		isMatch += aConditions->IsUnderwater     == EObserveState::None ? true : aConditions->IsUnderwater     == CurrentState.IsUnderwater;
+		isMatch += aConditions->IsOnWaterSurface == EObserveState::None ? true : aConditions->IsOnWaterSurface == CurrentState.IsOnWaterSurface;
+		isMatch += aConditions->IsAirborne       == EObserveState::None ? true : aConditions->IsAirborne       == CurrentState.IsAirborne;
 
-		return isMatch;
+		return isMatch == 11; /* 11 conditions */
 	}
 
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
