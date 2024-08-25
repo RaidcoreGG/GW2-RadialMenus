@@ -198,7 +198,7 @@ void CRadialMenu::Activate()
 		ImGui::GetIO().MousePos = this->Origin;
 	}
 
-	if (this->WasActionCamActive)
+	if (this->WasActionCamActive && !RadialCtx->IsRightClickHeld)
 	{
 		std::thread([this]() {
 
@@ -231,7 +231,7 @@ void CRadialMenu::Release(bool aIsCancel)
 		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 	}
 
-	if (this->WasActionCamActive)
+	if (this->WasActionCamActive && !RadialCtx->IsRightClickHeld)
 	{
 		this->API->GameBinds.InvokeAsync(EGameBinds_CameraActionMode, 10);
 	}

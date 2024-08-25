@@ -1267,6 +1267,17 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return this->Release(ESelectionMode::Click) ? 0 : 1;
 			break;
 		}
+		case WM_RBUTTONDBLCLK:
+		case WM_RBUTTONDOWN:
+		{
+			this->IsRightClickHeld = true;
+			break;
+		}
+		case WM_RBUTTONUP:
+		{
+			this->IsRightClickHeld = false;
+			break;
+		}
 	}
 
 	return uMsg;
