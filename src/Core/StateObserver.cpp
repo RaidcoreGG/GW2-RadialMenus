@@ -118,8 +118,8 @@ namespace StateObserver
 			IsJumping = false;
 		}
 
-		/* if previous frame we were mounted, but not anymore */
-		if (WasMounted && MumbleLink->Context.MountIndex == Mumble::EMountIndex::None)
+		/* (ignore if underwater) && if previous frame we were mounted, but not anymore */
+		if (MumbleLink->AvatarPosition.Y > 0.0f && WasMounted && MumbleLink->Context.MountIndex == Mumble::EMountIndex::None)
 		{
 			LastDismountTimestamp = timestampNow;
 		}
