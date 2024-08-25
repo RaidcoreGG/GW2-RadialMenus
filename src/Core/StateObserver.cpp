@@ -84,6 +84,25 @@ namespace StateObserver
 				{
 					IsAscending = true;
 				}
+				if (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Griffon)
+				{
+					if (truncDeltaY <= trunc(100. * -0.152) && truncDeltaY >= trunc(1000. * -0.4332)) /* griffon gliding */
+					{
+						IsGliding = true;
+					}
+					else if (truncDeltaY == trunc(1000. * -0.8746)) /* griffon falling */
+					{
+						IsFalling = true;
+					}
+					else if (truncDeltaY <= trunc(100. * -1.254) && truncDeltaY >= trunc(1000. * -1.9131)) /* griffon dive-superdive */
+					{
+						IsGliding = true;
+					}
+				}
+				else if (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skyscale && truncDeltaY == trunc(1000. * -0.6604)) /* skyscale descend */
+				{
+					IsFalling = true;
+				}
 			}
 
 			LastDeltaY = deltaY;
