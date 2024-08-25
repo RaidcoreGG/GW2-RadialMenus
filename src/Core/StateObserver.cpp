@@ -110,9 +110,9 @@ namespace StateObserver
 
 		/* derived positional states */
 		CurrentState.IsUnderwater     = MumbleLink->AvatarPosition.Y < -1.2f                                                        ? EObserveState::True : EObserveState::False;
-		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y < 0.0f) ||
+		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y <= -1.0f)/* ||
 		                                (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
-		                                 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)              ? EObserveState::True : EObserveState::False;
+		                                 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/            ? EObserveState::True : EObserveState::False;
 		CurrentState.IsAirborne       = IsFalling || IsGliding || IsAscending || IsJumping                                          ? EObserveState::True : EObserveState::False;
 	}
 

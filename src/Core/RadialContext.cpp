@@ -257,12 +257,16 @@ std::string GameBindToString(EGameBinds aGameBind)
 }
 /* helpers end */
 
-void ConditionSelectable(std::string aName, EObserveState* aState)
+void ConditionSelectable(std::string aName, EObserveState* aState, const char* aHelpTooltip = nullptr)
 {
 	ImGui::TableNextRow();
 	ImGui::TableSetColumnIndex(0);
 	float width = ImGui::GetColumnWidth();
 	ImGui::Text(aName.c_str());
+	if (aHelpTooltip)
+	{
+		ImGui::HelpMarker(aHelpTooltip);
+	}
 
 	ImGui::TableSetColumnIndex(1);
 	std::string state;
@@ -297,7 +301,7 @@ void ConditionSelectable(std::string aName, EObserveState* aState)
 	}
 }
 
-void ConditionEditor(std::string aName, Conditions* aConditions)
+void ConditionEditor(std::string aName, Conditions* aConditions, bool* aPreviousReq = nullptr)
 {
 	std::string popupName = "ConditionEditor##" + aName;
 
@@ -324,8 +328,14 @@ void ConditionEditor(std::string aName, Conditions* aConditions)
 		/* derived positional states */
 		ConditionSelectable("Is underwater", &aConditions->IsUnderwater);
 		ConditionSelectable("Is on water surface", &aConditions->IsOnWaterSurface);
-		ConditionSelectable("Is airborne", &aConditions->IsAirborne);
+		ConditionSelectable("Is airborne", &aConditions->IsAirborne, "Will be true when falling, gliding using an updraft, or after jumping.");
 		ImGui::EndTable();
+
+		if (aPreviousReq)
+		{
+			ImGui::Checkbox("Link with previous action", aPreviousReq);
+			ImGui::HelpMarker("Besides the set conditions, setting this means that the previous action must have executed for this one to be able to.");
+		}
 
 		if (ImGui::Button("Done##ConditionEditor"))
 		{
@@ -608,7 +618,7 @@ void CRadialContext::RenderOptions()
 		}
 		else
 		{
-			if (ImGui::InputText("##radialname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##radialname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				editingName = false;
 				EditingMenu->SetName(inputBuff);
@@ -696,6 +706,7 @@ void CRadialContext::RenderOptions()
 	else if (EditingItem) /* editing sub item */
 	{
 		ImGui::TextDisabled("Name");
+		ImGui::HelpMarker("This name has to be unique.");
 
 		static bool editingName;
 		static char inputBuff[64];
@@ -709,7 +720,7 @@ void CRadialContext::RenderOptions()
 		}
 		else
 		{
-			if (ImGui::InputText("##radialitemname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##radialitemname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				editingName = false;
 				EditingItem->Identifier = inputBuff;
@@ -814,7 +825,7 @@ void CRadialContext::RenderOptions()
 			}
 			else
 			{
-				if (ImGui::InputText("##radialitemiconurl", inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputText("##radialitemiconurl", inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					editingUrl = false;
 					EditingItem->Icon.Value = inputBuff;
@@ -834,6 +845,7 @@ void CRadialContext::RenderOptions()
 		ImGui::TextDisabled("Activation");
 		ConditionEditor("Edit Conditions##activation", &EditingItem->Activation);
 		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
+		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
 		ImGui::InputInt("Timeout (seconds)", &EditingItem->ActivationTimeout);
 		ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
 
@@ -927,7 +939,7 @@ void CRadialContext::RenderOptions()
 					static char inputBuff[MAX_PATH];
 					strcpy_s(inputBuff, ((ActionGeneric*)action)->Identifier.c_str());
 
-					if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 					{
 						((ActionGeneric*)action)->Identifier = _strdup(inputBuff);
 					}
@@ -1178,7 +1190,7 @@ void CRadialContext::RenderOptions()
 
 			ImGui::TableSetColumnIndex(2);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-			ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation);
+			ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, &action->OnlyExecuteIfPrevious);
 
 			ImGui::TableSetColumnIndex(3);
 			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))

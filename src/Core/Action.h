@@ -14,6 +14,7 @@ struct ActionBase
 {
 	EActionType Type;
 	Conditions  Activation;
+	bool        OnlyExecuteIfPrevious;
 };
 
 ///----------------------------------------------------------------------------------------------------

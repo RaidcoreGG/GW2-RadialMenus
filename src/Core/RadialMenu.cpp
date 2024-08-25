@@ -259,8 +259,22 @@ void CRadialMenu::Release(bool aIsCancel)
 				return;
 			}
 
+			/* initially set to true, and only in the skip set to false, this way the first action ignores the setting */
+			bool previousExecuted = true;
 			for (ActionBase* act : item->Actions)
 			{
+				if (!StateObserver::IsMatch(&act->Activation))
+				{
+					previousExecuted = false;
+					continue;
+				}
+
+				if (act->OnlyExecuteIfPrevious && !previousExecuted)
+				{
+					previousExecuted = false;
+					continue;
+				}
+
 				switch (act->Type)
 				{
 					case EActionType::InputBind:
@@ -303,6 +317,8 @@ void CRadialMenu::Release(bool aIsCancel)
 						break;
 					}
 				}
+
+				previousExecuted = true;
 			}
 		}).detach();
 	}
@@ -486,6 +502,8 @@ std::string CRadialMenu::GetInputBind()
 int CRadialMenu::GetHoveredIndex()
 {
 	int hoverIndex = -1;
+
+	if (this->DrawnItems.size() < 2) { return hoverIndex; }
 
 	ImVec2 currentMousePos = ImGui::GetMousePos();
 
