@@ -914,27 +914,57 @@ void CRadialContext::RenderOptions()
 				{
 					if (action->Type != EActionType::GameInputBind)
 					{
+						EGameBinds persistBind = (EGameBinds)0;
+
+						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind || 
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						{
+							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+						}
+
 						delete EditingItem->Actions[i];
 						EditingItem->Actions[i] = new ActionGameInputBind();
 						EditingItem->Actions[i]->Type = EActionType::GameInputBind;
+						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("InputBind Press (Game)"))
 				{
 					if (action->Type != EActionType::GameInputBindPress)
 					{
+						EGameBinds persistBind = (EGameBinds)0;
+
+						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						{
+							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+						}
+
 						delete EditingItem->Actions[i];
 						EditingItem->Actions[i] = new ActionGameInputBind();
 						EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
+						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("InputBind Release (Game)"))
 				{
 					if (action->Type != EActionType::GameInputBindRelease)
 					{
+						EGameBinds persistBind = (EGameBinds)0;
+
+						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						{
+							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+						}
+
 						delete EditingItem->Actions[i];
 						EditingItem->Actions[i] = new ActionGameInputBind();
 						EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
+						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("Event"))
