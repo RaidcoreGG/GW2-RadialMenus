@@ -119,7 +119,7 @@ namespace StateObserver
 		}
 
 		/* (ignore if underwater) && if previous frame we were mounted, but not anymore */
-		if (MumbleLink->AvatarPosition.Y > 0.0f && WasMounted && MumbleLink->Context.MountIndex == Mumble::EMountIndex::None)
+		if (WasMounted && MumbleLink->Context.MountIndex == Mumble::EMountIndex::None)
 		{
 			LastDismountTimestamp = timestampNow;
 		}
@@ -151,8 +151,9 @@ namespace StateObserver
 		CurrentState.IsUnderwater     = MumbleLink->AvatarPosition.Y < -1.2f                                                        ? EObserveState::True : EObserveState::False;
 		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y <= -1.0f)/* ||
 		                                (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
-		                                 MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/            ? EObserveState::True : EObserveState::False;
-		CurrentState.IsAirborne       = IsFalling || IsGliding || IsAscending || IsJumping || IsDismounting                         ? EObserveState::True : EObserveState::False;
+		                                MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/             ? EObserveState::True : EObserveState::False;
+		CurrentState.IsAirborne       = (IsFalling || IsGliding || IsAscending || IsJumping || IsDismounting) &&
+		                                CurrentState.IsUnderwater == EObserveState::False                                           ? EObserveState::True : EObserveState::False;
 	}
 
 	bool IsMatch(Conditions* aConditions)
