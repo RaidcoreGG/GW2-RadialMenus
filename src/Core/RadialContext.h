@@ -11,7 +11,7 @@
 
 #include <mutex>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vector>
 
 #include "ERadialType.h"
@@ -34,6 +34,11 @@ class CRadialContext
 	///----------------------------------------------------------------------------------------------------
 	~CRadialContext() = default;
 
+	void CreateDefaultMountRadial();
+
+	void Load();
+	void Save();
+
 	///----------------------------------------------------------------------------------------------------
 	/// Activate:
 	/// 	Activates the radial menu.
@@ -46,17 +51,6 @@ class CRadialContext
 	///----------------------------------------------------------------------------------------------------
 	bool Release(ESelectionMode aMode);
 
-	void Add(std::string aIdentifier, ERadialType aType);
-	void Remove(std::string aIdentifier);
-
-	void AddItem(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue);
-	void RemoveItem(std::string aRadialId, std::string aItemId);
-
-	void AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue);
-	void AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue);
-	void AddItemAction(std::string aRadialId, std::string aItemId, int aValue);
-	void RemoveItemAction(std::string aRadialId, std::string aItemId, int aIndex);
-
 	void Render();
 	void RenderOptions();
 
@@ -64,26 +58,30 @@ class CRadialContext
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	private:
-	std::mutex                                    Mutex;
-	std::vector<CRadialMenu*>                     Radials;
-	std::unordered_map<std::string, CRadialMenu*> RadialIBMap;
-	CRadialMenu*                                  ActiveRadial = nullptr;
-	RadialItem*                                   QueuedItem = nullptr;
+	std::mutex                          Mutex;
+	std::vector<CRadialMenu*>           Radials;
+	std::map<std::string, CRadialMenu*> RadialIBMap;
+	CRadialMenu*                        ActiveRadial = nullptr;
+	RadialItem*                         QueuedItem = nullptr;
 
-	void AddInternal(std::string aIdentifier, ERadialType aType);
-	void RemoveInternal(std::string aIdentifier);
+	/* Editor */
+	CRadialMenu*                        EditingMenu = nullptr;
+	RadialItem*                         EditingItem = nullptr;
 
-	void AddItemInternal(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue);
-	void RemoveItemInternal(std::string aRadialId, std::string aItemId);
+	void LoadInternal();
+	void SaveInternal();
 
-	void AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue);
-	void AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue);
-	void AddItemActionInternal(std::string aRadialId, std::string aItemId, int aValue);
-	void RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex);
+	CRadialMenu* Add(std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick, int aID = -1);
+	void Remove(std::string aIdentifier);
 
 	int GetLowestUnusedID();
+	bool IsIDInUse(int aID, CRadialMenu* aRadialSkip = nullptr);
+
+	std::string GetUnusedName(std::string aName, CRadialMenu* aRadialSkip = nullptr);
+	bool IsNameInUse(std::string aName, CRadialMenu* aRadialSkip = nullptr);
 
 	void ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor = false);
+	void GenerateIBMap();
 };
 
 #endif

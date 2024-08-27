@@ -33,17 +33,23 @@ class CRadialMenu
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
 	///----------------------------------------------------------------------------------------------------
-	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType);
+	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
 	///----------------------------------------------------------------------------------------------------
 	/// dtor
 	///----------------------------------------------------------------------------------------------------
 	~CRadialMenu();
 
 	///----------------------------------------------------------------------------------------------------
-	/// Render:
-	/// 	Renders the radial menu.
+	/// Save:
+	/// 	Saves the changes to disk.
 	///----------------------------------------------------------------------------------------------------
-	void Render();
+	void Save();
+
+	///----------------------------------------------------------------------------------------------------
+	/// Render:
+	/// 	Renders the radial menu. Returns true if an item is hovered.
+	///----------------------------------------------------------------------------------------------------
+	bool Render();
 
 	///----------------------------------------------------------------------------------------------------
 	/// Activate:
@@ -61,7 +67,8 @@ class CRadialMenu
 	/// AddItem:
 	/// 	Adds a selector to the radial menu.
 	///----------------------------------------------------------------------------------------------------
-	void AddItem(RadialItem* aMenuItem);
+	void AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue,
+				 Conditions aVisibility = {}, Conditions aActivation = {}, int aActivationTimeout = 30);
 
 	///----------------------------------------------------------------------------------------------------
 	/// RemoveItem:
@@ -92,6 +99,42 @@ class CRadialMenu
 	/// 	Moves an item down in order.
 	///----------------------------------------------------------------------------------------------------
 	void MoveItemDown(std::string aIdentifier);
+	
+	///----------------------------------------------------------------------------------------------------
+	/// AddItemAction:
+	/// 	Adds an action to an item.
+	///----------------------------------------------------------------------------------------------------
+	void AddItemAction(std::string aItemId, EActionType aType, std::string aValue);
+
+	///----------------------------------------------------------------------------------------------------
+	/// AddItemAction:
+	/// 	Adds an action to an item.
+	///----------------------------------------------------------------------------------------------------
+	void AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue);
+
+	///----------------------------------------------------------------------------------------------------
+	/// AddItemAction:
+	/// 	Adds an action to an item.
+	///----------------------------------------------------------------------------------------------------
+	void AddItemAction(std::string aItemId, int aValue);
+
+	///----------------------------------------------------------------------------------------------------
+	/// RemoveItemAction:
+	/// 	Removes an action from an item.
+	///----------------------------------------------------------------------------------------------------
+	void RemoveItemAction(std::string aItemId, int aIndex);
+
+	///----------------------------------------------------------------------------------------------------
+	/// GetID:
+	/// 	Returns the ID of the Radial.
+	///----------------------------------------------------------------------------------------------------
+	int GetID();
+
+	///----------------------------------------------------------------------------------------------------
+	/// SetID:
+	/// 	Sets the ID of the Radial.
+	///----------------------------------------------------------------------------------------------------
+	void SetID(int aID);
 
 	///----------------------------------------------------------------------------------------------------
 	/// GetName:
@@ -141,29 +184,14 @@ class CRadialMenu
 	///----------------------------------------------------------------------------------------------------
 	std::string GetInputBind();
 	
-	///----------------------------------------------------------------------------------------------------
-	/// GetHoveredIndex:
-	/// 	Returns the index of the currently hovered item.
-	///----------------------------------------------------------------------------------------------------
-	int GetHoveredIndex();
-
-	///----------------------------------------------------------------------------------------------------
-	/// GetID:
-	/// 	Returns the ID of the Radial.
-	///----------------------------------------------------------------------------------------------------
-	int GetID();
-
 	private:
 	AddonAPI*                   API;
 	HMODULE                     Module;
 	NexusLinkData*              NexusLink;
-	Mumble::Data*               MumbleLink;
-	Mumble::Identity*           MumbleIdentity;
 
 	int                         ID;
 	std::string                 Identifier;
 	ERadialType                 Type;
-	ImVec2                      Size;
 	ESelectionMode              SelectionMode;
 
 	std::mutex                  Mutex;
@@ -175,6 +203,7 @@ class CRadialMenu
 	Texture*                    DividerTexture;
 	Texture*                    SegmentTexture;
 
+	ImVec2                      Size;
 	float                       MinimalMouseMoveDistance;
 	float                       SegmentContentDistance;
 	ImVec2                      SegmentContentSize;
@@ -184,6 +213,12 @@ class CRadialMenu
 	ImVec2                      Origin;
 	ImVec2                      MousePos;
 	bool                        WasActionCamActive;
+
+	///----------------------------------------------------------------------------------------------------
+	/// GetHoveredIndex:
+	/// 	Returns the index of the currently hovered item.
+	///----------------------------------------------------------------------------------------------------
+	int GetHoveredIndex();
 
 	///----------------------------------------------------------------------------------------------------
 	/// Invalidate:

@@ -72,6 +72,18 @@ namespace String
 
 		return retStr;
 	}
+
+#define MAX_STRING_FORMAT_LENGTH 4096
+	std::string Format(std::string aFmt, ...)
+	{
+		va_list args;
+		va_start(args, aFmt);
+		char buffer[MAX_STRING_FORMAT_LENGTH];
+		vsprintf_s(buffer, MAX_STRING_FORMAT_LENGTH - 1, aFmt.c_str(), args);
+		va_end(args);
+
+		return buffer;
+	}
 }
 
 namespace Time
@@ -79,5 +91,54 @@ namespace Time
 	unsigned long long GetTimestampMillis()
 	{
 		return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	}
+}
+
+namespace Input
+{
+	unsigned short KeystrokeMessageFlags::GetScanCode()
+	{
+		unsigned short ret = ScanCode;
+
+		if (ExtendedFlag)
+		{
+			ret |= 0xE000;
+		}
+
+		return ret;
+	}
+
+	KeystrokeMessageFlags::KeystrokeMessageFlags(LPARAM aLParam)
+	{
+		/* direct assignment is not possible, so we cast and then copy */
+		KeystrokeMessageFlags tmp = *(KeystrokeMessageFlags*)&aLParam;
+
+		RepeatCount = tmp.RepeatCount;
+		ScanCode = tmp.ScanCode;
+		ExtendedFlag = tmp.ExtendedFlag;
+		Reserved = tmp.Reserved;
+		ContextCode = tmp.ContextCode;
+		PreviousKeyState = tmp.PreviousKeyState;
+		TransitionState = tmp.TransitionState;
+	}
+
+	LPARAM& KMFToLParam(KeystrokeMessageFlags& aKmf)
+	{
+		return *(LPARAM*)&aKmf;
+	}
+
+	LPARAM GetKeyMessageLPARAM(unsigned aVKey, bool aIsDown, bool aIsSystem)
+	{
+		KeyLParam lp;
+
+		lp.RepeatCount = 1;
+		lp.ScanCode = MapVirtualKeyA(aVKey, MAPVK_VK_TO_VSC);
+		lp.ExtendedFlag = lp.ScanCode & 0xE0 ? 1 : 0;
+		lp.Reserved = 0;
+		lp.ContextCode = aIsSystem ? 1 : 0;
+		lp.PreviousKeyState = aIsDown ? 0 : 1;
+		lp.TransitionState = aIsDown ? 0 : 1;
+
+		return KMFToLParam(lp);
 	}
 }

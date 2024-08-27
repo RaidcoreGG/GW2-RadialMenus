@@ -9,9 +9,12 @@
 #include "RadialContext.h"
 
 #include <map>
+#include <fstream>
 
 #include "imgui/imgui_internal.h"
 #include "imgui_extensions.h"
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #include "Addon.h"
 #include "Shared.h"
@@ -373,6 +376,55 @@ void ConditionEditor(std::string aName, Conditions* aConditions, bool* aPrevious
 	}
 }
 
+void CRadialContext::CreateDefaultMountRadial()
+{
+	unsigned int col = ImColor(255, 255, 255, 255);
+	unsigned int colHov = ImColor(245, 192, 67, 255);
+
+	CRadialMenu* mounts = this->Add("Mounts", ERadialType::Normal);
+
+	mounts->AddItem("Raptor", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_RAPTOR.png");
+	mounts->AddItemAction("Raptor", EActionType::GameInputBind, EGameBinds_SpumoniMAM01);
+
+	mounts->AddItem("Springer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SPRINGER.png");
+	mounts->AddItemAction("Springer", EActionType::GameInputBind, EGameBinds_SpumoniMAM02);
+
+	mounts->AddItem("Skimmer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKIMMER.png");
+	mounts->AddItemAction("Skimmer", EActionType::GameInputBind, EGameBinds_SpumoniMAM03);
+
+	mounts->AddItem("Jackal", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_JACKAL.png");
+	mounts->AddItemAction("Jackal", EActionType::GameInputBind, EGameBinds_SpumoniMAM04);
+
+	mounts->AddItem("Griffon", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_GRIFFON.png");
+	mounts->AddItemAction("Griffon", EActionType::GameInputBind, EGameBinds_SpumoniMAM05);
+
+	mounts->AddItem("Roller Beetle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_ROLLERBEETLE.png");
+	mounts->AddItemAction("Roller Beetle", EActionType::GameInputBind, EGameBinds_SpumoniMAM06);
+
+	mounts->AddItem("Warclaw", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_WARCLAW.png");
+	mounts->AddItemAction("Warclaw", EActionType::GameInputBind, EGameBinds_SpumoniMAM07);
+
+	mounts->AddItem("Skyscale", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKYSCALE.png");
+	mounts->AddItemAction("Skyscale", EActionType::GameInputBind, EGameBinds_SpumoniMAM08);
+
+	mounts->AddItem("Siege Turtle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SIEGETURTLE.png");
+	mounts->AddItemAction("Siege Turtle", EActionType::GameInputBind, EGameBinds_SpumoniMAM09);
+
+	this->Save();
+}
+
+void CRadialContext::Load()
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+	this->LoadInternal();
+}
+
+void CRadialContext::Save()
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+	this->SaveInternal();
+}
+
 void CRadialContext::Activate(CRadialMenu* aRadial)
 {
 	if (!aRadial) { return; }
@@ -433,61 +485,13 @@ bool CRadialContext::Release(ESelectionMode aMode)
 	return true;
 }
 
-void CRadialContext::Add(std::string aIdentifier, ERadialType aType)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->AddInternal(aIdentifier, aType);
-}
-
-void CRadialContext::Remove(std::string aIdentifier)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->RemoveInternal(aIdentifier);
-}
-
-void CRadialContext::AddItem(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->AddItemInternal(aRadialId, aItemId, aColor, aColorHover, aIconType, aIconValue);
-}
-
-void CRadialContext::RemoveItem(std::string aRadialId, std::string aItemId)
-{
-	this->RemoveItemInternal(aRadialId, aItemId);
-}
-
-void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->AddItemActionInternal(aRadialId, aItemId, aType, aValue);
-}
-
-void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->AddItemActionInternal(aRadialId, aItemId, aType, aValue);
-}
-
-void CRadialContext::AddItemAction(std::string aRadialId, std::string aItemId, int aValue)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->AddItemActionInternal(aRadialId, aItemId, aValue);
-}
-
-void CRadialContext::RemoveItemAction(std::string aRadialId, std::string aItemId, int aIndex)
-{
-	const std::lock_guard<std::mutex> lock(this->Mutex);
-	this->RemoveItemActionInternal(aRadialId, aItemId, aIndex);
-}
-
 void CRadialContext::Render()
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
 	for (CRadialMenu* radial : this->Radials)
 	{
-		radial->Render();
-		if (radial->GetHoveredIndex() > -1 && radial->GetSelectionMode() == ESelectionMode::Hover)
+		if (radial->Render() && radial->GetSelectionMode() == ESelectionMode::Hover)
 		{
 			this->Release(ESelectionMode::Hover);
 		}
@@ -498,12 +502,30 @@ void CRadialContext::RenderOptions()
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	static CRadialMenu* EditingMenu = nullptr;
-	static RadialItem* EditingItem = nullptr;
-
 	float width = ImGui::GetWindowContentRegionWidth();
 
-	ImGui::BeginChild("##radialitemselector", ImVec2(width / 6 * 2, 0));
+	if (ImGui::Button("Reload radials"))
+	{
+		this->LoadInternal();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Save changes"))
+	{
+		this->SaveInternal();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Open folder"))
+	{
+		ShellExecuteA(NULL, "explore", PacksDirectory.string().c_str(), NULL, NULL, SW_SHOW);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("New radial"))
+	{
+		this->Add("New Radial " + std::to_string(this->GetLowestUnusedID()));
+	}
+
+	ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
+	
 	ImGui::TextDisabled("Select Radial Menu:");
 	std::string radDel;
 	for (CRadialMenu* radial : this->Radials)
@@ -521,10 +543,10 @@ void CRadialContext::RenderOptions()
 			}
 			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
 
-			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), EditingMenu == radial && EditingItem == nullptr))
+			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), this->EditingMenu == radial && this->EditingItem == nullptr))
 			{
-				EditingMenu = radial;
-				EditingItem = nullptr;
+				this->EditingMenu = radial;
+				this->EditingItem = nullptr;
 			}
 			ImGui::Separator();
 
@@ -544,10 +566,10 @@ void CRadialContext::RenderOptions()
 				float btnSz = ImGui::GetFrameHeight();
 				float btnPad = ImGui::GetStyle().ItemSpacing.x;
 
-				if (ImGui::Selectable(item->Identifier.c_str(), EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
+				if (ImGui::Selectable(item->Identifier.c_str(), this->EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
 				{
-					EditingMenu = radial;
-					EditingItem = item;
+					this->EditingMenu = radial;
+					this->EditingItem = item;
 				}
 				ImGui::SameLine();
 				if (ImGui::ArrowButtonCondDisabled(("up_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
@@ -564,9 +586,9 @@ void CRadialContext::RenderOptions()
 				{
 					this->Release(ESelectionMode::Escape);
 					radial->RemoveItem(item->Identifier);
-					if (EditingItem == item)
+					if (this->EditingItem == item)
 					{
-						EditingItem = nullptr;
+						this->EditingItem = nullptr;
 					}
 				}
 
@@ -580,9 +602,9 @@ void CRadialContext::RenderOptions()
 
 			if (capacity > items.size())
 			{
-				if (ImGui::Button(("Add##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
+				if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
 				{
-					this->AddItemInternal(radial->GetName(), "New Item " + std::to_string(radial->GetItems().size() + 1), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
+					radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
 				}
 			}
 			else if (capacity < items.size())
@@ -610,80 +632,105 @@ void CRadialContext::RenderOptions()
 	if (!radDel.empty())
 	{
 		this->Release(ESelectionMode::Escape);
-		this->RemoveInternal(radDel);
-		EditingItem = nullptr;
-		EditingMenu = nullptr;
-	}
-
-	if (ImGui::Button("New##radial", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-	{
-		this->AddInternal("New Radial " + std::to_string(this->GetLowestUnusedID()), ERadialType::Normal);
+		this->Remove(radDel);
+		this->EditingItem = nullptr;
+		this->EditingMenu = nullptr;
 	}
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
 	ImGui::BeginChild("##radialitemeditor", ImVec2(width / 6 * 4, 0));
-	if (EditingMenu && !EditingItem) /* editing general menu settings */
+	if (this->EditingMenu && !this->EditingItem) /* editing general menu settings */
 	{
+		ImGui::TextDisabled("ID: %d", this->EditingMenu->GetID());
 		ImGui::TextDisabled("Input Bind");
-		ImGui::Text(EditingMenu->GetInputBind().c_str());
+		bool modifiedBinds = false;
+		if (ImGui::BeginCombo("##radialinputbind", this->EditingMenu->GetInputBind().c_str()))
+		{
+			for (auto& [bind, radial] : this->RadialIBMap)
+			{
+				if (ImGui::Selectable(bind.c_str()))
+				{
+					if (radial != this->EditingMenu)
+					{
+						int tmp = radial->GetID();
+						radial->SetID(this->EditingMenu->GetID());
+						this->EditingMenu->SetID(tmp);
+
+						APIDefs->Localization.Set(radial->GetInputBind().c_str(), "en", radial->GetName().c_str());
+						APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", this->EditingMenu->GetName().c_str());
+						modifiedBinds = true;
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
 		ImGui::SameLine();
-		ImGui::TextDisabled("shown as \"%s\"", EditingMenu->GetName().c_str());
+		ImGui::TextDisabled("shown as \"%s\"", this->EditingMenu->GetName().c_str());
+
+		if (modifiedBinds)
+		{
+			this->GenerateIBMap();
+		}
 
 		ImGui::TextDisabled("Name");
+		ImGui::HelpMarker("This name has to be unique.");
 
 		static bool editingName;
-		static char inputBuff[64];
+		static char inputBuff[MAX_PATH];
 		if (!editingName)
 		{
-			if (ImGui::Button(EditingMenu->GetName().c_str()))
+			if (ImGui::Button(this->EditingMenu->GetName().c_str()))
 			{
 				editingName = true;
-				strcpy_s(inputBuff, EditingMenu->GetName().c_str());
+				strcpy_s(inputBuff, this->EditingMenu->GetName().c_str());
 			}
 		}
 		else
 		{
-			if (ImGui::InputText("##radialname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##radialname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 			{
+				std::string newName = this->GetUnusedName(inputBuff, this->EditingMenu);
+
+				this->EditingMenu->SetName(newName);
+				APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", newName.c_str());
+
 				editingName = false;
-				EditingMenu->SetName(inputBuff);
-				APIDefs->Localization.Set(EditingMenu->GetInputBind().c_str(), "en", inputBuff);
 			}
 		}
 
 		ImGui::TextDisabled("Type");
 		std::string type;
-		switch (EditingMenu->GetType())
+		switch (this->EditingMenu->GetType())
 		{
 			case ERadialType::Small:
 				type = "Small";
-				this->ApplyColorToAll(EditingMenu, SMALL_ITEM_COLOR, false);
-				this->ApplyColorToAll(EditingMenu, SMALL_ITEM_COLOR_HOVER, true);
+				this->ApplyColorToAll(this->EditingMenu, SMALL_ITEM_COLOR, false);
+				this->ApplyColorToAll(this->EditingMenu, SMALL_ITEM_COLOR_HOVER, true);
 				break;
 			case ERadialType::Normal:
 				type = "Normal";
-				this->ApplyColorToAll(EditingMenu, NORMAL_ITEM_COLOR, false);
-				this->ApplyColorToAll(EditingMenu, NORMAL_ITEM_COLOR_HOVER, true);
+				this->ApplyColorToAll(this->EditingMenu, NORMAL_ITEM_COLOR, false);
+				this->ApplyColorToAll(this->EditingMenu, NORMAL_ITEM_COLOR_HOVER, true);
 				break;
 		}
 		if (ImGui::BeginCombo("##radialtype", type.c_str()))
 		{
 			if (ImGui::Selectable("Small"))
 			{
-				EditingMenu->SetType(ERadialType::Small);
+				this->EditingMenu->SetType(ERadialType::Small);
 			}
 			if (ImGui::Selectable("Normal"))
 			{
-				EditingMenu->SetType(ERadialType::Normal);
+				this->EditingMenu->SetType(ERadialType::Normal);
 			}
 			ImGui::EndCombo();
 		}
 
 		ImGui::TextDisabled("Selection Mode");
 		std::string selMode;
-		switch (EditingMenu->GetSelectionMode())
+		switch (this->EditingMenu->GetSelectionMode())
 		{
 			case ESelectionMode::Click:
 				selMode = "Click";
@@ -702,55 +749,55 @@ void CRadialContext::RenderOptions()
 		{
 			if (ImGui::Selectable("Click"))
 			{
-				EditingMenu->SetSelectionMode(ESelectionMode::Click);
+				this->EditingMenu->SetSelectionMode(ESelectionMode::Click);
 			}
 			ImGui::TooltipGeneric("Left mouse button will select the element.");
 
 			if (ImGui::Selectable("Release"))
 			{
-				EditingMenu->SetSelectionMode(ESelectionMode::Release);
+				this->EditingMenu->SetSelectionMode(ESelectionMode::Release);
 			}
 			ImGui::TooltipGeneric("Releasing the input bind will select the element.");
 
 			if (ImGui::Selectable("Release / Click"))
 			{
-				EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
+				this->EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
 			}
 			ImGui::TooltipGeneric("Releasing the input bind or left mouse button will select the element.");
 
 			if (ImGui::Selectable("Hover"))
 			{
-				EditingMenu->SetSelectionMode(ESelectionMode::Hover);
+				this->EditingMenu->SetSelectionMode(ESelectionMode::Hover);
 			}
 			ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
 
 			ImGui::EndCombo();
 		}
 
-		ImGui::Checkbox("Draw in Center", &EditingMenu->DrawInCenter);
-		ImGui::Checkbox("Restore Cursor Position", &EditingMenu->RestoreCursor);
+		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
+		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
 	}
-	else if (EditingItem) /* editing sub item */
+	else if (this->EditingItem) /* editing sub item */
 	{
 		ImGui::TextDisabled("Name");
 		ImGui::HelpMarker("This name has to be unique.");
 
 		static bool editingName;
-		static char inputBuff[64];
+		static char inputBuff[MAX_PATH];
 		if (!editingName)
 		{
-			if (ImGui::Button(EditingItem->Identifier.c_str()))
+			if (ImGui::Button(this->EditingItem->Identifier.c_str()))
 			{
 				editingName = true;
-				strcpy_s(inputBuff, EditingItem->Identifier.c_str());
+				strcpy_s(inputBuff, this->EditingItem->Identifier.c_str());
 			}
 		}
 		else
 		{
-			if (ImGui::InputText("##radialitemname", inputBuff, 64, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##radialitemname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				editingName = false;
-				EditingItem->Identifier = inputBuff;
+				this->EditingItem->Identifier = inputBuff;
 			}
 		}
 
@@ -759,21 +806,21 @@ void CRadialContext::RenderOptions()
 		ImGui::TableNextRow();
 		ImGui::TableSetColumnIndex(0);
 		ImGui::TextDisabled("Color");
-		ImGui::ColorEdit4U32("Color", &EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+		ImGui::ColorEdit4U32("Color", &this->EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
 		if (ImGui::Button("Apply to all##color"))
 		{
-			this->ApplyColorToAll(EditingMenu, EditingItem->Color, false);
+			this->ApplyColorToAll(this->EditingMenu, this->EditingItem->Color, false);
 		}
 		ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::TextDisabled("Color Hover");
-		ImGui::ColorEdit4U32("Color Hover", &EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+		ImGui::ColorEdit4U32("Color Hover", &this->EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
 		ImGui::SameLine();
 		if (ImGui::Button("Apply to all##colorhover"))
 		{
-			this->ApplyColorToAll(EditingMenu, EditingItem->ColorHover, true);
+			this->ApplyColorToAll(this->EditingMenu, this->EditingItem->ColorHover, true);
 		}
 		ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
 
@@ -782,7 +829,7 @@ void CRadialContext::RenderOptions()
 		ImGui::TextDisabled("Icon");
 
 		std::string iconType;
-		switch (EditingItem->Icon.Type)
+		switch (this->EditingItem->Icon.Type)
 		{
 			case EIconType::File:
 				iconType = "File";
@@ -795,18 +842,18 @@ void CRadialContext::RenderOptions()
 		{
 			if (ImGui::Selectable("File"))
 			{
-				EditingItem->Icon.Type = EIconType::File;
+				this->EditingItem->Icon.Type = EIconType::File;
 			}
 			if (ImGui::Selectable("URL"))
 			{
-				EditingItem->Icon.Type = EIconType::URL;
+				this->EditingItem->Icon.Type = EIconType::URL;
 			}
 			ImGui::EndCombo();
 		}
 
-		if (EditingItem->Icon.Type == EIconType::File)
+		if (this->EditingItem->Icon.Type == EIconType::File)
 		{
-			if (ImGui::Button(EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
+			if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
 			{
 				OPENFILENAME ofn{};
 				char buff[MAX_PATH]{};
@@ -820,62 +867,62 @@ void CRadialContext::RenderOptions()
 
 				if (GetOpenFileName(&ofn))
 				{
-					EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
-					if (!EditingItem->Icon.Value.empty())
+					this->EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
+					if (!this->EditingItem->Icon.Value.empty())
 					{
-						EditingItem->Icon.Value = String::Replace(EditingItem->Icon.Value, GW2Root.string() + "\\", "");
-						EditingItem->Icon.Texture = nullptr;
-						std::filesystem::path iconPath = EditingItem->Icon.Value;
+						this->EditingItem->Icon.Value = String::Replace(this->EditingItem->Icon.Value, GW2Root.string() + "\\", "");
+						this->EditingItem->Icon.Texture = nullptr;
+						std::filesystem::path iconPath = this->EditingItem->Icon.Value;
 						if (iconPath.is_relative())
 						{
-							APIDefs->Textures.LoadFromFile(EditingItem->Icon.Value.c_str(), (GW2Root / EditingItem->Icon.Value).string().c_str(), nullptr);
+							APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), (GW2Root / this->EditingItem->Icon.Value).string().c_str(), nullptr);
 						}
 						else
 						{
-							APIDefs->Textures.LoadFromFile(EditingItem->Icon.Value.c_str(), EditingItem->Icon.Value.c_str(), nullptr);
+							APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
 						}
 					}
 				}
 			}
 		}
-		else if (EditingItem->Icon.Type == EIconType::URL)
+		else if (this->EditingItem->Icon.Type == EIconType::URL)
 		{
 			static bool editingUrl;
 			static char inputBuff[MAX_PATH];
 			if (!editingUrl)
 			{
-				if (ImGui::Button(EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
+				if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
 				{
 					editingUrl = true;
-					strcpy_s(inputBuff, EditingItem->Icon.Value.c_str());
+					strcpy_s(inputBuff, this->EditingItem->Icon.Value.c_str());
 				}
 			}
 			else
 			{
-				if (ImGui::InputText("##radialitemiconurl", inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+				if (ImGui::InputText("##radialitemiconurl", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 				{
 					editingUrl = false;
-					EditingItem->Icon.Value = inputBuff;
-					if (!EditingItem->Icon.Value.empty())
+					this->EditingItem->Icon.Value = inputBuff;
+					if (!this->EditingItem->Icon.Value.empty())
 					{
-						EditingItem->Icon.Texture = nullptr;
-						APIDefs->Textures.LoadFromURL(EditingItem->Icon.Value.c_str(), URL::GetBase(EditingItem->Icon.Value).c_str(), URL::GetEndpoint(EditingItem->Icon.Value).c_str(), nullptr);
+						this->EditingItem->Icon.Texture = nullptr;
+						APIDefs->Textures.LoadFromURL(this->EditingItem->Icon.Value.c_str(), URL::GetBase(this->EditingItem->Icon.Value).c_str(), URL::GetEndpoint(this->EditingItem->Icon.Value).c_str(), nullptr);
 					}
 				}
 			}
 		}
 
 		ImGui::TextDisabled("Visibility");
-		ConditionEditor("Edit Conditions##visibility", &EditingItem->Visibility);
-		ImGui::TooltipGeneric(ConditionsToString(&EditingItem->Visibility).c_str());
+		ConditionEditor("Edit Conditions##visibility", &this->EditingItem->Visibility);
+		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
 		ImGui::HelpMarker("These conditions control when this item is visible.");
 
 		ImGui::TextDisabled("Activation");
-		ConditionEditor("Edit Conditions##activation", &EditingItem->Activation);
-		ImGui::TooltipGeneric(ConditionsToString(&EditingItem->Activation).c_str());
+		ConditionEditor("Edit Conditions##activation", &this->EditingItem->Activation);
+		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
 		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
 		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-		ImGui::InputInt("Timeout (seconds)", &EditingItem->ActivationTimeout);
+		ImGui::InputInt("Timeout (seconds)", &this->EditingItem->ActivationTimeout);
 		ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
 
 		ImGui::TextDisabled("Actions");
@@ -884,7 +931,7 @@ void CRadialContext::RenderOptions()
 		ImGui::BeginTable("##radialitemactions", 4);
 		int i = 0;
 		int idxDel = -1;
-		for (ActionBase* action : EditingItem->Actions)
+		for (ActionBase* action : this->EditingItem->Actions)
 		{
 			std::string actionType;
 			switch (action->Type)
@@ -905,9 +952,9 @@ void CRadialContext::RenderOptions()
 				{
 					if (action->Type != EActionType::InputBind)
 					{
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionGeneric();
-						EditingItem->Actions[i]->Type = EActionType::InputBind;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionGeneric();
+						this->EditingItem->Actions[i]->Type = EActionType::InputBind;
 					}
 				}
 				if (ImGui::Selectable("InputBind (Game)"))
@@ -916,17 +963,17 @@ void CRadialContext::RenderOptions()
 					{
 						EGameBinds persistBind = (EGameBinds)0;
 
-						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind || 
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind || 
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
 						{
-							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
 						}
 
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionGameInputBind();
-						EditingItem->Actions[i]->Type = EActionType::GameInputBind;
-						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionGameInputBind();
+						this->EditingItem->Actions[i]->Type = EActionType::GameInputBind;
+						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("InputBind Press (Game)"))
@@ -935,17 +982,17 @@ void CRadialContext::RenderOptions()
 					{
 						EGameBinds persistBind = (EGameBinds)0;
 
-						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
 						{
-							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
 						}
 
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionGameInputBind();
-						EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
-						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionGameInputBind();
+						this->EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
+						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("InputBind Release (Game)"))
@@ -954,35 +1001,35 @@ void CRadialContext::RenderOptions()
 					{
 						EGameBinds persistBind = (EGameBinds)0;
 
-						if (EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
 						{
-							persistBind = ((ActionGameInputBind*)EditingItem->Actions[i])->Identifier;
+							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
 						}
 
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionGameInputBind();
-						EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
-						((ActionGameInputBind*)EditingItem->Actions[i])->Identifier = persistBind;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionGameInputBind();
+						this->EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
+						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
 					}
 				}
 				if (ImGui::Selectable("Event"))
 				{
 					if (action->Type != EActionType::Event)
 					{
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionGeneric();
-						EditingItem->Actions[i]->Type = EActionType::Event;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionGeneric();
+						this->EditingItem->Actions[i]->Type = EActionType::Event;
 					}
 				}
 				if (ImGui::Selectable("Delay"))
 				{
 					if (action->Type != EActionType::Delay)
 					{
-						delete EditingItem->Actions[i];
-						EditingItem->Actions[i] = new ActionDelay();
-						EditingItem->Actions[i]->Type = EActionType::Delay;
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionDelay();
+						this->EditingItem->Actions[i]->Type = EActionType::Delay;
 					}
 				}
 				ImGui::EndCombo();
@@ -998,7 +1045,7 @@ void CRadialContext::RenderOptions()
 					static char inputBuff[MAX_PATH];
 					strcpy_s(inputBuff, ((ActionGeneric*)action)->Identifier.c_str());
 
-					if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, MAX_PATH, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+					if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 					{
 						((ActionGeneric*)action)->Identifier = _strdup(inputBuff);
 					}
@@ -1255,16 +1302,16 @@ void CRadialContext::RenderOptions()
 			ImGui::TableSetColumnIndex(3);
 			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
 			{
-				ActionBase* tmp = EditingItem->Actions[i - 1];
-				EditingItem->Actions[i - 1] = EditingItem->Actions[i];
-				EditingItem->Actions[i] = tmp;
+				ActionBase* tmp = this->EditingItem->Actions[i - 1];
+				this->EditingItem->Actions[i - 1] = this->EditingItem->Actions[i];
+				this->EditingItem->Actions[i] = tmp;
 			}
 			ImGui::SameLine();
-			if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == EditingItem->Actions.size() - 1))
+			if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == this->EditingItem->Actions.size() - 1))
 			{
-				ActionBase* tmp = EditingItem->Actions[i + 1];
-				EditingItem->Actions[i + 1] = EditingItem->Actions[i];
-				EditingItem->Actions[i] = tmp;
+				ActionBase* tmp = this->EditingItem->Actions[i + 1];
+				this->EditingItem->Actions[i + 1] = this->EditingItem->Actions[i];
+				this->EditingItem->Actions[i] = tmp;
 			}
 			ImGui::SameLine();
 			if (ImGui::CrossButton(("x_action##" + std::to_string(i)).c_str()))
@@ -1278,16 +1325,12 @@ void CRadialContext::RenderOptions()
 
 		if (ImGui::Button("Add Action"))
 		{
-			/* can't use actionaddinternal here because we don't have the radialid */
-			ActionGeneric* action = new ActionGeneric();
-			action->Type = EActionType::InputBind;
-			EditingItem->Actions.push_back(action);
+			this->EditingMenu->AddItemAction(this->EditingItem->Identifier, EActionType::InputBind, "");
 		}
 
 		if (idxDel != -1)
 		{
-			delete EditingItem->Actions[idxDel];
-			EditingItem->Actions.erase(EditingItem->Actions.begin() + idxDel);
+			this->EditingMenu->RemoveItemAction(this->EditingItem->Identifier, idxDel);
 		}
 	}
 	ImGui::EndChild();
@@ -1355,17 +1398,112 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return uMsg;
 }
 
-void CRadialContext::AddInternal(std::string aIdentifier, ERadialType aType)
+void CRadialContext::LoadInternal()
 {
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, this->GetLowestUnusedID(), aIdentifier, aType);
+	this->ActiveRadial = nullptr;
+	this->EditingMenu = nullptr;
+	this->EditingItem = nullptr;
+	while (this->Radials.size() > 0) /* clear all, with proper cleanup */
+	{
+		this->Remove(this->Radials.front()->GetName());
+	}
+	this->RadialIBMap.clear();
+
+	for (const std::filesystem::directory_entry entry : std::filesystem::directory_iterator(PacksDirectory))
+	{
+		std::filesystem::path filePath = entry.path();
+
+		if (!std::filesystem::is_regular_file(filePath))
+		{
+			continue;
+		}
+
+		try
+		{
+			std::ifstream file(filePath);
+
+			json radialsJson = json::parse(file);
+			for (json radialData : radialsJson)
+			{
+				int id = 0;
+				if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
+				std::string name;
+				if (!radialData["Name"].is_null()) { radialData["Name"].get_to(name); }
+				name = this->GetUnusedName(name);
+				ERadialType type = ERadialType::None;
+				if (!radialData["Type"].is_null()) { radialData["Type"].get_to(type); }
+				ESelectionMode selMode = ESelectionMode::None;
+				if (!radialData["SelectionMode"].is_null()) { radialData["SelectionMode"].get_to(selMode); }
+
+				bool drawInCenter = false;
+				if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
+				bool restoreCursor = false;
+				if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
+
+				bool idCollision = this->IsIDInUse(id);
+
+				if (idCollision)
+				{
+					id = 1000;
+					while (this->IsIDInUse(id))
+					{
+						id++;
+					}
+				}
+
+				CRadialMenu* radial = this->Add(name, type, selMode, id);
+				radial->DrawInCenter = drawInCenter;
+				radial->RestoreCursor = restoreCursor;
+
+				if (!radialData["Items"].is_null())
+				{
+					continue;
+				}
+
+				for (json radialItemData : radialData["Items"])
+				{
+
+				}
+			}
+		}
+		catch (json::parse_error& ex)
+		{
+			APIDefs->Log(ELogLevel_WARNING, "Radial Menus", String::Format("%s could not be parsed. Error: %s", filePath.filename().string().c_str(), ex.what()).c_str());
+		}
+
+		// if ID collision. set ID to 9999+
+		// then after finishing with all the others, check all over 9999 and getlowestid
+
+		/*if (anyCollision)
+		{
+			this->SaveInternal();
+		}*/
+	}
+}
+
+void CRadialContext::SaveInternal()
+{
+	for (CRadialMenu* radial : this->Radials)
+	{
+		radial->Save();
+	}
+}
+
+CRadialMenu* CRadialContext::Add(std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode, int aID)
+{
+	if (aID == -1) { aID = this->GetLowestUnusedID(); }
+
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aID, aIdentifier, aRadialMenuType, aSelectionMode);
 	std::string bind = radial->GetInputBind();
-	this->RadialIBMap[bind] = radial;
 	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
 	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());
 	this->Radials.push_back(radial);
+	this->GenerateIBMap();
+
+	return radial;
 }
 
-void CRadialContext::RemoveInternal(std::string aIdentifier)
+void CRadialContext::Remove(std::string aIdentifier)
 {
 	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aIdentifier](CRadialMenu* menu) { return menu->GetName() == aIdentifier; });
 
@@ -1376,112 +1514,11 @@ void CRadialContext::RemoveInternal(std::string aIdentifier)
 			this->Release(ESelectionMode::Escape);
 		}
 
-		auto mapit = this->RadialIBMap.find((*it)->GetInputBind());
-
-		if (mapit != this->RadialIBMap.end())
-		{
-			this->RadialIBMap.erase(mapit);
-		}
-
+		std::string bind = (*it)->GetInputBind();
+		APIDefs->InputBinds.Deregister(bind.c_str());
 		delete (*it);
-
 		this->Radials.erase(it);
-	}
-}
-
-void CRadialContext::AddItemInternal(std::string aRadialId, std::string aItemId, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = new RadialItem();
-		item->Identifier = aItemId;
-		item->Color = aColor;
-		item->ColorHover = aColorHover;
-		item->Icon.Type = aIconType;
-		item->Icon.Value = aIconValue;
-		item->ActivationTimeout = 30; /* 30s timeout */
-		(*it)->AddItem(item);
-	}
-}
-
-void CRadialContext::RemoveItemInternal(std::string aRadialId, std::string aItemId)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		(*it)->RemoveItem(aItemId);
-	}
-}
-
-void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, std::string aValue)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionGeneric* action = new ActionGeneric();
-			action->Type = aType;
-			action->Identifier = _strdup(aValue.c_str());
-
-			item->Actions.push_back(action);
-		}
-	}
-}
-
-void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, EActionType aType, EGameBinds aValue)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionGameInputBind* action = new ActionGameInputBind();
-			action->Type = aType;
-			action->Identifier = aValue;
-
-			item->Actions.push_back(action);
-		}
-	}
-}
-
-void CRadialContext::AddItemActionInternal(std::string aRadialId, std::string aItemId, int aValue)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-
-		if (item)
-		{
-			ActionDelay* action = new ActionDelay();
-			action->Type = EActionType::Delay;
-			action->Duration = aValue;
-
-			item->Actions.push_back(action);
-		}
-	}
-}
-
-void CRadialContext::RemoveItemActionInternal(std::string aRadialId, std::string aItemId, int aIndex)
-{
-	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aRadialId](CRadialMenu* menu) { return menu->GetName() == aRadialId; });
-
-	if (it != this->Radials.end())
-	{
-		RadialItem* item = (*it)->GetItem(aItemId);
-		delete item->Actions[aIndex];
-		item->Actions.erase(item->Actions.begin() + aIndex);
+		this->GenerateIBMap();
 	}
 }
 
@@ -1508,6 +1545,49 @@ int CRadialContext::GetLowestUnusedID()
 
 	return lowestUnusedId;
 }
+bool CRadialContext::IsIDInUse(int aID, CRadialMenu* aRadialSkip)
+{
+	for (CRadialMenu* r : this->Radials)
+	{
+		if (aRadialSkip != nullptr && aRadialSkip == r) { continue; }
+
+		if (r->GetID() == aID)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::string CRadialContext::GetUnusedName(std::string aName, CRadialMenu* aRadialSkip)
+{
+	// if the "name" is in use get "name (2)", "name (3)" etc
+	std::string newName = aName;
+	int i = 1;
+	while (this->IsNameInUse(newName, this->EditingMenu))
+	{
+		i++;
+		newName = aName;
+		newName.append(" (" + std::to_string(i) + ")");
+	}
+
+	return newName;
+}
+bool CRadialContext::IsNameInUse(std::string aName, CRadialMenu* aRadialSkip)
+{
+	for (CRadialMenu* r : this->Radials)
+	{
+		if (aRadialSkip != nullptr && aRadialSkip == r) { continue; }
+
+		if (r->GetName() == aName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
 
 void CRadialContext::ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor)
 {
@@ -1523,5 +1603,15 @@ void CRadialContext::ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, 
 		{
 			item->Color = aColor;
 		}
+	}
+}
+
+void CRadialContext::GenerateIBMap()
+{
+	this->RadialIBMap.clear();
+
+	for (CRadialMenu* r : this->Radials)
+	{
+		this->RadialIBMap[r->GetInputBind()] = r;
 	}
 }

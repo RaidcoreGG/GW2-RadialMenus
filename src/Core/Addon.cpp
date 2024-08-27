@@ -43,46 +43,20 @@ namespace Addon
 
 		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
 
-		Lang::Init(APIDefs->Localization.Set);
-		RadialCtx = new CRadialContext();
-
 		GW2Root = APIDefs->Paths.GetGameDirectory();
 		AddonDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus");
+		PacksDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus/packs");
+
+		Lang::Init(APIDefs->Localization.Set);
+		RadialCtx = new CRadialContext();
+		RadialCtx->Load();
 
 		//if (!std::filesystem::exists(AddonDirectory))
 		{
 			std::filesystem::create_directory(AddonDirectory);
-			unsigned int col = ImColor(255, 255, 255, 255);
-			unsigned int colHov = ImColor(245, 192, 67, 255);
-
-			RadialCtx->Add("Mounts", ERadialType::Normal);
-
-			RadialCtx->AddItem("Mounts", "Raptor", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_RAPTOR.png");
-			RadialCtx->AddItemAction("Mounts", "Raptor", EActionType::GameInputBind, EGameBinds_SpumoniMAM01);
-
-			RadialCtx->AddItem("Mounts", "Springer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SPRINGER.png");
-			RadialCtx->AddItemAction("Mounts", "Springer", EActionType::GameInputBind, EGameBinds_SpumoniMAM02);
-
-			RadialCtx->AddItem("Mounts", "Skimmer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKIMMER.png");
-			RadialCtx->AddItemAction("Mounts", "Skimmer", EActionType::GameInputBind, EGameBinds_SpumoniMAM03);
-
-			RadialCtx->AddItem("Mounts", "Jackal", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_JACKAL.png");
-			RadialCtx->AddItemAction("Mounts", "Jackal", EActionType::GameInputBind, EGameBinds_SpumoniMAM04);
-
-			RadialCtx->AddItem("Mounts", "Griffon", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_GRIFFON.png");
-			RadialCtx->AddItemAction("Mounts", "Griffon", EActionType::GameInputBind, EGameBinds_SpumoniMAM05);
-
-			RadialCtx->AddItem("Mounts", "Roller Beetle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_ROLLERBEETLE.png");
-			RadialCtx->AddItemAction("Mounts", "Roller Beetle", EActionType::GameInputBind, EGameBinds_SpumoniMAM06);
-
-			RadialCtx->AddItem("Mounts", "Warclaw", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_WARCLAW.png");
-			RadialCtx->AddItemAction("Mounts", "Warclaw", EActionType::GameInputBind, EGameBinds_SpumoniMAM07);
-
-			RadialCtx->AddItem("Mounts", "Skyscale", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKYSCALE.png");
-			RadialCtx->AddItemAction("Mounts", "Skyscale", EActionType::GameInputBind, EGameBinds_SpumoniMAM08);
-
-			RadialCtx->AddItem("Mounts", "Siege Turtle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SIEGETURTLE.png");
-			RadialCtx->AddItemAction("Mounts", "Siege Turtle", EActionType::GameInputBind, EGameBinds_SpumoniMAM09);
+			std::filesystem::create_directory(PacksDirectory);
+			
+			RadialCtx->CreateDefaultMountRadial();
 		}
 	}
 

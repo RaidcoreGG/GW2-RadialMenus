@@ -17,18 +17,16 @@
 #include "Shared.h"
 #include "StateObserver.h"
 
-CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType)
+CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
 {
 	this->API = aAPI;
 	this->Module = aModule;
 	this->NexusLink = (NexusLinkData*)this->API->DataLink.Get("DL_NEXUS_LINK");
-	this->MumbleLink = (Mumble::Data*)this->API->DataLink.Get("DL_MUMBLE_LINK");
-	this->MumbleIdentity = (Mumble::Identity*)this->API->DataLink.Get("DL_MUMBLE_LINK_IDENTITY");
 
 	this->ID = aID;
 	this->Identifier = aIdentifier;
 	this->Type = aRadialMenuType;
-	this->SelectionMode = ESelectionMode::Release;
+	this->SelectionMode = aSelectionMode;
 
 	this->Invalidate();
 }
@@ -53,15 +51,20 @@ CRadialMenu::~CRadialMenu()
 	}
 }
 
-void CRadialMenu::Render()
+void CRadialMenu::Save()
 {
-	if (this->Type == ERadialType::None) { return; }
+
+}
+
+bool CRadialMenu::Render()
+{
+	if (this->Type == ERadialType::None) { return false; }
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	if (this->DrawnItems.size() > this->ItemsCapacity) { return; }
-	if (this->DrawnItems.size() < 2) { return; }
-	if (!this->IsActive) { return; }
+	if (this->DrawnItems.size() > this->ItemsCapacity) { return false; }
+	if (this->DrawnItems.size() < 2) { return false; }
+	if (!this->IsActive) { return false; }
 
 	ImVec2 size = ImVec2(this->Size.x * NexusLink->Scaling, this->Size.y * NexusLink->Scaling);
 	ImVec2 sizeHalf = ImVec2((size.x / 2.0f), (size.y / 2.0f));
@@ -70,15 +73,17 @@ void CRadialMenu::Render()
 	ImVec2 safePad = style.DisplaySafeAreaPadding;
 	style.DisplaySafeAreaPadding = ImVec2(0, 0);
 
+	int hoverIndex = -1;
+
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
 	ImGui::SetNextWindowSize(ImVec2(NexusLink->Width, NexusLink->Height), ImGuiCond_Appearing);
-	if (ImGui::Begin(("RADIAL##" + this->Identifier).c_str(), (bool*)0, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar)))
+	if (ImGui::Begin(("RADIAL##" + this->Identifier).c_str(), (bool*)0, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings)))
 	{
 		ImGui::SetCursorPos(ImVec2(this->Origin.x - sizeHalf.x, this->Origin.y - sizeHalf.y));
 		ImGui::BeginChild(("RADIALINNER##" + this->Identifier).c_str());
 		ImVec2 initialPos = ImVec2(1, 1);
 
-		int hoverIndex = this->GetHoveredIndex();
+		hoverIndex = this->GetHoveredIndex();
 
 		if (this->BaseTexture)
 		{
@@ -155,6 +160,8 @@ void CRadialMenu::Render()
 	ImGui::End();
 
 	style.DisplaySafeAreaPadding = safePad;
+
+	return hoverIndex != -1;
 }
 
 void CRadialMenu::Activate()
@@ -287,9 +294,44 @@ void CRadialMenu::Release(bool aIsCancel)
 					case EActionType::GameInputBind:
 					{
 						ActionGameInputBind* action = (ActionGameInputBind*)act;
+						/* FIXME: all of the following code is acopy of the Nexus Invoke function. Nexus does not provide Invoke only InvokeAsync.*/
+						/* get modifier state */
+						bool wasAltPressed = GetAsyncKeyState(VK_MENU);
+						bool wasCtrlPressed = GetAsyncKeyState(VK_CONTROL);
+						bool wasShiftPressed = GetAsyncKeyState(VK_SHIFT);
+
+						/* unset modifier state */
+						if (wasAltPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYUP, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, false, true));
+						}
+						if (wasCtrlPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, false, false));
+						}
+						if (wasShiftPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, false, false));
+						}
+
+						/* execute action action */
 						this->API->GameBinds.Press(action->Identifier);
 						Sleep(100);
 						this->API->GameBinds.Release(action->Identifier);
+
+						/* restore modifier state */
+						if (wasAltPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYDOWN, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, true, true));
+						}
+						if (wasCtrlPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, true, false));
+						}
+						if (wasShiftPressed)
+						{
+							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, true, false));
+						}
 						break;
 					}
 					case EActionType::GameInputBindPress:
@@ -328,49 +370,92 @@ void CRadialMenu::Release(bool aIsCancel)
 	this->IsActive = false;
 }
 
-void CRadialMenu::AddItem(RadialItem* aMenuItem)
+void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, Conditions aVisibility, Conditions aActivation, int aActivationTimeout)
 {
-	if (aMenuItem == nullptr) { return; }
-
+	RadialItem* item = new RadialItem();
+	item->Color = aColor;
+	item->ColorHover = aColorHover;
+	item->Icon.Type = aIconType;
+	item->Icon.Value = aIconValue;
+	item->Visibility = aVisibility;
+	item->Activation = aActivation;
+	item->ActivationTimeout = aActivationTimeout;
+	
 	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	std::string itemName = aName;
+	int i;
+	if (aName.empty())
+	{
+		i = this->Items.size() + 1;
+	}
+	else
+	{
+		i = 1;
+	}
+	bool exists = false;
+	do
+	{
+		if (aName.empty())
+		{
+			itemName = "New Item " + std::to_string(i);
+		}
+		else if (i > 1)
+		{
+			/* if it's the first iteration and a name was provided, it's already set. */
+			itemName = aName + " (" + std::to_string(i) + ")";
+		}
+
+		exists = false;
+		for (RadialItem* existingItem : this->Items)
+		{
+			if (existingItem->Identifier == itemName)
+			{
+				i++;
+				exists = true;
+				break;
+			}
+		}
+	} while (exists);
+
+	item->Identifier = itemName;
 
 	switch (this->Type)
 	{
-	case ERadialType::None: return;
-	case ERadialType::Normal:
-		if (this->Items.size() >= ItemsCapacity) { return; }
-		break;
-	case ERadialType::Small:
-		if (this->Items.size() >= ItemsCapacity) { return; }
-		break;
+		case ERadialType::None: return;
+		case ERadialType::Normal:
+			if (this->Items.size() >= ItemsCapacity) { return; }
+			break;
+		case ERadialType::Small:
+			if (this->Items.size() >= ItemsCapacity) { return; }
+			break;
 	}
-	
-	switch (aMenuItem->Icon.Type)
+
+	switch (item->Icon.Type)
 	{
 		case EIconType::File:
 		{
-			std::filesystem::path iconPath = aMenuItem->Icon.Value;
+			std::filesystem::path iconPath = item->Icon.Value;
 			if (iconPath.is_relative())
 			{
-				APIDefs->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), (GW2Root / aMenuItem->Icon.Value).string().c_str(), nullptr);
+				APIDefs->Textures.LoadFromFile(item->Icon.Value.c_str(), (GW2Root / item->Icon.Value).string().c_str(), nullptr);
 			}
 			else
 			{
-				APIDefs->Textures.LoadFromFile(aMenuItem->Icon.Value.c_str(), aMenuItem->Icon.Value.c_str(), nullptr);
+				APIDefs->Textures.LoadFromFile(item->Icon.Value.c_str(), item->Icon.Value.c_str(), nullptr);
 			}
 			break;
 		}
 		case EIconType::URL:
 		{
-			this->API->Textures.LoadFromURL(aMenuItem->Icon.Value.c_str(), URL::GetBase(aMenuItem->Icon.Value).c_str(), URL::GetEndpoint(aMenuItem->Icon.Value).c_str(), nullptr);
+			this->API->Textures.LoadFromURL(item->Icon.Value.c_str(), URL::GetBase(item->Icon.Value).c_str(), URL::GetEndpoint(item->Icon.Value).c_str(), nullptr);
 			break;
 		}
 	}
 
-	this->Items.push_back(aMenuItem);
+	this->Items.push_back(item);
 
 	/* recalculate positions/offsets */
-
 	this->Invalidate();
 }
 
@@ -458,6 +543,77 @@ void CRadialMenu::MoveItemDown(std::string aIdentifier)
 	}
 }
 
+void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, std::string aValue)
+{
+	RadialItem* item = this->GetItem(aItemId);
+
+	if (item)
+	{
+		const std::lock_guard<std::mutex> lock(this->Mutex);
+
+		ActionGeneric* action = new ActionGeneric();
+		action->Type = aType;
+		action->Identifier = _strdup(aValue.c_str());
+
+		item->Actions.push_back(action);
+	}
+}
+
+void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue)
+{
+	RadialItem* item = this->GetItem(aItemId);
+
+	if (item)
+	{
+		const std::lock_guard<std::mutex> lock(this->Mutex);
+
+		ActionGameInputBind* action = new ActionGameInputBind();
+		action->Type = aType;
+		action->Identifier = aValue;
+
+		item->Actions.push_back(action);
+	}
+}
+
+void CRadialMenu::AddItemAction(std::string aItemId, int aValue)
+{
+	RadialItem* item = this->GetItem(aItemId);
+
+	if (item)
+	{
+		const std::lock_guard<std::mutex> lock(this->Mutex);
+
+		ActionDelay* action = new ActionDelay();
+		action->Type = EActionType::Delay;
+		action->Duration = aValue;
+
+		item->Actions.push_back(action);
+	}
+}
+
+void CRadialMenu::RemoveItemAction(std::string aItemId, int aIndex)
+{
+	RadialItem* item = this->GetItem(aItemId);
+
+	if (item)
+	{
+		const std::lock_guard<std::mutex> lock(this->Mutex);
+
+		delete item->Actions[aIndex];
+		item->Actions.erase(item->Actions.begin() + aIndex);
+	}
+}
+
+int CRadialMenu::GetID()
+{
+	return this->ID;
+}
+
+void CRadialMenu::SetID(int aID)
+{
+	this->ID = aID;
+}
+
 const std::string& CRadialMenu::GetName()
 {
 	return this->Identifier;
@@ -516,11 +672,6 @@ int CRadialMenu::GetHoveredIndex()
 	}
 
 	return hoverIndex;
-}
-
-int CRadialMenu::GetID()
-{
-	return this->ID;
 }
 
 void CRadialMenu::Invalidate()

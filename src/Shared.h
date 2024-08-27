@@ -19,5 +19,6 @@ extern NexusLinkData* NexusLink;
 extern CRadialContext* RadialCtx;
 extern std::filesystem::path GW2Root;
 extern std::filesystem::path AddonDirectory;
+extern std::filesystem::path PacksDirectory;
 
 #endif

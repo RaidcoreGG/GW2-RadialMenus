@@ -120,6 +120,9 @@
     <ClInclude Include="src\Core\StateObserver.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="src\thirdparty\nlohmann\json.hpp">
+      <Filter>_EXTERNAL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
