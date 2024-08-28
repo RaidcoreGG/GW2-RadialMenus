@@ -1405,18 +1405,6 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
-		case WM_MOUSEMOVE:
-		{
-			/* this WM_MOUSEMOVE handler should be added into nexus */
-			CURSORINFO curInfo{};
-			curInfo.cbSize = sizeof(CURSORINFO);
-			GetCursorInfo(&curInfo);
-			if (!(curInfo.flags & CURSOR_SHOWING))
-			{
-				return 0;
-			}
-			break;
-		}
 		case WM_KEYDOWN:
 		{
 			if (wParam == VK_ESCAPE)

@@ -222,6 +222,7 @@ class CRadialMenu
 	ImVec2                      Origin;
 	ImVec2                      MousePos;
 	bool                        WasActionCamActive;
+	bool                        WasRightClickHeld;
 
 	///----------------------------------------------------------------------------------------------------
 	/// GetHoveredIndex:
