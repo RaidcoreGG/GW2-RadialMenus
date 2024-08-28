@@ -194,7 +194,7 @@ void CRadialMenu::Activate()
 	CURSORINFO curInfo{};
 	curInfo.cbSize = sizeof(CURSORINFO);
 	GetCursorInfo(&curInfo);
-	this->WasActionCamActive = !(curInfo.flags & CURSOR_SHOWING);
+	this->WasActionCamActive = !(curInfo.flags & CURSOR_SHOWING) && !RadialCtx->IsRightClickHeld;
 
 	/* override origin if draw in center */
 	if (this->DrawInCenter)
@@ -207,7 +207,7 @@ void CRadialMenu::Activate()
 		ImGui::GetIO().MousePos = this->Origin;
 	}
 
-	if (this->WasActionCamActive && !RadialCtx->IsRightClickHeld)
+	if (this->WasActionCamActive)
 	{
 		std::thread([this]() {
 
@@ -240,7 +240,7 @@ void CRadialMenu::Release(bool aIsCancel)
 		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 	}
 
-	if (this->WasActionCamActive && !RadialCtx->IsRightClickHeld)
+	if (this->WasActionCamActive)
 	{
 		this->API->GameBinds.InvokeAsync(EGameBinds_CameraActionMode, 10);
 	}
