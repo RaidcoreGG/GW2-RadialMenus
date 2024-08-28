@@ -71,8 +71,9 @@ class CRadialContext
 	void LoadInternal();
 	void SaveInternal();
 
-	CRadialMenu* Add(std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick, int aID = -1);
+	CRadialMenu* Add(std::filesystem::path aPath, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick, int aID = -1);
 	void Remove(std::string aIdentifier);
+	void Remove(std::filesystem::path aPath);
 
 	int GetLowestUnusedID();
 	bool IsIDInUse(int aID, CRadialMenu* aRadialSkip = nullptr);

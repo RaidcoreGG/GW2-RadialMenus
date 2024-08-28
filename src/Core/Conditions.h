@@ -1,6 +1,9 @@
 #ifndef CONDITIONS_H
 #define CONDITIONS_H
 
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
+
 ///----------------------------------------------------------------------------------------------------
 /// EObserveState Enumeration
 ///----------------------------------------------------------------------------------------------------
@@ -32,5 +35,8 @@ struct Conditions
 	EObserveState IsOnWaterSurface;
 	EObserveState IsAirborne;
 };
+
+void to_json(json& j, const Conditions& c);
+void from_json(const json& j, Conditions& c);
 
 #endif

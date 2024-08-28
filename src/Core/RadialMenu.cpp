@@ -17,11 +17,13 @@
 #include "Shared.h"
 #include "StateObserver.h"
 
-CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
+CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
 {
 	this->API = aAPI;
 	this->Module = aModule;
 	this->NexusLink = (NexusLinkData*)this->API->DataLink.Get("DL_NEXUS_LINK");
+
+	this->Path = aPath;
 
 	this->ID = aID;
 	this->Identifier = aIdentifier;
@@ -543,7 +545,7 @@ void CRadialMenu::MoveItemDown(std::string aIdentifier)
 	}
 }
 
-void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, std::string aValue)
+void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, std::string aValue, Conditions aActivation, bool aOnlyExecuteIfPrevious)
 {
 	RadialItem* item = this->GetItem(aItemId);
 
@@ -553,13 +555,15 @@ void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, std::str
 
 		ActionGeneric* action = new ActionGeneric();
 		action->Type = aType;
-		action->Identifier = _strdup(aValue.c_str());
+		action->Activation = aActivation;
+		action->OnlyExecuteIfPrevious = aOnlyExecuteIfPrevious;
+		action->Identifier = aValue;
 
 		item->Actions.push_back(action);
 	}
 }
 
-void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue)
+void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue, Conditions aActivation, bool aOnlyExecuteIfPrevious)
 {
 	RadialItem* item = this->GetItem(aItemId);
 
@@ -569,13 +573,15 @@ void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, EGameBin
 
 		ActionGameInputBind* action = new ActionGameInputBind();
 		action->Type = aType;
+		action->Activation = aActivation;
+		action->OnlyExecuteIfPrevious = aOnlyExecuteIfPrevious;
 		action->Identifier = aValue;
 
 		item->Actions.push_back(action);
 	}
 }
 
-void CRadialMenu::AddItemAction(std::string aItemId, int aValue)
+void CRadialMenu::AddItemAction(std::string aItemId, int aValue, Conditions aActivation, bool aOnlyExecuteIfPrevious)
 {
 	RadialItem* item = this->GetItem(aItemId);
 
@@ -585,6 +591,8 @@ void CRadialMenu::AddItemAction(std::string aItemId, int aValue)
 
 		ActionDelay* action = new ActionDelay();
 		action->Type = EActionType::Delay;
+		action->Activation = aActivation;
+		action->OnlyExecuteIfPrevious = aOnlyExecuteIfPrevious;
 		action->Duration = aValue;
 
 		item->Actions.push_back(action);
@@ -653,6 +661,11 @@ int CRadialMenu::GetCapacity()
 std::string CRadialMenu::GetInputBind()
 {
 	return "KB_RADIAL" + std::to_string(this->ID);
+}
+
+std::filesystem::path CRadialMenu::GetPath()
+{
+	return this->Path;
 }
 
 int CRadialMenu::GetHoveredIndex()

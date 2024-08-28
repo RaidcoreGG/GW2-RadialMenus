@@ -45,16 +45,24 @@ namespace Addon
 
 		GW2Root = APIDefs->Paths.GetGameDirectory();
 		AddonDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus");
-		PacksDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus/packs");
+		PacksDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus\\packs");
+		IconsDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus\\icons");
+
+		bool firstInstall = false;
+		if (!std::filesystem::exists(AddonDirectory))
+		{
+			firstInstall = true;
+		}
+		std::filesystem::create_directory(AddonDirectory);
+		std::filesystem::create_directory(PacksDirectory);
+		std::filesystem::create_directory(IconsDirectory);
 
 		Lang::Init(APIDefs->Localization.Set);
 		RadialCtx = new CRadialContext();
 		RadialCtx->Load();
 
-		//if (!std::filesystem::exists(AddonDirectory))
+		//if (firstInstall == true)
 		{
-			std::filesystem::create_directory(AddonDirectory);
-			std::filesystem::create_directory(PacksDirectory);
 			
 			RadialCtx->CreateDefaultMountRadial();
 		}

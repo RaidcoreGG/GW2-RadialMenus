@@ -12,3 +12,4 @@ CRadialContext* RadialCtx            = nullptr;
 std::filesystem::path GW2Root        = {};
 std::filesystem::path AddonDirectory = {};
 std::filesystem::path PacksDirectory = {};
+std::filesystem::path IconsDirectory = {};

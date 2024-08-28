@@ -381,7 +381,7 @@ void CRadialContext::CreateDefaultMountRadial()
 	unsigned int col = ImColor(255, 255, 255, 255);
 	unsigned int colHov = ImColor(245, 192, 67, 255);
 
-	CRadialMenu* mounts = this->Add("Mounts", ERadialType::Normal);
+	CRadialMenu* mounts = this->Add(PacksDirectory / "Mounts.json", "Mounts", ERadialType::Normal);
 
 	mounts->AddItem("Raptor", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_RAPTOR.png");
 	mounts->AddItemAction("Raptor", EActionType::GameInputBind, EGameBinds_SpumoniMAM01);
@@ -521,7 +521,39 @@ void CRadialContext::RenderOptions()
 	ImGui::SameLine();
 	if (ImGui::Button("New radial"))
 	{
-		this->Add("New Radial " + std::to_string(this->GetLowestUnusedID()));
+		std::thread([this]() {
+			OPENFILENAME ofn{};
+			char buff[MAX_PATH]{};
+			char initialDir[MAX_PATH]{};
+			strcpy_s(initialDir, PacksDirectory.string().c_str());
+
+			ofn.lStructSize = sizeof(OPENFILENAME);
+			ofn.hwndOwner = 0;
+			ofn.lpstrFile = buff;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.lpstrFilter = "JSON\0*.json";
+			ofn.Flags = OFN_PATHMUSTEXIST | OFN_CREATEPROMPT;
+			ofn.lpstrInitialDir = initialDir;
+
+			if (GetSaveFileName(&ofn))
+			{
+				std::filesystem::path path = ofn.lpstrFile != 0 ? ofn.lpstrFile : std::filesystem::path{};
+
+				if (path.extension() != ".json")
+				{
+					path += ".json";
+				}
+
+				if (!path.empty())
+				{
+					if (std::filesystem::exists(path))
+					{
+						this->Remove(path);
+					}
+					this->Add(path, "New Radial " + std::to_string(this->GetLowestUnusedID()));
+				}
+			}
+		}).detach();
 	}
 
 	ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
@@ -644,6 +676,7 @@ void CRadialContext::RenderOptions()
 	if (this->EditingMenu && !this->EditingItem) /* editing general menu settings */
 	{
 		ImGui::TextDisabled("ID: %d", this->EditingMenu->GetID());
+		ImGui::TextDisabled("Path: %s", this->EditingMenu->GetPath().string().c_str());
 		ImGui::TextDisabled("Input Bind");
 		bool modifiedBinds = false;
 		if (ImGui::BeginCombo("##radialinputbind", this->EditingMenu->GetInputBind().c_str()))
@@ -855,34 +888,39 @@ void CRadialContext::RenderOptions()
 		{
 			if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
 			{
-				OPENFILENAME ofn{};
-				char buff[MAX_PATH]{};
+				std::thread([this]() {
+					OPENFILENAME ofn{};
+					char buff[MAX_PATH]{};
+					char initialDir[MAX_PATH]{};
+					strcpy_s(initialDir, IconsDirectory.string().c_str());
 
-				ofn.lStructSize = sizeof(OPENFILENAME);
-				ofn.hwndOwner = 0;
-				ofn.lpstrFile = buff;
-				ofn.nMaxFile = MAX_PATH;
-				//ofn.lpstrFilter = "Guild Wars 2 Executable\0*.exe";
-				ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+					ofn.lStructSize = sizeof(OPENFILENAME);
+					ofn.hwndOwner = 0;
+					ofn.lpstrFile = buff;
+					ofn.nMaxFile = MAX_PATH;
+					//ofn.lpstrFilter = "Guild Wars 2 Executable\0*.exe";
+					ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+					ofn.lpstrInitialDir = initialDir;
 
-				if (GetOpenFileName(&ofn))
-				{
-					this->EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
-					if (!this->EditingItem->Icon.Value.empty())
+					if (GetOpenFileName(&ofn))
 					{
-						this->EditingItem->Icon.Value = String::Replace(this->EditingItem->Icon.Value, GW2Root.string() + "\\", "");
-						this->EditingItem->Icon.Texture = nullptr;
-						std::filesystem::path iconPath = this->EditingItem->Icon.Value;
-						if (iconPath.is_relative())
+						this->EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
+						if (!this->EditingItem->Icon.Value.empty())
 						{
-							APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), (GW2Root / this->EditingItem->Icon.Value).string().c_str(), nullptr);
-						}
-						else
-						{
-							APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
+							this->EditingItem->Icon.Value = String::Replace(this->EditingItem->Icon.Value, GW2Root.string() + "\\", "");
+							this->EditingItem->Icon.Texture = nullptr;
+							std::filesystem::path iconPath = this->EditingItem->Icon.Value;
+							if (iconPath.is_relative())
+							{
+								APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), (GW2Root / this->EditingItem->Icon.Value).string().c_str(), nullptr);
+							}
+							else
+							{
+								APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
+							}
 						}
 					}
-				}
+				}).detach();
 			}
 		}
 		else if (this->EditingItem->Icon.Type == EIconType::URL)
@@ -1409,6 +1447,8 @@ void CRadialContext::LoadInternal()
 	}
 	this->RadialIBMap.clear();
 
+	/* FIXME: load mappings */
+
 	for (const std::filesystem::directory_entry entry : std::filesystem::directory_iterator(PacksDirectory))
 	{
 		std::filesystem::path filePath = entry.path();
@@ -1418,51 +1458,122 @@ void CRadialContext::LoadInternal()
 			continue;
 		}
 
+		bool anyCollision = false;
+
 		try
 		{
 			std::ifstream file(filePath);
 
-			json radialsJson = json::parse(file);
-			for (json radialData : radialsJson)
+			json radialData = json::parse(file);
+			
+			int id = 0;
+			if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
+			else { continue; }
+			std::string name;
+			if (!radialData["Name"].is_null()) { radialData["Name"].get_to(name); }
+			else { continue; }
+			name = this->GetUnusedName(name);
+			ERadialType type = ERadialType::None;
+			if (!radialData["Type"].is_null()) { radialData["Type"].get_to(type); }
+			ESelectionMode selMode = ESelectionMode::None;
+			if (!radialData["SelectionMode"].is_null()) { radialData["SelectionMode"].get_to(selMode); }
+
+			bool drawInCenter = false;
+			if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
+			bool restoreCursor = false;
+			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
+
+			bool idCollision = this->IsIDInUse(id);
+
+			/* FIXME: also check the mapping, not just ID exists */
+
+			if (idCollision)
 			{
-				int id = 0;
-				if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
-				std::string name;
-				if (!radialData["Name"].is_null()) { radialData["Name"].get_to(name); }
-				name = this->GetUnusedName(name);
-				ERadialType type = ERadialType::None;
-				if (!radialData["Type"].is_null()) { radialData["Type"].get_to(type); }
-				ESelectionMode selMode = ESelectionMode::None;
-				if (!radialData["SelectionMode"].is_null()) { radialData["SelectionMode"].get_to(selMode); }
+				anyCollision = true;
 
-				bool drawInCenter = false;
-				if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
-				bool restoreCursor = false;
-				if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
-
-				bool idCollision = this->IsIDInUse(id);
-
-				if (idCollision)
+				id = 1000;
+				while (this->IsIDInUse(id))
 				{
-					id = 1000;
-					while (this->IsIDInUse(id))
-					{
-						id++;
-					}
+					id++;
 				}
+			}
 
-				CRadialMenu* radial = this->Add(name, type, selMode, id);
-				radial->DrawInCenter = drawInCenter;
-				radial->RestoreCursor = restoreCursor;
+			CRadialMenu* radial = this->Add(filePath, name, type, selMode, id);
+			radial->DrawInCenter = drawInCenter;
+			radial->RestoreCursor = restoreCursor;
 
-				if (!radialData["Items"].is_null())
+			if (!radialData["Items"].is_null())
+			{
+				continue;
+			}
+
+			for (json radialItemData : radialData["Items"])
+			{
+				std::string itemId;
+				if (!radialItemData["Identifier"].is_null()) { radialItemData["Identifier"].get_to(itemId); }
+				else { continue; }
+				unsigned int color = 0;
+				if (!radialItemData["Color"].is_null()) { radialItemData["Color"].get_to(color); }
+				unsigned int colorHover = 0;
+				if (!radialItemData["ColorHover"].is_null()) { radialItemData["ColorHover"].get_to(colorHover); }
+				EIconType iconType = EIconType::None;
+				if (!radialItemData["IconType"].is_null()) { radialItemData["IconType"].get_to(iconType); }
+				std::string iconValue;
+				if (!radialItemData["IconValue"].is_null()) { radialItemData["IconValue"].get_to(iconValue); }
+				Conditions visibility{};
+				if (!radialItemData["Visibility"].is_null()) { radialItemData["Visibility"].get_to(visibility); }
+				Conditions activation{};
+				if (!radialItemData["Activation"].is_null()) { radialItemData["Activation"].get_to(activation); }
+				int activationTimeout = 0;
+				if (!radialItemData["ActivationTimeout"].is_null()) { radialItemData["ActivationTimeout"].get_to(activationTimeout); }
+
+				radial->AddItem(itemId, color, colorHover, iconType, iconValue, visibility, activation, activationTimeout);
+
+				if (!radialItemData["Actions"].is_null())
 				{
 					continue;
 				}
 
-				for (json radialItemData : radialData["Items"])
+				for (json radialActionData : radialItemData["Actions"])
 				{
+					EActionType actionType = EActionType::None;
+					if (!radialActionData["Type"].is_null()) { radialActionData["Type"].get_to(actionType); }
+					else { continue; }
+					Conditions actionActivation{};
+					if (!radialActionData["Activation"].is_null()) { radialActionData["Activation"].get_to(actionActivation); }
+					bool execCond = false;
+					if (!radialActionData["OnlyExecuteIfPrevious"].is_null()) { radialActionData["OnlyExecuteIfPrevious"].get_to(execCond); }
 
+					switch (actionType)
+					{
+						case EActionType::InputBind:
+						case EActionType::Event:
+						{
+							std::string actionIdentifier;
+							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+
+							radial->AddItemAction(itemId, actionType, actionIdentifier, actionActivation, execCond);
+							break;
+						}
+						case EActionType::GameInputBind:
+						case EActionType::GameInputBindPress:
+						case EActionType::GameInputBindRelease:
+						{
+							EGameBinds actionIdentifier = (EGameBinds)0;
+							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+
+							radial->AddItemAction(itemId, actionType, actionIdentifier, actionActivation, execCond);
+							break;
+						}
+						case EActionType::Delay:
+						{
+							int actionDuration = 0;
+							if (!radialActionData["Duration"].is_null()) { radialActionData["Duration"].get_to(actionDuration); }
+
+							radial->AddItemAction(itemId, actionDuration, actionActivation, execCond);
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -1471,29 +1582,37 @@ void CRadialContext::LoadInternal()
 			APIDefs->Log(ELogLevel_WARNING, "Radial Menus", String::Format("%s could not be parsed. Error: %s", filePath.filename().string().c_str(), ex.what()).c_str());
 		}
 
-		// if ID collision. set ID to 9999+
-		// then after finishing with all the others, check all over 9999 and getlowestid
-
-		/*if (anyCollision)
+		if (anyCollision)
 		{
+			/* after all radials were properly mapped, check all ids above 9999 and reset them to the lowest possible */
+			for (CRadialMenu* radial : this->Radials)
+			{
+				if (radial->GetID() > 9999)
+				{
+					radial->SetID(this->GetLowestUnusedID());
+				}
+			}
+			this->GenerateIBMap();
 			this->SaveInternal();
-		}*/
+		}
 	}
 }
 
 void CRadialContext::SaveInternal()
 {
+	/* FIXME: save mappings */
+
 	for (CRadialMenu* radial : this->Radials)
 	{
 		radial->Save();
 	}
 }
 
-CRadialMenu* CRadialContext::Add(std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode, int aID)
+CRadialMenu* CRadialContext::Add(std::filesystem::path aPath, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode, int aID)
 {
 	if (aID == -1) { aID = this->GetLowestUnusedID(); }
 
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aID, aIdentifier, aRadialMenuType, aSelectionMode);
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aPath, aID, aIdentifier, aRadialMenuType, aSelectionMode);
 	std::string bind = radial->GetInputBind();
 	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
 	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());
@@ -1506,6 +1625,24 @@ CRadialMenu* CRadialContext::Add(std::string aIdentifier, ERadialType aRadialMen
 void CRadialContext::Remove(std::string aIdentifier)
 {
 	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aIdentifier](CRadialMenu* menu) { return menu->GetName() == aIdentifier; });
+
+	if (it != this->Radials.end())
+	{
+		if (this->ActiveRadial == (*it))
+		{
+			this->Release(ESelectionMode::Escape);
+		}
+
+		std::string bind = (*it)->GetInputBind();
+		APIDefs->InputBinds.Deregister(bind.c_str());
+		delete (*it);
+		this->Radials.erase(it);
+		this->GenerateIBMap();
+	}
+}
+void CRadialContext::Remove(std::filesystem::path aPath)
+{
+	auto it = std::find_if(this->Radials.begin(), this->Radials.end(), [aPath](CRadialMenu* menu) { return menu->GetPath() == aPath; });
 
 	if (it != this->Radials.end())
 	{

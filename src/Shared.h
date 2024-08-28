@@ -20,5 +20,6 @@ extern CRadialContext* RadialCtx;
 extern std::filesystem::path GW2Root;
 extern std::filesystem::path AddonDirectory;
 extern std::filesystem::path PacksDirectory;
+extern std::filesystem::path IconsDirectory;
 
 #endif

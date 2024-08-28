@@ -12,6 +12,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #include "imgui/imgui.h"
 #include "Mumble/Mumble.h"
@@ -33,7 +34,7 @@ class CRadialMenu
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
 	///----------------------------------------------------------------------------------------------------
-	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, int aID, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
+	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
 	///----------------------------------------------------------------------------------------------------
 	/// dtor
 	///----------------------------------------------------------------------------------------------------
@@ -104,19 +105,19 @@ class CRadialMenu
 	/// AddItemAction:
 	/// 	Adds an action to an item.
 	///----------------------------------------------------------------------------------------------------
-	void AddItemAction(std::string aItemId, EActionType aType, std::string aValue);
+	void AddItemAction(std::string aItemId, EActionType aType, std::string aValue, Conditions aActivation = {}, bool aOnlyExecuteIfPrevious = false);
 
 	///----------------------------------------------------------------------------------------------------
 	/// AddItemAction:
 	/// 	Adds an action to an item.
 	///----------------------------------------------------------------------------------------------------
-	void AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue);
+	void AddItemAction(std::string aItemId, EActionType aType, EGameBinds aValue, Conditions aActivation = {}, bool aOnlyExecuteIfPrevious = false);
 
 	///----------------------------------------------------------------------------------------------------
 	/// AddItemAction:
 	/// 	Adds an action to an item.
 	///----------------------------------------------------------------------------------------------------
-	void AddItemAction(std::string aItemId, int aValue);
+	void AddItemAction(std::string aItemId, int aValue, Conditions aActivation = {}, bool aOnlyExecuteIfPrevious = false);
 
 	///----------------------------------------------------------------------------------------------------
 	/// RemoveItemAction:
@@ -183,11 +184,19 @@ class CRadialMenu
 	/// 	Constructs the input bind with the ID.
 	///----------------------------------------------------------------------------------------------------
 	std::string GetInputBind();
+
+	///----------------------------------------------------------------------------------------------------
+	/// GetPath:
+	/// 	Returns the file path of this radial menu.
+	///----------------------------------------------------------------------------------------------------
+	std::filesystem::path GetPath();
 	
 	private:
 	AddonAPI*                   API;
 	HMODULE                     Module;
 	NexusLinkData*              NexusLink;
+
+	std::filesystem::path       Path;
 
 	int                         ID;
 	std::string                 Identifier;
