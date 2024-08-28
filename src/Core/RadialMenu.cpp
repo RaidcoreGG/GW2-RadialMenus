@@ -77,12 +77,13 @@ bool CRadialMenu::Render()
 
 	int hoverIndex = -1;
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
 	ImGui::SetNextWindowSize(ImVec2(NexusLink->Width, NexusLink->Height), ImGuiCond_Appearing);
-	if (ImGui::Begin(("RADIAL##" + this->Identifier).c_str(), (bool*)0, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings)))
+	if (ImGui::Begin(("RADIAL##" + this->Identifier).c_str(), (bool*)0, (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings)))
 	{
 		ImGui::SetCursorPos(ImVec2(this->Origin.x - sizeHalf.x, this->Origin.y - sizeHalf.y));
-		ImGui::BeginChild(("RADIALINNER##" + this->Identifier).c_str());
+		ImGui::BeginChild(("RADIALINNER##" + this->Identifier).c_str(), ImVec2(0,0), false, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings));
 		ImVec2 initialPos = ImVec2(1, 1);
 
 		hoverIndex = this->GetHoveredIndex();
@@ -160,6 +161,7 @@ bool CRadialMenu::Render()
 		ImGui::EndChild();
 	}
 	ImGui::End();
+	ImGui::PopStyleVar();
 
 	style.DisplaySafeAreaPadding = safePad;
 
