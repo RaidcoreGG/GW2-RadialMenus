@@ -3,6 +3,7 @@
 
 #include <Windows.h>
 #include <string>
+#include <filesystem>
 
 /* FIXME: this entire file is copied stuff from Nexus/Util. */
 
@@ -50,6 +51,13 @@ namespace Input
 	LPARAM& KMFToLParam(KeystrokeMessageFlags& aKmf);
 
 	LPARAM GetKeyMessageLPARAM(unsigned aVKey, bool aIsDown, bool aIsSystem);
+}
+
+namespace Resources
+{
+	bool Get(HMODULE aModule, LPCSTR aResourceName, LPCSTR aResourceType, LPVOID* aOutLockedResource, DWORD* aOutResourceSize);
+
+	bool Unpack(HMODULE aModule, std::filesystem::path aPath, unsigned int aResourceID, std::string aResourceType, bool aIsBinary = false);
 }
 
 #endif

@@ -152,6 +152,15 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="src\Resources\ICON_GRIFFON.png" />
+    <Image Include="src\Resources\ICON_JACKAL.png" />
+    <Image Include="src\Resources\ICON_RAPTOR.png" />
+    <Image Include="src\Resources\ICON_ROLLERBEETLE.png" />
+    <Image Include="src\Resources\ICON_SIEGETURTLE.png" />
+    <Image Include="src\Resources\ICON_SKIMMER.png" />
+    <Image Include="src\Resources\ICON_SKYSCALE.png" />
+    <Image Include="src\Resources\ICON_SPRINGER.png" />
+    <Image Include="src\Resources\ICON_WARCLAW.png" />
     <Image Include="src\Resources\MWS_2_SELECTOR.png" />
     <Image Include="src\Resources\MWS_3_SELECTOR.png" />
     <Image Include="src\Resources\MWS_4_SELECTOR.png" />

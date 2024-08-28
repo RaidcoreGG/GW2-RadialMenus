@@ -37,6 +37,9 @@
     <Filter Include="Core\Structs">
       <UniqueIdentifier>{c3bebf30-8ba0-4f1a-ab18-72dbf3601d70}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\MountIcons">
+      <UniqueIdentifier>{4618b004-b03d-4a50-b72a-d74fcbe01391}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thirdparty\imgui\imconfig.h">
@@ -231,6 +234,33 @@
     </Image>
     <Image Include="src\Resources\MWS_DIVIDER.png">
       <Filter>Resource Files\MWS</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_SIEGETURTLE.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_SKIMMER.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_SKYSCALE.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_SPRINGER.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_WARCLAW.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_GRIFFON.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_JACKAL.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_RAPTOR.png">
+      <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\ICON_ROLLERBEETLE.png">
+      <Filter>Resource Files\MountIcons</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

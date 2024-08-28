@@ -25,6 +25,16 @@
 #define TEX_MWS_SELECTOR7			207
 #define TEX_MWS_SELECTOR8			208
 
+#define ICON_RAPTOR					300
+#define ICON_SPRINGER				301
+#define ICON_SKIMMER				302
+#define ICON_JACKAL					303
+#define ICON_GRIFFON				304
+#define ICON_ROLLERBEETLE			305
+#define ICON_WARCLAW				306
+#define ICON_SKYSCALE				307
+#define ICON_SIEGETURTLE			308
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED

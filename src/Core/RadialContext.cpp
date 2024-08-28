@@ -19,6 +19,7 @@ using json = nlohmann::json;
 #include "Addon.h"
 #include "Shared.h"
 #include "Util.h"
+#include "resource.h"
 
 #define NORMAL_ITEM_COLOR ImColor(255, 255, 255, 255)
 #define NORMAL_ITEM_COLOR_HOVER ImColor(245, 192, 67, 255)
@@ -383,31 +384,40 @@ void CRadialContext::CreateDefaultMountRadial()
 
 	CRadialMenu* mounts = this->Add(PacksDirectory / "Mounts.json", "Mounts", ERadialType::Normal);
 
-	mounts->AddItem("Raptor", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_RAPTOR.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_RAPTOR.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_RAPTOR.png", ICON_RAPTOR, "PNG", true); }
+	mounts->AddItem("Raptor", col, colHov, EIconType::File, (IconsDirectory / "ICON_RAPTOR.png").string());
 	mounts->AddItemAction("Raptor", EActionType::GameInputBind, EGameBinds_SpumoniMAM01);
 
-	mounts->AddItem("Springer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SPRINGER.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_SPRINGER.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SPRINGER.png", ICON_SPRINGER, "PNG", true); }
+	mounts->AddItem("Springer", col, colHov, EIconType::File, (IconsDirectory / "ICON_SPRINGER.png").string());
 	mounts->AddItemAction("Springer", EActionType::GameInputBind, EGameBinds_SpumoniMAM02);
 
-	mounts->AddItem("Skimmer", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKIMMER.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_SKIMMER.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SKIMMER.png", ICON_SKIMMER, "PNG", true); }
+	mounts->AddItem("Skimmer", col, colHov, EIconType::File, (IconsDirectory / "ICON_SKIMMER.png").string());
 	mounts->AddItemAction("Skimmer", EActionType::GameInputBind, EGameBinds_SpumoniMAM03);
 
-	mounts->AddItem("Jackal", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_JACKAL.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_JACKAL.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_JACKAL.png", ICON_JACKAL, "PNG", true); }
+	mounts->AddItem("Jackal", col, colHov, EIconType::File, (IconsDirectory / "ICON_JACKAL.png").string());
 	mounts->AddItemAction("Jackal", EActionType::GameInputBind, EGameBinds_SpumoniMAM04);
 
-	mounts->AddItem("Griffon", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_GRIFFON.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_GRIFFON.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_GRIFFON.png", ICON_GRIFFON, "PNG", true); }
+	mounts->AddItem("Griffon", col, colHov, EIconType::File, (IconsDirectory / "ICON_GRIFFON.png").string());
 	mounts->AddItemAction("Griffon", EActionType::GameInputBind, EGameBinds_SpumoniMAM05);
 
-	mounts->AddItem("Roller Beetle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_ROLLERBEETLE.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_ROLLERBEETLE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_ROLLERBEETLE.png", ICON_ROLLERBEETLE, "PNG", true); }
+	mounts->AddItem("Roller Beetle", col, colHov, EIconType::File, (IconsDirectory / "ICON_ROLLERBEETLE.png").string());
 	mounts->AddItemAction("Roller Beetle", EActionType::GameInputBind, EGameBinds_SpumoniMAM06);
 
-	mounts->AddItem("Warclaw", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_WARCLAW.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_WARCLAW.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_WARCLAW.png", ICON_WARCLAW, "PNG", true); }
+	mounts->AddItem("Warclaw", col, colHov, EIconType::File, (IconsDirectory / "ICON_WARCLAW.png").string());
 	mounts->AddItemAction("Warclaw", EActionType::GameInputBind, EGameBinds_SpumoniMAM07);
 
-	mounts->AddItem("Skyscale", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SKYSCALE.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_SKYSCALE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SKYSCALE.png", ICON_SKYSCALE, "PNG", true); }
+	mounts->AddItem("Skyscale", col, colHov, EIconType::File, (IconsDirectory / "ICON_SKYSCALE.png").string());
 	mounts->AddItemAction("Skyscale", EActionType::GameInputBind, EGameBinds_SpumoniMAM08);
 
-	mounts->AddItem("Siege Turtle", col, colHov, EIconType::File, "addons/Nexus/Textures/ICON_SIEGETURTLE.png");
+	if (!std::filesystem::exists(IconsDirectory / "ICON_SIEGETURTLE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SIEGETURTLE.png", ICON_SIEGETURTLE, "PNG", true); }
+	mounts->AddItem("Siege Turtle", col, colHov, EIconType::File, (IconsDirectory / "ICON_SIEGETURTLE.png").string());
 	mounts->AddItemAction("Siege Turtle", EActionType::GameInputBind, EGameBinds_SpumoniMAM09);
 
 	this->Save();
