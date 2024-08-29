@@ -1456,6 +1456,11 @@ void CRadialContext::LoadInternal()
 			continue;
 		}
 
+		if (filePath.extension() != ".json")
+		{
+			continue;
+		}
+
 		bool anyCollision = false;
 
 		try
