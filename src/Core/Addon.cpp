@@ -61,9 +61,8 @@ namespace Addon
 		RadialCtx = new CRadialContext();
 		RadialCtx->Load();
 
-		//if (firstInstall == true)
+		if (firstInstall == true)
 		{
-			
 			RadialCtx->CreateDefaultMountRadial();
 		}
 	}

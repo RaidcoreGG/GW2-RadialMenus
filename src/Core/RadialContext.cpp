@@ -385,39 +385,39 @@ void CRadialContext::CreateDefaultMountRadial()
 	CRadialMenu* mounts = this->Add(PacksDirectory / "Mounts.json", "Mounts", ERadialType::Normal);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_RAPTOR.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_RAPTOR.png", ICON_RAPTOR, "PNG", true); }
-	mounts->AddItem("Raptor", col, colHov, EIconType::File, (IconsDirectory / "ICON_RAPTOR.png").string());
+	mounts->AddItem("Raptor", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_RAPTOR.png");
 	mounts->AddItemAction("Raptor", EActionType::GameInputBind, EGameBinds_SpumoniMAM01);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_SPRINGER.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SPRINGER.png", ICON_SPRINGER, "PNG", true); }
-	mounts->AddItem("Springer", col, colHov, EIconType::File, (IconsDirectory / "ICON_SPRINGER.png").string());
+	mounts->AddItem("Springer", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_SPRINGER.png");
 	mounts->AddItemAction("Springer", EActionType::GameInputBind, EGameBinds_SpumoniMAM02);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_SKIMMER.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SKIMMER.png", ICON_SKIMMER, "PNG", true); }
-	mounts->AddItem("Skimmer", col, colHov, EIconType::File, (IconsDirectory / "ICON_SKIMMER.png").string());
+	mounts->AddItem("Skimmer", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_SKIMMER.png");
 	mounts->AddItemAction("Skimmer", EActionType::GameInputBind, EGameBinds_SpumoniMAM03);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_JACKAL.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_JACKAL.png", ICON_JACKAL, "PNG", true); }
-	mounts->AddItem("Jackal", col, colHov, EIconType::File, (IconsDirectory / "ICON_JACKAL.png").string());
+	mounts->AddItem("Jackal", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_JACKAL.png");
 	mounts->AddItemAction("Jackal", EActionType::GameInputBind, EGameBinds_SpumoniMAM04);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_GRIFFON.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_GRIFFON.png", ICON_GRIFFON, "PNG", true); }
-	mounts->AddItem("Griffon", col, colHov, EIconType::File, (IconsDirectory / "ICON_GRIFFON.png").string());
+	mounts->AddItem("Griffon", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_GRIFFON.png");
 	mounts->AddItemAction("Griffon", EActionType::GameInputBind, EGameBinds_SpumoniMAM05);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_ROLLERBEETLE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_ROLLERBEETLE.png", ICON_ROLLERBEETLE, "PNG", true); }
-	mounts->AddItem("Roller Beetle", col, colHov, EIconType::File, (IconsDirectory / "ICON_ROLLERBEETLE.png").string());
+	mounts->AddItem("Roller Beetle", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_ROLLERBEETLE.png");
 	mounts->AddItemAction("Roller Beetle", EActionType::GameInputBind, EGameBinds_SpumoniMAM06);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_WARCLAW.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_WARCLAW.png", ICON_WARCLAW, "PNG", true); }
-	mounts->AddItem("Warclaw", col, colHov, EIconType::File, (IconsDirectory / "ICON_WARCLAW.png").string());
+	mounts->AddItem("Warclaw", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_WARCLAW.png");
 	mounts->AddItemAction("Warclaw", EActionType::GameInputBind, EGameBinds_SpumoniMAM07);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_SKYSCALE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SKYSCALE.png", ICON_SKYSCALE, "PNG", true); }
-	mounts->AddItem("Skyscale", col, colHov, EIconType::File, (IconsDirectory / "ICON_SKYSCALE.png").string());
+	mounts->AddItem("Skyscale", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_SKYSCALE.png");
 	mounts->AddItemAction("Skyscale", EActionType::GameInputBind, EGameBinds_SpumoniMAM08);
 
 	if (!std::filesystem::exists(IconsDirectory / "ICON_SIEGETURTLE.png")) { Resources::Unpack(SelfModule, IconsDirectory / "ICON_SIEGETURTLE.png", ICON_SIEGETURTLE, "PNG", true); }
-	mounts->AddItem("Siege Turtle", col, colHov, EIconType::File, (IconsDirectory / "ICON_SIEGETURTLE.png").string());
+	mounts->AddItem("Siege Turtle", col, colHov, EIconType::File, "addons\\RadialMenus\\icons\\ICON_SIEGETURTLE.png");
 	mounts->AddItemAction("Siege Turtle", EActionType::GameInputBind, EGameBinds_SpumoniMAM09);
 
 	this->Save();
@@ -1464,7 +1464,7 @@ void CRadialContext::LoadInternal()
 
 			json radialData = json::parse(file);
 			
-			int id = 0;
+			int id = -1;
 			if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
 			else { continue; }
 			std::string name;
@@ -1488,19 +1488,14 @@ void CRadialContext::LoadInternal()
 			if (idCollision)
 			{
 				anyCollision = true;
-
-				id = 1000;
-				while (this->IsIDInUse(id))
-				{
-					id++;
-				}
+				id = 0;
 			}
 
 			CRadialMenu* radial = this->Add(filePath, name, type, selMode, id);
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
 
-			if (!radialData["Items"].is_null())
+			if (radialData["Items"].is_null())
 			{
 				continue;
 			}
@@ -1508,7 +1503,7 @@ void CRadialContext::LoadInternal()
 			for (json radialItemData : radialData["Items"])
 			{
 				std::string itemId;
-				if (!radialItemData["Identifier"].is_null()) { radialItemData["Identifier"].get_to(itemId); }
+				if (!radialItemData["Name"].is_null()) { radialItemData["Name"].get_to(itemId); }
 				else { continue; }
 				unsigned int color = 0;
 				if (!radialItemData["Color"].is_null()) { radialItemData["Color"].get_to(color); }
@@ -1527,7 +1522,7 @@ void CRadialContext::LoadInternal()
 
 				radial->AddItem(itemId, color, colorHover, iconType, iconValue, visibility, activation, activationTimeout);
 
-				if (!radialItemData["Actions"].is_null())
+				if (radialItemData["Actions"].is_null())
 				{
 					continue;
 				}
@@ -1582,16 +1577,17 @@ void CRadialContext::LoadInternal()
 
 		if (anyCollision)
 		{
-			/* after all radials were properly mapped, check all ids above 9999 and reset them to the lowest possible */
+			/* after all radials were properly mapped, check all ids that are 0 and reset them to the lowest possible */
 			for (CRadialMenu* radial : this->Radials)
 			{
-				if (radial->GetID() > 9999)
+				if (radial->GetID() == 0)
 				{
 					radial->SetID(this->GetLowestUnusedID());
 				}
 			}
 			this->GenerateIBMap();
 			this->SaveInternal();
+			APIDefs->UI.SendAlert("Some Radial bindings might have changed due to ID conflicts.");
 		}
 	}
 }

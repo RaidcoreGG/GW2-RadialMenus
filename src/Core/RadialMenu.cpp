@@ -8,9 +8,12 @@
 
 #include "RadialMenu.h"
 
+#include <fstream>
 #include <filesystem>
 
 #include "imgui_extensions.h"
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #include "resource.h"
 #include "Util.h"
@@ -55,7 +58,74 @@ CRadialMenu::~CRadialMenu()
 
 void CRadialMenu::Save()
 {
+	const std::lock_guard<std::mutex> lock(this->Mutex);
 
+	json radialJSON = json{
+		{"ID", this->ID},
+		{"Name", this->Identifier},
+		{"Type", this->Type},
+		{"SelectionMode", this->SelectionMode},
+
+		{"DrawInCenter", this->DrawInCenter},
+		{"RestoreCursor", this->RestoreCursor},
+
+		{"Items", json::array()}
+	};
+
+	for (RadialItem* item : this->Items)
+	{
+		json itemJSON = json{
+			{"Name", item->Identifier},
+			{"Color", item->Color},
+			{"ColorHover", item->ColorHover},
+			{"IconType", item->Icon.Type},
+			{"IconValue", item->Icon.Value},
+			{"Visibility", item->Visibility},
+			{"Activation", item->Activation},
+			{"ActivationTimeout", item->ActivationTimeout},
+
+			{"Actions", json::array()}
+		};
+
+		for (ActionBase* action : item->Actions)
+		{
+			json actionJSON = json{
+				{"Type", action->Type},
+				{"Activation", action->Activation},
+				{"OnlyExecuteIfPrevious", action->OnlyExecuteIfPrevious}
+			};
+
+			switch (action->Type)
+			{
+				case EActionType::InputBind:
+				case EActionType::Event:
+				{
+					actionJSON["Identifier"] = ((ActionGeneric*)action)->Identifier;
+					break;
+				}
+				case EActionType::GameInputBind:
+				case EActionType::GameInputBindPress:
+				case EActionType::GameInputBindRelease:
+				{
+					actionJSON["Identifier"] = ((ActionGameInputBind*)action)->Identifier;
+					break;
+				}
+				case EActionType::Delay:
+				{
+					actionJSON["Duration"] = ((ActionDelay*)action)->Duration;
+					break;
+				}
+			}
+
+			itemJSON["Actions"].push_back(actionJSON);
+		}
+
+		radialJSON["Items"].push_back(itemJSON);
+	}
+
+	std::ofstream file(this->Path);
+	file << radialJSON.dump(1, '\t') << std::endl;
+	file.close();
 }
 
 bool CRadialMenu::Render()
