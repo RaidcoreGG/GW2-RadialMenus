@@ -36,7 +36,7 @@ void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGam
 		ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(255, 255, 0, 255));
 	}
 
-	if (ImGui::Selectable(APIDefs->Localization.Translate(aLabel)))
+	if (ImGui::Selectable((APIDefs->Localization.Translate(aLabel) + ("##" + std::to_string(aGameBind))).c_str()))
 	{
 		((ActionGameInputBind*)aAction)->Identifier = aGameBind;
 	}
