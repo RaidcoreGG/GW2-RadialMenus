@@ -70,6 +70,7 @@ void CRadialMenu::Save()
 
 		{"DrawInCenter", this->DrawInCenter},
 		{"RestoreCursor", this->RestoreCursor},
+		{"InstantActivation", this->InstantActivation},
 		{"Scale", this->Scale},
 		{"HoverTimeout", this->HoverTimeout},
 		{"ItemRotation", this->ItemRotationDegrees},
@@ -270,6 +271,10 @@ void CRadialMenu::Activate()
 	{
 		this->SegmentRadius = 360.0f / this->DrawnItems.size();
 	}
+	if (this->DrawnItems.size() == 1 && this->InstantActivation) {
+		this->DrawnItems[0]->Activate(this->API);
+		return;
+	}
 
 	this->SegmentTexture = nullptr;
 
@@ -356,120 +361,7 @@ void CRadialMenu::Release(bool aIsCancel)
 	{
 		RadialItem* item = this->DrawnItems[idx];
 		
-		std::thread([this, item]() {
-			/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
-			int msWaited = 0;
-			while (!StateObserver::IsMatch(&item->Activation))
-			{
-				msWaited += 100;
-				Sleep(100);
-
-				if (msWaited > item->ActivationTimeout * 1000) { break; }
-			}
-
-			if (msWaited > item->ActivationTimeout * 1000)
-			{
-				this->API->UI.SendAlert("Cancelled after waiting for timeout.");
-				return;
-			}
-
-			/* initially set to true, and only in the skip set to false, this way the first action ignores the setting */
-			bool previousExecuted = true;
-			for (ActionBase* act : item->Actions)
-			{
-				if (!StateObserver::IsMatch(&act->Activation))
-				{
-					previousExecuted = false;
-					continue;
-				}
-
-				if (act->OnlyExecuteIfPrevious && !previousExecuted)
-				{
-					previousExecuted = false;
-					continue;
-				}
-
-				switch (act->Type)
-				{
-					case EActionType::InputBind:
-					{
-						ActionGeneric* action = (ActionGeneric*)act;
-						this->API->InputBinds.Invoke(action->Identifier.c_str(), false);
-						this->API->InputBinds.Invoke(action->Identifier.c_str(), true);
-						break;
-					}
-					case EActionType::GameInputBind:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						/* FIXME: all of the following code is acopy of the Nexus Invoke function. Nexus does not provide Invoke only InvokeAsync.*/
-						/* get modifier state */
-						bool wasAltPressed = GetAsyncKeyState(VK_MENU);
-						bool wasCtrlPressed = GetAsyncKeyState(VK_CONTROL);
-						bool wasShiftPressed = GetAsyncKeyState(VK_SHIFT);
-
-						/* unset modifier state */
-						if (wasAltPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYUP, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, false, true));
-						}
-						if (wasCtrlPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, false, false));
-						}
-						if (wasShiftPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, false, false));
-						}
-
-						/* execute action action */
-						this->API->GameBinds.Press(action->Identifier);
-						Sleep(100);
-						this->API->GameBinds.Release(action->Identifier);
-
-						/* restore modifier state */
-						if (GetAsyncKeyState(VK_MENU))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYDOWN, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, true, true));
-						}
-						if (GetAsyncKeyState(VK_CONTROL))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, true, false));
-						}
-						if (GetAsyncKeyState(VK_SHIFT))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, true, false));
-						}
-						break;
-					}
-					case EActionType::GameInputBindPress:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						this->API->GameBinds.Press(action->Identifier);
-						break;
-					}
-					case EActionType::GameInputBindRelease:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						this->API->GameBinds.Release(action->Identifier);
-						break;
-					}
-					case EActionType::Event:
-					{
-						ActionGeneric* action = (ActionGeneric*)act;
-						this->API->Events.Raise(action->Identifier.c_str(), nullptr);
-						break;
-					}
-					case EActionType::Delay:
-					{
-						ActionDelay* action = (ActionDelay*)act;
-						Sleep(action->Duration);
-						break;
-					}
-				}
-
-				previousExecuted = true;
-			}
-		}).detach();
+		item->Activate(this->API);
 	}
 
 	this->Origin = this->MousePos = ImVec2(-1, -1);

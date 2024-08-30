@@ -839,6 +839,7 @@ void CRadialContext::RenderOptions()
 
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
+		ImGui::Checkbox("Instant Activate if only one Item visible", &this->EditingMenu->InstantActivation);
 	}
 	else if (this->EditingItem) /* editing sub item */
 	{
@@ -1516,6 +1517,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
 			bool restoreCursor = false;
 			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
+			bool instantActivation = false;
+			if (!radialData["InstantActivation"].is_null()) { radialData["InstantActivation"].get_to(instantActivation); }
 			float scale = 1.0f;
 			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
 			int hoverTimeout = 0;
@@ -1536,6 +1539,7 @@ void CRadialContext::LoadInternal()
 			CRadialMenu* radial = this->Add(filePath, name, type, selMode, id);
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
+			radial->InstantActivation = instantActivation;
 			radial->Scale = scale;
 			radial->HoverTimeout = hoverTimeout;
 			radial->ItemRotationDegrees = itemRotation;

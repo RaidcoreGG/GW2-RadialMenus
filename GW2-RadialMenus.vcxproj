@@ -139,6 +139,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\Core\Addon.cpp" />
     <ClCompile Include="src\Core\Conditions.cpp" />
     <ClCompile Include="src\Core\RadialContext.cpp" />
+    <ClCompile Include="src\Core\RadialItem.cpp" />
     <ClCompile Include="src\Core\StateObserver.cpp" />
     <ClCompile Include="src\entry.cpp" />
     <ClCompile Include="src\imgui_extensions.cpp" />

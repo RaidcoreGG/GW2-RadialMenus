@@ -170,6 +170,9 @@
     <ClCompile Include="src\Core\Conditions.cpp">
       <Filter>Core\Structs</Filter>
     </ClCompile>
+    <ClCompile Include="src\Core\RadialItem.cpp">
+      <Filter>Core\Structs</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="src\Resources\MW_5_SELECTOR.png">

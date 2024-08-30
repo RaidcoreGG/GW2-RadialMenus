@@ -21,6 +21,8 @@ typedef struct RadialItem
 	Conditions               Activation;
 	int                      ActivationTimeout;
 	std::vector<ActionBase*> Actions;
+
+	void Activate(AddonAPI* API);
 } RadialMenuItem;
 
 #endif
