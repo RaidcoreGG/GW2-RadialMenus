@@ -31,11 +31,12 @@ class CRadialMenu
 	bool                        DrawInCenter;
 	bool                        RestoreCursor;
 	float                       Scale;
+	int                         HoverTimeout;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
 	///----------------------------------------------------------------------------------------------------
-	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale = 1.0f, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
+	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale = 1.0f, int aHoverTimeout = 0, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
 	///----------------------------------------------------------------------------------------------------
 	/// dtor
 	///----------------------------------------------------------------------------------------------------
@@ -231,11 +232,14 @@ class CRadialMenu
 	bool                        WasActionCamActive;
 	bool                        WasRightClickHeld;
 
+	int                         HoverIndex;
+	unsigned long long          HoverStartTime;
+
 	///----------------------------------------------------------------------------------------------------
-	/// GetHoveredIndex:
+	/// GetCurrentlyHoveredIndex:
 	/// 	Returns the index of the currently hovered item.
 	///----------------------------------------------------------------------------------------------------
-	int GetHoveredIndex();
+	int GetCurrentlyHoveredIndex();
 
 	///----------------------------------------------------------------------------------------------------
 	/// LoadSegmentTexture:

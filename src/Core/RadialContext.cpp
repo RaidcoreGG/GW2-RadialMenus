@@ -501,7 +501,7 @@ void CRadialContext::Render()
 
 	for (CRadialMenu* radial : this->Radials)
 	{
-		if (radial->Render() && radial->GetSelectionMode() == ESelectionMode::Hover)
+		if (radial->Render())
 		{
 			this->Release(ESelectionMode::Hover);
 		}
@@ -779,7 +779,8 @@ void CRadialContext::RenderOptions()
 
 		ImGui::TextDisabled("Selection Mode");
 		std::string selMode;
-		switch (this->EditingMenu->GetSelectionMode())
+		ESelectionMode selectionMode = this->EditingMenu->GetSelectionMode();
+		switch (selectionMode)
 		{
 			case ESelectionMode::Click:
 				selMode = "Click";
@@ -821,6 +822,14 @@ void CRadialContext::RenderOptions()
 			ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
 
 			ImGui::EndCombo();
+		}
+
+		if (selectionMode == ESelectionMode::Hover)
+		{
+			ImGui::TextDisabled("Hover Timeout (milliseconds)");
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+			ImGui::InputInt("##radialhovertimeout", &this->EditingMenu->HoverTimeout);
+			ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
 		}
 
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
@@ -1493,6 +1502,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
 			float scale = 1.0f;
 			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
+			int hoverTimeout = 0;
+			if (!radialData["HoverTimeout"].is_null()) { radialData["HoverTimeout"].get_to(hoverTimeout); }
 
 			bool idCollision = this->IsIDInUse(id);
 
@@ -1508,6 +1519,7 @@ void CRadialContext::LoadInternal()
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
 			radial->Scale = scale;
+			radial->HoverTimeout = hoverTimeout;
 
 			if (radialData["Items"].is_null())
 			{
@@ -1620,7 +1632,7 @@ CRadialMenu* CRadialContext::Add(std::filesystem::path aPath, std::string aIdent
 {
 	if (aID == -1) { aID = this->GetLowestUnusedID(); }
 
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aPath, aID, aIdentifier, 1.0f, aRadialMenuType, aSelectionMode);
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aPath, aID, aIdentifier, 1.0f, 0, aRadialMenuType, aSelectionMode);
 	std::string bind = radial->GetInputBind();
 	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
 	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());

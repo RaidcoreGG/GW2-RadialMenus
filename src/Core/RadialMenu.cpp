@@ -20,7 +20,7 @@ using json = nlohmann::json;
 #include "Shared.h"
 #include "StateObserver.h"
 
-CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
+CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale, int aHoverTimeout, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
 {
 	this->API = aAPI;
 	this->Module = aModule;
@@ -33,6 +33,7 @@ CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path 
 	this->Type = aRadialMenuType;
 	this->SelectionMode = aSelectionMode;
 	this->Scale = aScale;
+	this->HoverTimeout = aHoverTimeout;
 
 	this->Invalidate();
 }
@@ -70,6 +71,7 @@ void CRadialMenu::Save()
 		{"DrawInCenter", this->DrawInCenter},
 		{"RestoreCursor", this->RestoreCursor},
 		{"Scale", this->Scale},
+		{"HoverTimeout", this->HoverTimeout},
 
 		{"Items", json::array()}
 	};
@@ -147,8 +149,6 @@ bool CRadialMenu::Render()
 	ImVec2 safePad = style.DisplaySafeAreaPadding;
 	style.DisplaySafeAreaPadding = ImVec2(0, 0);
 
-	int hoverIndex = -1;
-
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
 	ImGui::SetNextWindowSize(ImVec2(NexusLink->Width, NexusLink->Height), ImGuiCond_Appearing);
@@ -158,7 +158,13 @@ bool CRadialMenu::Render()
 		ImGui::BeginChild(("RADIALINNER##" + this->Identifier).c_str(), ImVec2(0,0), false, (ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoSavedSettings));
 		ImVec2 initialPos = ImVec2(1, 1);
 
-		hoverIndex = this->GetHoveredIndex();
+		int hoverIndex = this->GetCurrentlyHoveredIndex();
+
+		if (this->HoverIndex != hoverIndex)
+		{
+			this->HoverStartTime = Time::GetTimestampMillis();
+			this->HoverIndex = hoverIndex;
+		}
 
 		if (this->BaseTexture)
 		{
@@ -237,7 +243,9 @@ bool CRadialMenu::Render()
 
 	style.DisplaySafeAreaPadding = safePad;
 
-	return hoverIndex != -1;
+	int hoverTime = Time::GetTimestampMillis() - this->HoverStartTime;
+
+	return this->SelectionMode == ESelectionMode::Hover && this->HoverIndex != -1 && hoverTime >= this->HoverTimeout;
 }
 
 void CRadialMenu::Activate()
@@ -308,13 +316,16 @@ void CRadialMenu::Activate()
 	this->Origin.x += 1.0f;
 	this->Origin.y += 1.0f;
 
+	this->HoverIndex = -1;
+	this->HoverStartTime = -1;
+
 	this->IsActive = true;
 }
 
 void CRadialMenu::Release(bool aIsCancel)
 {
 	/* if is cancel, directly set it to -1 to not trigger any release */
-	int idx = aIsCancel ? -1 : this->GetHoveredIndex();
+	int idx = aIsCancel ? -1 : this->HoverIndex;
 
 	/* winapi set cursor */
 	if (this->RestoreCursor)
@@ -453,6 +464,9 @@ void CRadialMenu::Release(bool aIsCancel)
 	}
 
 	this->Origin = this->MousePos = ImVec2(-1, -1);
+
+	this->HoverIndex = -1;
+	this->HoverStartTime = -1;
 
 	this->IsActive = false;
 }
@@ -798,7 +812,7 @@ void CRadialMenu::Invalidate()
 	this->Origin = ImVec2(-1, -1);
 }
 
-int CRadialMenu::GetHoveredIndex()
+int CRadialMenu::GetCurrentlyHoveredIndex()
 {
 	int hoverIndex = -1;
 
