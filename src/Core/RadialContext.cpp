@@ -832,6 +832,11 @@ void CRadialContext::RenderOptions()
 			ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
 		}
 
+		ImGui::TextDisabled("Items Rotation");
+		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+		ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180);
+		ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
+
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
 	}
@@ -1504,6 +1509,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
 			int hoverTimeout = 0;
 			if (!radialData["HoverTimeout"].is_null()) { radialData["HoverTimeout"].get_to(hoverTimeout); }
+			int itemRotation = 0;
+			if (!radialData["ItemRotation"].is_null()) { radialData["ItemRotation"].get_to(itemRotation); }
 
 			bool idCollision = this->IsIDInUse(id);
 
@@ -1520,6 +1527,7 @@ void CRadialContext::LoadInternal()
 			radial->RestoreCursor = restoreCursor;
 			radial->Scale = scale;
 			radial->HoverTimeout = hoverTimeout;
+			radial->ItemRotationDegrees = itemRotation;
 
 			if (radialData["Items"].is_null())
 			{

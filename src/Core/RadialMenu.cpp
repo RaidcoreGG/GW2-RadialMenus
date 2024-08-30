@@ -72,6 +72,7 @@ void CRadialMenu::Save()
 		{"RestoreCursor", this->RestoreCursor},
 		{"Scale", this->Scale},
 		{"HoverTimeout", this->HoverTimeout},
+		{"ItemRotation", this->ItemRotationDegrees},
 
 		{"Items", json::array()}
 	};
@@ -212,7 +213,7 @@ bool CRadialMenu::Render()
 			{
 				RadialItem* item = this->DrawnItems[i];
 
-				float segmentStart = (SegmentRadius * i);
+				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
 				ImGui::ImageRotated(this->SegmentTexture->Resource, Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
 				
 				if (item->Icon.Texture)
@@ -243,7 +244,7 @@ bool CRadialMenu::Render()
 
 	style.DisplaySafeAreaPadding = safePad;
 
-	int hoverTime = Time::GetTimestampMillis() - this->HoverStartTime;
+	unsigned int hoverTime = Time::GetTimestampMillis() - this->HoverStartTime;
 
 	return this->SelectionMode == ESelectionMode::Hover && this->HoverIndex != -1 && hoverTime >= this->HoverTimeout;
 }
@@ -464,9 +465,6 @@ void CRadialMenu::Release(bool aIsCancel)
 	}
 
 	this->Origin = this->MousePos = ImVec2(-1, -1);
-
-	this->HoverIndex = -1;
-	this->HoverStartTime = -1;
 
 	this->IsActive = false;
 }
@@ -825,7 +823,18 @@ int CRadialMenu::GetCurrentlyHoveredIndex()
 
 	if (distance >= this->MinimalMouseMoveDistance * NexusLink->Scaling)
 	{
-		hoverIndex = ceilf(angle / SegmentRadius) - 1;
+		float hoverOffset = abs((float)this->ItemRotationDegrees / this->SegmentRadius);
+		hoverIndex = ceilf((angle - this->ItemRotationDegrees) / this->SegmentRadius) - 1;
+
+		/* wrap around */
+		if (hoverIndex < 0)
+		{
+			hoverIndex += this->DrawnItems.size();
+		}
+		else if (hoverIndex >= this->DrawnItems.size())
+		{
+			hoverIndex -= this->DrawnItems.size();
+		}
 	}
 
 	return hoverIndex;

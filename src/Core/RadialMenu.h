@@ -32,6 +32,7 @@ class CRadialMenu
 	bool                        RestoreCursor;
 	float                       Scale;
 	int                         HoverTimeout;
+	int                         ItemRotationDegrees;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
