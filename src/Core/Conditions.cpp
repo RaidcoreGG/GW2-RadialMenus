@@ -6,7 +6,7 @@ void to_json(json& j, const Conditions& c)
 		{"IsCombat", c.IsCombat},
 		{"IsMounted", c.IsMounted},
 		{"IsCommander", c.IsCommander},
-		{"IsCompetitive", c.IsCombat},
+		{"IsCompetitive", c.IsCompetitive},
 		{"IsMapOpen", c.IsMapOpen},
 		{"IsTextboxActive", c.IsTextboxActive},
 		{"IsInstance", c.IsInstance},
