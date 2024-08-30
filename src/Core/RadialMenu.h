@@ -30,11 +30,12 @@ class CRadialMenu
 	public:
 	bool                        DrawInCenter;
 	bool                        RestoreCursor;
+	float                       Scale;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
 	///----------------------------------------------------------------------------------------------------
-	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
+	CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale = 1.0f, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick);
 	///----------------------------------------------------------------------------------------------------
 	/// dtor
 	///----------------------------------------------------------------------------------------------------
@@ -191,6 +192,12 @@ class CRadialMenu
 	///----------------------------------------------------------------------------------------------------
 	std::filesystem::path GetPath();
 	
+	///----------------------------------------------------------------------------------------------------
+	/// Invalidate:
+	/// 	Invalidates all textures and other amount dependant resources, causing them to be refreshed.
+	///----------------------------------------------------------------------------------------------------
+	void Invalidate();
+
 	private:
 	AddonAPI*                   API;
 	HMODULE                     Module;
@@ -229,12 +236,6 @@ class CRadialMenu
 	/// 	Returns the index of the currently hovered item.
 	///----------------------------------------------------------------------------------------------------
 	int GetHoveredIndex();
-
-	///----------------------------------------------------------------------------------------------------
-	/// Invalidate:
-	/// 	Invalidates all textures and other amount dependant resources, causing them to be refreshed.
-	///----------------------------------------------------------------------------------------------------
-	void Invalidate();
 
 	///----------------------------------------------------------------------------------------------------
 	/// LoadSegmentTexture:

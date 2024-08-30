@@ -771,6 +771,12 @@ void CRadialContext::RenderOptions()
 			ImGui::EndCombo();
 		}
 
+		ImGui::TextDisabled("Scale");
+		if (ImGui::DragFloat("##radialscale", &this->EditingMenu->Scale, 0.01f, 0.1f, 5.0f, "%.2f"))
+		{
+			this->EditingMenu->Invalidate();
+		}
+
 		ImGui::TextDisabled("Selection Mode");
 		std::string selMode;
 		switch (this->EditingMenu->GetSelectionMode())
@@ -1485,6 +1491,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
 			bool restoreCursor = false;
 			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
+			float scale = 1.0f;
+			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
 
 			bool idCollision = this->IsIDInUse(id);
 
@@ -1499,6 +1507,7 @@ void CRadialContext::LoadInternal()
 			CRadialMenu* radial = this->Add(filePath, name, type, selMode, id);
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
+			radial->Scale = scale;
 
 			if (radialData["Items"].is_null())
 			{
@@ -1611,7 +1620,7 @@ CRadialMenu* CRadialContext::Add(std::filesystem::path aPath, std::string aIdent
 {
 	if (aID == -1) { aID = this->GetLowestUnusedID(); }
 
-	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aPath, aID, aIdentifier, aRadialMenuType, aSelectionMode);
+	CRadialMenu* radial = new CRadialMenu(APIDefs, SelfModule, aPath, aID, aIdentifier, 1.0f, aRadialMenuType, aSelectionMode);
 	std::string bind = radial->GetInputBind();
 	APIDefs->InputBinds.RegisterWithString(bind.c_str(), Addon::OnInputBind, "(null)");
 	APIDefs->Localization.Set(bind.c_str(), "en", aIdentifier.c_str());

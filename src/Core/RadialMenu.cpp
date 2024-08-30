@@ -20,7 +20,7 @@ using json = nlohmann::json;
 #include "Shared.h"
 #include "StateObserver.h"
 
-CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
+CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
 {
 	this->API = aAPI;
 	this->Module = aModule;
@@ -32,6 +32,7 @@ CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path 
 	this->Identifier = aIdentifier;
 	this->Type = aRadialMenuType;
 	this->SelectionMode = aSelectionMode;
+	this->Scale = aScale;
 
 	this->Invalidate();
 }
@@ -68,6 +69,7 @@ void CRadialMenu::Save()
 
 		{"DrawInCenter", this->DrawInCenter},
 		{"RestoreCursor", this->RestoreCursor},
+		{"Scale", this->Scale},
 
 		{"Items", json::array()}
 	};
@@ -751,6 +753,51 @@ std::filesystem::path CRadialMenu::GetPath()
 	return this->Path;
 }
 
+void CRadialMenu::Invalidate()
+{
+	this->BaseTexture = nullptr;
+	this->DividerTexture = nullptr;
+	this->SegmentTexture = nullptr;
+
+	switch (this->Type)
+	{
+		default:
+		case ERadialType::None:
+			this->ItemsCapacity = 0;
+			this->Size = ImVec2(0, 0);
+			this->MinimalMouseMoveDistance = 0;
+			this->SegmentContentDistance = 0;
+			this->SegmentContentSize = ImVec2(0, 0);
+			break;
+		case ERadialType::Normal:
+			this->ItemsCapacity = 12;
+			this->Size = ImVec2(520.0f * this->Scale, 520.0f * this->Scale);
+			this->MinimalMouseMoveDistance = 150.0f * this->Scale;
+			this->SegmentContentDistance = 200.0f * this->Scale;
+			this->SegmentContentSize = ImVec2(128.0f * this->Scale, 128.0f * this->Scale);
+			break;
+		case ERadialType::Small:
+			this->ItemsCapacity = 8;
+			this->Size = ImVec2(112.0f * this->Scale, 112.0f * this->Scale);
+			this->MinimalMouseMoveDistance = 18.0f * this->Scale;
+			this->SegmentContentDistance = 36.0f * this->Scale;
+			this->SegmentContentSize = ImVec2(32.0f * this->Scale, 32.0f * this->Scale);
+			break;
+	}
+
+	/*if (this->Items.size() == 0)
+	{
+		this->SegmentRadius = 0;
+	}
+	else
+	{
+		this->SegmentRadius = 360.0f / this->Items.size();
+	}*/
+
+	this->IsActive = false;
+	this->Origin = ImVec2(-1, -1);
+}
+
 int CRadialMenu::GetHoveredIndex()
 {
 	int hoverIndex = -1;
@@ -768,51 +815,6 @@ int CRadialMenu::GetHoveredIndex()
 	}
 
 	return hoverIndex;
-}
-
-void CRadialMenu::Invalidate()
-{
-	this->BaseTexture		= nullptr;
-	this->DividerTexture	= nullptr;
-	this->SegmentTexture	= nullptr;
-
-	switch (this->Type)
-	{
-		default:
-		case ERadialType::None:
-			this->ItemsCapacity = 0;
-			this->Size = ImVec2(0, 0);
-			this->MinimalMouseMoveDistance = 0;
-			this->SegmentContentDistance = 0;
-			this->SegmentContentSize = ImVec2(0, 0);
-			break;
-		case ERadialType::Normal:
-			this->ItemsCapacity = 12;
-			this->Size = ImVec2(520.0f, 520.0f);
-			this->MinimalMouseMoveDistance = 150.0f;
-			this->SegmentContentDistance = 200.0f;
-			this->SegmentContentSize = ImVec2(128.0f, 128.0f);
-			break;
-		case ERadialType::Small:
-			this->ItemsCapacity = 8;
-			this->Size = ImVec2(112.0f, 112.0f);
-			this->MinimalMouseMoveDistance = 18.0f;
-			this->SegmentContentDistance = 36.0f;
-			this->SegmentContentSize = ImVec2(32.0f, 32.0f);
-			break;
-	}
-
-	/*if (this->Items.size() == 0)
-	{
-		this->SegmentRadius = 0;
-	}
-	else
-	{
-		this->SegmentRadius = 360.0f / this->Items.size();
-	}*/
-
-	this->IsActive = false;
-	this->Origin = ImVec2(-1, -1);
 }
 
 void CRadialMenu::LoadSegmentTexture()
