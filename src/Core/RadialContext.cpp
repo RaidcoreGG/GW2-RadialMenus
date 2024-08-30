@@ -839,7 +839,8 @@ void CRadialContext::RenderOptions()
 
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
-		ImGui::Checkbox("Instant Activate if only one Item visible", &this->EditingMenu->InstantActivation);
+		ImGui::Checkbox("Instant Activation for single Items", &this->EditingMenu->InstantActivation);
+		ImGui::HelpMarker("If due to filter conditions only one item would be visible,\ninstantly activate that Item wihtout showing a menu");
 	}
 	else if (this->EditingItem) /* editing sub item */
 	{

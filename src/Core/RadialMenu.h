@@ -30,7 +30,7 @@ class CRadialMenu
 	public:
 	bool                        DrawInCenter;
 	bool                        RestoreCursor;
-	bool						InstantActivation;
+	bool                        InstantActivation;
 	float                       Scale;
 	int                         HoverTimeout;
 	int                         ItemRotationDegrees;
