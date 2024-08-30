@@ -407,15 +407,15 @@ void CRadialMenu::Release(bool aIsCancel)
 						this->API->GameBinds.Release(action->Identifier);
 
 						/* restore modifier state */
-						if (wasAltPressed)
+						if (GetAsyncKeyState(VK_MENU))
 						{
 							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYDOWN, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, true, true));
 						}
-						if (wasCtrlPressed)
+						if (GetAsyncKeyState(VK_CONTROL))
 						{
 							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, true, false));
 						}
-						if (wasShiftPressed)
+						if (GetAsyncKeyState(VK_SHIFT))
 						{
 							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, true, false));
 						}
