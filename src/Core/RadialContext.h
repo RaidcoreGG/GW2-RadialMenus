@@ -23,6 +23,7 @@
 class CRadialContext
 {
 	public:
+	bool IsLeftClickHeld = false;
 	bool IsRightClickHeld = false;
 
 	///----------------------------------------------------------------------------------------------------

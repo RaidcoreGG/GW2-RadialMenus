@@ -231,7 +231,6 @@ class CRadialMenu
 	ImVec2                      Origin;
 	ImVec2                      MousePos;
 	bool                        WasActionCamActive;
-	bool                        WasRightClickHeld;
 
 	int                         HoverIndex;
 	unsigned long long          HoverStartTime;

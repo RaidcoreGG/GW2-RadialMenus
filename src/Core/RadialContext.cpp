@@ -1433,9 +1433,20 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			break;
 		}
+		case WM_LBUTTONDBLCLK:
+		{
+			this->IsLeftClickHeld = true;
+			break;
+		}
 		case WM_LBUTTONDOWN:
 		{
+			this->IsLeftClickHeld = true;
 			return this->Release(ESelectionMode::Click) ? 0 : 1;
+			break;
+		}
+		case WM_LBUTTONUP:
+		{
+			this->IsLeftClickHeld = false;
 			break;
 		}
 		case WM_RBUTTONDBLCLK:

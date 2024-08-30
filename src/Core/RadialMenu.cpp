@@ -277,9 +277,8 @@ void CRadialMenu::Activate()
 	CURSORINFO curInfo{};
 	curInfo.cbSize = sizeof(CURSORINFO);
 	GetCursorInfo(&curInfo);
-	this->WasActionCamActive = !(curInfo.flags & CURSOR_SHOWING) && !RadialCtx->IsRightClickHeld;
-	this->WasRightClickHeld = RadialCtx->IsRightClickHeld;
-
+	this->WasActionCamActive = !(curInfo.flags & CURSOR_SHOWING) && !(RadialCtx->IsLeftClickHeld || RadialCtx->IsRightClickHeld);
+	
 	/* override origin if draw in center */
 	if (this->DrawInCenter)
 	{
@@ -303,7 +302,17 @@ void CRadialMenu::Activate()
 			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 		}).detach();
 	}
-	else if (this->WasRightClickHeld)
+	
+	if (RadialCtx->IsLeftClickHeld)
+	{
+		std::thread([this]() {
+			this->API->WndProc.SendToGameOnly(0, WM_LBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
+			SetCursorPos(this->Origin.x, this->Origin.y);
+			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+		}).detach();
+	}
+	if (RadialCtx->IsRightClickHeld)
 	{
 		std::thread([this]() {
 			this->API->WndProc.SendToGameOnly(0, WM_RBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
@@ -342,7 +351,6 @@ void CRadialMenu::Release(bool aIsCancel)
 	}
 
 	this->WasActionCamActive = false;
-	this->WasRightClickHeld = false;
 
 	if (idx > -1)
 	{
