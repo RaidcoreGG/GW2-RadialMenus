@@ -201,6 +201,34 @@ class CRadialMenu
 	///----------------------------------------------------------------------------------------------------
 	void Invalidate();
 
+	///----------------------------------------------------------------------------------------------------
+	/// ApplyColorToAll:
+	/// 	Applies the given color to all items.
+	/// 	ColorIndex: 0 = None, 1 = Color, 2 = ColorHover
+	///----------------------------------------------------------------------------------------------------
+	void ApplyColorToAll(unsigned int aColor, int aColorIndex);
+
+	///----------------------------------------------------------------------------------------------------
+	/// ApplyActivationTimeoutToAll:
+	/// 	Applies the activation timeout to all items.
+	///----------------------------------------------------------------------------------------------------
+	void ApplyActivationTimeoutToAll(int aTimeout);
+
+	///----------------------------------------------------------------------------------------------------
+	/// ApplyConditionToAll:
+	/// 	Applies the given condition to all items.
+	/// 	aConditionIndex: 0 = None, 1 = Visibility, 2 = Activation
+	/// 	aStateIndex: -99 copy all else matching the 0-based index of the observed state of the struct.
+	///----------------------------------------------------------------------------------------------------
+	void ApplyConditionToAll(Conditions* aOrigin, int aConditionIndex, int aStateIndex);
+
+	///----------------------------------------------------------------------------------------------------
+	/// ApplyConditionToAll:
+	/// 	Applies the given condition to all actions in this item.
+	/// 	aStateIndex: -99 copy all else matching the 0-based index of the observed state of the struct.
+	///----------------------------------------------------------------------------------------------------
+	void ApplyConditionToAll(RadialItem* aItem, Conditions* aOrigin, int aStateIndex);
+
 	private:
 	AddonAPI*                   API;
 	HMODULE                     Module;

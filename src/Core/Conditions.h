@@ -34,6 +34,9 @@ struct Conditions
 	EObserveState IsUnderwater;
 	EObserveState IsOnWaterSurface;
 	EObserveState IsAirborne;
+
+	void SetIndex(int aIndex, EObserveState aState);
+	EObserveState GetIndex(int aIndex);
 };
 
 void to_json(json& j, const Conditions& c);

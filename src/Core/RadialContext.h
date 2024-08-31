@@ -82,7 +82,6 @@ class CRadialContext
 	std::string GetUnusedName(std::string aName, CRadialMenu* aRadialSkip = nullptr);
 	bool IsNameInUse(std::string aName, CRadialMenu* aRadialSkip = nullptr);
 
-	void ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor = false);
 	void GenerateIBMap();
 };
 

@@ -4,7 +4,6 @@
 #include <thread>
 
 void RadialMenuItem::Activate(AddonAPI* API) {
-
 	std::thread([this, API]() {
 		/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
 		int msWaited = 0;
@@ -70,24 +69,12 @@ void RadialMenuItem::Activate(AddonAPI* API) {
 					API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, false, false));
 				}
 
+				Sleep(10);
 				/* execute action action */
 				API->GameBinds.Press(action->Identifier);
 				Sleep(100);
 				API->GameBinds.Release(action->Identifier);
 
-				/* restore modifier state */
-				if (GetAsyncKeyState(VK_MENU))
-				{
-					API->WndProc.SendToGameOnly(0, WM_SYSKEYDOWN, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, true, true));
-				}
-				if (GetAsyncKeyState(VK_CONTROL))
-				{
-					API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, true, false));
-				}
-				if (GetAsyncKeyState(VK_SHIFT))
-				{
-					API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, true, false));
-				}
 				break;
 			}
 			case EActionType::GameInputBindPress:
@@ -119,5 +106,4 @@ void RadialMenuItem::Activate(AddonAPI* API) {
 			previousExecuted = true;
 		}
 	}).detach();
-
 }

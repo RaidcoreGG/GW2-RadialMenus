@@ -360,7 +360,6 @@ void CRadialMenu::Release(bool aIsCancel)
 	if (idx > -1)
 	{
 		RadialItem* item = this->DrawnItems[idx];
-		
 		item->Activate(this->API);
 	}
 
@@ -708,6 +707,88 @@ void CRadialMenu::Invalidate()
 
 	this->IsActive = false;
 	this->Origin = ImVec2(-1, -1);
+}
+
+void CRadialMenu::ApplyColorToAll(unsigned int aColor, int aColorIndex)
+{
+	if (aColorIndex == 0) { return; }
+
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	for (RadialItem* item : this->Items)
+	{
+		switch (aColorIndex)
+		{
+			case 1: item->Color = aColor; break;
+			case 2: item->ColorHover = aColor; break;
+		}
+	}
+}
+
+void CRadialMenu::ApplyActivationTimeoutToAll(int aTimeout)
+{
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	for (RadialItem* item : this->Items)
+	{
+		item->ActivationTimeout = aTimeout;
+	}
+}
+
+void CRadialMenu::ApplyConditionToAll(Conditions* aOrigin, int aConditionIndex, int aStateIndex)
+{
+	if (aConditionIndex == 0) { return; }
+
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	EObserveState targetState = aOrigin->GetIndex(aStateIndex);
+	Conditions fullCopy = *aOrigin;
+
+	for (RadialItem* item : this->Items)
+	{
+		Conditions* conditions = nullptr;
+
+		switch (aConditionIndex)
+		{
+			case 1: conditions = &item->Visibility; break;
+			case 2: conditions = &item->Activation; break;
+		}
+
+		if (conditions == nullptr) { continue; }
+
+		if (aStateIndex == -99)
+		{
+			*conditions = fullCopy;
+		}
+		else
+		{
+			conditions->SetIndex(aStateIndex, targetState);
+		}
+	}
+}
+
+void CRadialMenu::ApplyConditionToAll(RadialItem* aItem, Conditions* aOrigin, int aStateIndex)
+{
+	if (aItem == nullptr) { return; }
+
+	const std::lock_guard<std::mutex> lock(this->Mutex);
+
+	EObserveState targetState = aOrigin->GetIndex(aStateIndex);
+	Conditions fullCopy = *aOrigin;
+
+	for (ActionBase* action : aItem->Actions)
+	{
+		Conditions* conditions = &action->Activation;
+
+		if (aStateIndex == -99)
+		{
+			*conditions = fullCopy;
+		}
+		else
+		{
+			conditions->SetIndex(aStateIndex, targetState);
+		}
+	}
 }
 
 int CRadialMenu::GetCurrentlyHoveredIndex()
