@@ -3,6 +3,7 @@
 HMODULE SelfModule                   = nullptr;
 AddonAPI* APIDefs                    = nullptr;
 AddonDefinition AddonDef             = {};
+HWND WindowHandle                    = nullptr;
 
 Mumble::Data* MumbleLink             = nullptr;
 Mumble::Identity* MumbleIdentity     = nullptr;

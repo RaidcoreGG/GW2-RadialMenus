@@ -20,6 +20,25 @@ using json = nlohmann::json;
 #include "Shared.h"
 #include "StateObserver.h"
 
+/* helper for window relative cursor pos */
+void SetCursorPosWR(int x, int y)
+{
+	LONG style = GetWindowLong(WindowHandle, GWL_STYLE);
+
+	int xOffset = 0;
+	int yOffset = 0;
+
+	if (style & WS_CAPTION)
+	{
+		RECT windowRect{};
+		GetWindowRect(WindowHandle, &windowRect);
+		xOffset += windowRect.left + GetSystemMetrics(SM_CXSIZEFRAME);
+		yOffset += windowRect.top + GetSystemMetrics(SM_CYSIZEFRAME) + GetSystemMetrics(SM_CYSIZE);
+	}
+
+	SetCursorPos(x + xOffset, y + yOffset);
+}
+
 CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale, int aHoverTimeout, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
 {
 	this->API = aAPI;
@@ -286,7 +305,7 @@ void CRadialMenu::Activate()
 		this->Origin.y = NexusLink->Height / 2;
 
 		/* winapi set cursor */
-		SetCursorPos(this->Origin.x, this->Origin.y);
+		SetCursorPosWR(this->Origin.x, this->Origin.y);
 		ImGui::GetIO().MousePos = this->Origin;
 	}
 
@@ -298,7 +317,7 @@ void CRadialMenu::Activate()
 			Sleep(10);
 			this->API->GameBinds.Release(EGameBinds_CameraActionMode);
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPos(this->Origin.x, this->Origin.y);
+			SetCursorPosWR(this->Origin.x, this->Origin.y);
 			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 		}).detach();
 	}
@@ -308,7 +327,7 @@ void CRadialMenu::Activate()
 		std::thread([this]() {
 			this->API->WndProc.SendToGameOnly(0, WM_LBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPos(this->Origin.x, this->Origin.y);
+			SetCursorPosWR(this->Origin.x, this->Origin.y);
 			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 		}).detach();
 	}
@@ -317,7 +336,7 @@ void CRadialMenu::Activate()
 		std::thread([this]() {
 			this->API->WndProc.SendToGameOnly(0, WM_RBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPos(this->Origin.x, this->Origin.y);
+			SetCursorPosWR(this->Origin.x, this->Origin.y);
 			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 		}).detach();
 	}
@@ -340,7 +359,7 @@ void CRadialMenu::Release(bool aIsCancel)
 	/* winapi set cursor */
 	if (this->RestoreCursor)
 	{
-		SetCursorPos(this->MousePos.x, this->MousePos.y);
+		SetCursorPosWR(this->MousePos.x, this->MousePos.y);
 		ImGui::GetIO().MousePos = this->MousePos;
 		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
 	}

@@ -11,6 +11,7 @@
 extern HMODULE SelfModule;
 extern AddonAPI* APIDefs;
 extern AddonDefinition AddonDef;
+extern HWND WindowHandle;
 
 extern Mumble::Data* MumbleLink;
 extern Mumble::Identity* MumbleIdentity;

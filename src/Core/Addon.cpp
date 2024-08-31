@@ -98,6 +98,8 @@ namespace Addon
 
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
+		WindowHandle = hWnd;
+
 		StateObserver::WndProc(hWnd, uMsg, wParam, lParam);
 		assert(RadialCtx);
 		return RadialCtx->WndProc(hWnd, uMsg, wParam, lParam);
