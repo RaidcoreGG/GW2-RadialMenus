@@ -421,24 +421,12 @@ void CRadialMenu::Release(bool aIsCancel)
 							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, false, false));
 						}
 
+						Sleep(10);
 						/* execute action action */
 						this->API->GameBinds.Press(action->Identifier);
 						Sleep(100);
 						this->API->GameBinds.Release(action->Identifier);
 
-						/* restore modifier state */
-						if (GetAsyncKeyState(VK_MENU))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYDOWN, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, true, true));
-						}
-						if (GetAsyncKeyState(VK_CONTROL))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, true, false));
-						}
-						if (GetAsyncKeyState(VK_SHIFT))
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYDOWN, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, true, false));
-						}
 						break;
 					}
 					case EActionType::GameInputBindPress:
