@@ -288,7 +288,7 @@ std::string ConditionsToString(Conditions* aConditions)
 }
 /* helpers end */
 
-void ConditionSelectable(std::string aName, EObserveState* aState, const char* aHelpTooltip = nullptr)
+bool ConditionSelectable(std::string aName, EObserveState* aState, const char* aHelpTooltip = nullptr)
 {
 	ImGui::TableNextRow();
 	ImGui::TableSetColumnIndex(0);
@@ -330,9 +330,17 @@ void ConditionSelectable(std::string aName, EObserveState* aState, const char* a
 		}
 		ImGui::EndCombo();
 	}
+
+	ImGui::TableSetColumnIndex(2);
+	if (ImGui::Button(("Apply to all##applyallcondsel" + aName).c_str()))
+	{
+		return true;
+	}
+
+	return false;
 }
 
-void ConditionEditor(std::string aName, Conditions* aConditions, bool* aPreviousReq = nullptr)
+int ConditionEditor(std::string aName, Conditions* aConditions, std::string aApplyAllInfo, bool* aPreviousReq = nullptr)
 {
 	std::string popupName = "ConditionEditor##" + aName;
 
@@ -341,31 +349,43 @@ void ConditionEditor(std::string aName, Conditions* aConditions, bool* aPrevious
 		ImGui::OpenPopup(popupName.c_str());
 	}
 
+	int stateIndex = -1;
+
 	if (ImGui::BeginPopupContextItem(popupName.c_str()))
 	{
-		ImGui::BeginTable("##conditioneditortable", 2);
+		ImGui::BeginTable("##conditioneditortable", 3);
 		/* direct states */
-		ConditionSelectable("Is in combat", &aConditions->IsCombat);
-		ConditionSelectable("Is mounted", &aConditions->IsMounted);
-		ConditionSelectable("Is commander", &aConditions->IsCommander);
-		ConditionSelectable("Is in PvP/WvW", &aConditions->IsCompetitive);
-		ConditionSelectable("Is map open", &aConditions->IsMapOpen);
-		ConditionSelectable("Is textbox active", &aConditions->IsTextboxActive);
-		ConditionSelectable("Is in instance", &aConditions->IsInstance);
+		if (ConditionSelectable("Is in combat", &aConditions->IsCombat)) { stateIndex = 0; };
+		if (ConditionSelectable("Is mounted", &aConditions->IsMounted)) { stateIndex = 1; };
+		if (ConditionSelectable("Is commander", &aConditions->IsCommander)) { stateIndex = 2; };
+		if (ConditionSelectable("Is in PvP/WvW", &aConditions->IsCompetitive)) { stateIndex = 3; };
+		if (ConditionSelectable("Is map open", &aConditions->IsMapOpen)) { stateIndex = 4; };
+		if (ConditionSelectable("Is textbox active", &aConditions->IsTextboxActive)) { stateIndex = 5; };
+		if (ConditionSelectable("Is in instance", &aConditions->IsInstance)) { stateIndex = 6; };
 
 		/* derived game states */
-		ConditionSelectable("Is gameplay", &aConditions->IsGameplay);
+		if (ConditionSelectable("Is gameplay", &aConditions->IsGameplay)) { stateIndex = 7; };
 
 		/* derived positional states */
-		ConditionSelectable("Is underwater", &aConditions->IsUnderwater);
-		ConditionSelectable("Is on water surface", &aConditions->IsOnWaterSurface);
-		ConditionSelectable("Is airborne", &aConditions->IsAirborne, "Will be true when falling, gliding using an updraft, or after jumping.");
+		if (ConditionSelectable("Is underwater", &aConditions->IsUnderwater)) { stateIndex = 8; };
+		if (ConditionSelectable("Is on water surface", &aConditions->IsOnWaterSurface)) { stateIndex = 9; };
+		if (ConditionSelectable("Is airborne", &aConditions->IsAirborne, "Will be true when falling, gliding using an updraft, or after jumping.")) { stateIndex = 10; };
 		ImGui::EndTable();
 
 		if (aPreviousReq)
 		{
 			ImGui::Checkbox("Link with previous action", aPreviousReq);
 			ImGui::HelpMarker("Besides the set conditions, setting this means that the previous action must have executed for this one to be able to.");
+		}
+
+		if (!aApplyAllInfo.empty())
+		{
+			ImGui::TextDisabled(aApplyAllInfo.c_str());
+		}
+
+		if (ImGui::Button(("Apply all conditions to all##applyallcondstoall_whataname" + aName).c_str()))
+		{
+			stateIndex = -99;
 		}
 
 		if (ImGui::Button("Done##ConditionEditor"))
@@ -375,6 +395,8 @@ void ConditionEditor(std::string aName, Conditions* aConditions, bool* aPrevious
 
 		ImGui::EndPopup();
 	}
+
+	return stateIndex;
 }
 
 void CRadialContext::CreateDefaultMountRadial()
@@ -749,13 +771,13 @@ void CRadialContext::RenderOptions()
 		{
 			case ERadialType::Small:
 				type = "Small";
-				this->ApplyColorToAll(this->EditingMenu, SMALL_ITEM_COLOR, false);
-				this->ApplyColorToAll(this->EditingMenu, SMALL_ITEM_COLOR_HOVER, true);
+				this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR, 1);
+				this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR_HOVER, 2);
 				break;
 			case ERadialType::Normal:
 				type = "Normal";
-				this->ApplyColorToAll(this->EditingMenu, NORMAL_ITEM_COLOR, false);
-				this->ApplyColorToAll(this->EditingMenu, NORMAL_ITEM_COLOR_HOVER, true);
+				this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR, 1);
+				this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR_HOVER, 2);
 				break;
 		}
 		if (ImGui::BeginCombo("##radialtype", type.c_str()))
@@ -833,9 +855,9 @@ void CRadialContext::RenderOptions()
 		}
 
 		ImGui::TextDisabled("Items Rotation");
+		ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
 		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
 		ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180);
-		ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
 
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
@@ -873,7 +895,7 @@ void CRadialContext::RenderOptions()
 		ImGui::SameLine();
 		if (ImGui::Button("Apply to all##color"))
 		{
-			this->ApplyColorToAll(this->EditingMenu, this->EditingItem->Color, false);
+			this->EditingMenu->ApplyColorToAll(this->EditingItem->Color, 1);
 		}
 		ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
 
@@ -883,7 +905,7 @@ void CRadialContext::RenderOptions()
 		ImGui::SameLine();
 		if (ImGui::Button("Apply to all##colorhover"))
 		{
-			this->ApplyColorToAll(this->EditingMenu, this->EditingItem->ColorHover, true);
+			this->EditingMenu->ApplyColorToAll(this->EditingItem->ColorHover, 2);
 		}
 		ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
 
@@ -981,17 +1003,32 @@ void CRadialContext::RenderOptions()
 		}
 
 		ImGui::TextDisabled("Visibility");
-		ConditionEditor("Edit Conditions##visibility", &this->EditingItem->Visibility);
-		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
 		ImGui::HelpMarker("These conditions control when this item is visible.");
+		int applyVisToAll = ConditionEditor("Edit Conditions##visibility", &this->EditingItem->Visibility, "\"Apply to all\" will affect the visibility of all items in this radial.");
+		if (applyVisToAll > -1 || applyVisToAll == -99)
+		{
+			this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Visibility, 1, applyVisToAll);
+		}
+		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
 
 		ImGui::TextDisabled("Activation");
-		ConditionEditor("Edit Conditions##activation", &this->EditingItem->Activation);
-		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
 		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
-		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-		ImGui::InputInt("Timeout (seconds)", &this->EditingItem->ActivationTimeout);
+		int applyActToAll = ConditionEditor("Edit Conditions##activation", &this->EditingItem->Activation, "\"Apply to all\" will affect the activation of all items in this radial.");
+		if (applyActToAll > -1 || applyActToAll == -99)
+		{
+			this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Activation, 2, applyActToAll);
+		}
+		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
+		
+		ImGui::TextDisabled("Timeout (seconds)");
 		ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
+		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+		ImGui::InputInt("##activationtimeout", &this->EditingItem->ActivationTimeout);
+		ImGui::SameLine();
+		if (ImGui::Button("Apply to all##applyallactivationtimeout"))
+		{
+			this->EditingMenu->ApplyActivationTimeoutToAll(this->EditingItem->ActivationTimeout);
+		}
 
 		ImGui::TextDisabled("Actions");
 		ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
@@ -1364,7 +1401,11 @@ void CRadialContext::RenderOptions()
 
 			ImGui::TableSetColumnIndex(2);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-			ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, &action->OnlyExecuteIfPrevious);
+			int applyActionActToAll = ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, "\"Apply to all\" will affect of all actions in this item.", &action->OnlyExecuteIfPrevious);
+			if (applyActionActToAll > -1 || applyActionActToAll == -99)
+			{
+				this->EditingMenu->ApplyConditionToAll(this->EditingItem, &action->Activation, applyActionActToAll);
+			}
 			ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
 
 			ImGui::TableSetColumnIndex(3);
@@ -1763,23 +1804,6 @@ bool CRadialContext::IsNameInUse(std::string aName, CRadialMenu* aRadialSkip)
 	}
 
 	return false;
-}
-
-void CRadialContext::ApplyColorToAll(CRadialMenu* aRadial, unsigned int aColor, bool aHoverColor)
-{
-	if (!aRadial) { return; }
-
-	for (RadialItem* item : aRadial->GetItems())
-	{
-		if (aHoverColor)
-		{
-			item->ColorHover = aColor;
-		}
-		else
-		{
-			item->Color = aColor;
-		}
-	}
 }
 
 void CRadialContext::GenerateIBMap()

@@ -1,5 +1,48 @@
 #include "Conditions.h"
 
+
+void Conditions::SetIndex(int aIndex, EObserveState aState)
+{
+	switch (aIndex)
+	{
+		case 0: this->IsCombat = aState; break;
+		case 1: this->IsMounted = aState; break;
+		case 2: this->IsCommander = aState; break;
+		case 3: this->IsCompetitive = aState; break;
+		case 4: this->IsMapOpen = aState; break;
+		case 5: this->IsTextboxActive = aState; break;
+		case 6: this->IsInstance = aState; break;
+
+		case 7: this->IsGameplay = aState; break;
+
+		case 8: this->IsUnderwater = aState; break;
+		case 9: this->IsOnWaterSurface = aState; break;
+		case 10: this->IsAirborne = aState; break;
+	}
+}
+
+EObserveState Conditions::GetIndex(int aIndex)
+{
+	switch (aIndex)
+	{
+		case 0: return this->IsCombat;
+		case 1: return this->IsMounted;
+		case 2: return this->IsCommander;
+		case 3: return this->IsCompetitive;
+		case 4: return this->IsMapOpen;
+		case 5: return this->IsTextboxActive;
+		case 6: return this->IsInstance;
+
+		case 7: return this->IsGameplay;
+
+		case 8: return this->IsUnderwater;
+		case 9: return this->IsOnWaterSurface;
+		case 10: return this->IsAirborne;
+	}
+
+	return EObserveState::None;
+}
+
 void to_json(json& j, const Conditions& c)
 {
 	j = json{
