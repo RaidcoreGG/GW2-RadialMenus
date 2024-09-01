@@ -20,6 +20,7 @@ namespace StateObserver
 	
 	static float LastDeltaY;
 	static Vector3 LastPosition;
+	static int LastMap;
 
 	static bool IsFalling = false; // const deltaY : -1.0403
 	static bool IsGliding = false; // const deltaY : -0.1145
@@ -46,7 +47,7 @@ namespace StateObserver
 
 	void Advance()
 	{
-		if (!(NexusLink && MumbleLink && MumbleIdentity)) { return; }
+		if (!(NexusLink && MumbleLink && MumbleIdentity)) { LastMap = 0; return; }
 
 		unsigned long long timestampNow = Time::GetTimestampMillis();
 
@@ -54,8 +55,13 @@ namespace StateObserver
 		if (MumbleLink->AvatarPosition != LastPosition)
 		{
 			float deltaY = MumbleLink->AvatarPosition.Y - LastPosition.Y;
+			if (MumbleLink->Context.MapID != LastMap)
+			{
+				deltaY = 0;
+			}
 
 			LastPosition = MumbleLink->AvatarPosition;
+			LastMap = MumbleLink->Context.MapID;
 
 			IsFalling = false;
 			IsGliding = false;
