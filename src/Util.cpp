@@ -136,7 +136,7 @@ namespace Input
 		lp.ScanCode = MapVirtualKeyA(aVKey, MAPVK_VK_TO_VSC);
 		lp.ExtendedFlag = lp.ScanCode & 0xE000 ? 1 : 0;
 		lp.Reserved = 0;
-		lp.ContextCode = aIsSystem ? 1 : 0;
+		lp.ContextCode = 0;// aIsSystem ? 1 : 0;
 		lp.PreviousKeyState = aIsDown ? 0 : 1;
 		lp.TransitionState = aIsDown ? 0 : 1;
 
