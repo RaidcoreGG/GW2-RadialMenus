@@ -420,30 +420,9 @@ void CRadialMenu::Release(bool aIsCancel)
 					case EActionType::GameInputBind:
 					{
 						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						/* FIXME: all of the following code is acopy of the Nexus Invoke function. Nexus does not provide Invoke only InvokeAsync.*/
-						/* get modifier state */
-						bool wasAltPressed = GetAsyncKeyState(VK_MENU);
-						bool wasCtrlPressed = GetAsyncKeyState(VK_CONTROL);
-						bool wasShiftPressed = GetAsyncKeyState(VK_SHIFT);
 
-						/* unset modifier state */
-						if (wasAltPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_SYSKEYUP, VK_MENU, Input::GetKeyMessageLPARAM(VK_MENU, false, true));
-						}
-						if (wasCtrlPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_CONTROL, Input::GetKeyMessageLPARAM(VK_CONTROL, false, false));
-						}
-						if (wasShiftPressed)
-						{
-							this->API->WndProc.SendToGameOnly(0, WM_KEYUP, VK_SHIFT, Input::GetKeyMessageLPARAM(VK_SHIFT, false, false));
-						}
-
-						Sleep(10);
-						/* execute action action */
 						this->API->GameBinds.Press(action->Identifier);
-						Sleep(100);
+						Sleep(50);
 						this->API->GameBinds.Release(action->Identifier);
 
 						break;
