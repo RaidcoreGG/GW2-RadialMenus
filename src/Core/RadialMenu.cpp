@@ -277,9 +277,9 @@ bool CRadialMenu::Render()
 	return this->SelectionMode == ESelectionMode::Hover && this->HoverIndex != -1 && hoverTime >= this->HoverTimeout;
 }
 
-void CRadialMenu::Activate()
+bool CRadialMenu::Activate()
 {
-	if (this->IsActive) { return; }
+	if (this->IsActive) { return true; }
 
 	this->DrawnItems.clear();
 	for (RadialItem* item : this->Items)
@@ -290,9 +290,10 @@ void CRadialMenu::Activate()
 		}
 	}
 
-	if (this->DrawnItems.size() == 0)
+	if (this->DrawnItems.size() < 2)
 	{
 		this->SegmentRadius = 0;
+		return false;
 	}
 	else
 	{
@@ -358,10 +359,13 @@ void CRadialMenu::Activate()
 	this->HoverStartTime = -1;
 
 	this->IsActive = true;
+	return true;
 }
 
 void CRadialMenu::Release(bool aIsCancel)
 {
+	if (!this->IsActive) { return; }
+
 	/* if is cancel, directly set it to -1 to not trigger any release */
 	int idx = aIsCancel ? -1 : this->HoverIndex;
 

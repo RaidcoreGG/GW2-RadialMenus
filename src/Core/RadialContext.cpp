@@ -470,10 +470,9 @@ void CRadialContext::Activate(CRadialMenu* aRadial)
 			this->Release(ESelectionMode::Escape);
 		}
 	}
-	else
+	else if(aRadial->Activate())
 	{
 		this->ActiveRadial = aRadial;
-		this->ActiveRadial->Activate();
 	}
 }
 
