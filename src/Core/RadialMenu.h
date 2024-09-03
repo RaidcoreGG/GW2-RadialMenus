@@ -263,6 +263,9 @@ class CRadialMenu
 	int                         HoverIndex;
 	unsigned long long          HoverStartTime;
 
+	bool                        SetCursor;
+	ImVec2                      SetCursorPosition;
+
 	///----------------------------------------------------------------------------------------------------
 	/// GetCurrentlyHoveredIndex:
 	/// 	Returns the index of the currently hovered item.

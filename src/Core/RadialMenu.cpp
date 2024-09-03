@@ -21,7 +21,7 @@ using json = nlohmann::json;
 #include "StateObserver.h"
 
 /* helper for window relative cursor pos */
-void SetCursorPosWR(int x, int y)
+ImVec2 GetCursorPosWR(int x, int y)
 {
 	LONG style = GetWindowLong(WindowHandle, GWL_STYLE);
 
@@ -36,7 +36,7 @@ void SetCursorPosWR(int x, int y)
 		yOffset += windowRect.top + GetSystemMetrics(SM_CYSIZEFRAME) + GetSystemMetrics(SM_CYSIZE);
 	}
 
-	SetCursorPos(x + xOffset, y + yOffset);
+	return ImVec2(x + xOffset, y + yOffset);
 }
 
 CRadialMenu::CRadialMenu(AddonAPI* aAPI, HMODULE aModule, std::filesystem::path aPath, int aID, std::string aIdentifier, float aScale, int aHoverTimeout, ERadialType aRadialMenuType, ESelectionMode aSelectionMode)
@@ -154,6 +154,15 @@ void CRadialMenu::Save()
 
 bool CRadialMenu::Render()
 {
+	if (this->SetCursor)
+	{
+		this->SetCursor = false;
+
+		::SetCursorPos(this->SetCursorPosition.x, this->SetCursorPosition.y);
+		ImGui::GetIO().MousePos = this->SetCursorPosition;
+		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->SetCursorPosition.x, this->SetCursorPosition.y));
+	}
+
 	if (this->Type == ERadialType::None) { return false; }
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
@@ -305,8 +314,8 @@ void CRadialMenu::Activate()
 		this->Origin.y = NexusLink->Height / 2;
 
 		/* winapi set cursor */
-		SetCursorPosWR(this->Origin.x, this->Origin.y);
-		ImGui::GetIO().MousePos = this->Origin;
+		this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
+		this->SetCursor = true;
 	}
 
 	if (this->WasActionCamActive)
@@ -317,27 +326,27 @@ void CRadialMenu::Activate()
 			Sleep(10);
 			this->API->GameBinds.Release(EGameBinds_CameraActionMode);
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPosWR(this->Origin.x, this->Origin.y);
-			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
+			this->SetCursor = true;
 		}).detach();
 	}
 	
 	if (RadialCtx->IsLeftClickHeld)
 	{
 		std::thread([this]() {
-			this->API->WndProc.SendToGameOnly(0, WM_LBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			this->API->WndProc.SendToGameOnly(0, WM_LBUTTONUP, 0, MAKELPARAM(this->Origin.x, this->Origin.y));
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPosWR(this->Origin.x, this->Origin.y);
-			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
+			this->SetCursor = true;
 		}).detach();
 	}
 	if (RadialCtx->IsRightClickHeld)
 	{
 		std::thread([this]() {
-			this->API->WndProc.SendToGameOnly(0, WM_RBUTTONUP, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			this->API->WndProc.SendToGameOnly(0, WM_RBUTTONUP, 0, MAKELPARAM(this->Origin.x, this->Origin.y));
 			Sleep(10); /* this delay is needed in order to set the cursor after action cam has been toggled */
-			SetCursorPosWR(this->Origin.x, this->Origin.y);
-			this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+			this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
+			this->SetCursor = true;
 		}).detach();
 	}
 
@@ -359,9 +368,8 @@ void CRadialMenu::Release(bool aIsCancel)
 	/* winapi set cursor */
 	if (this->RestoreCursor)
 	{
-		SetCursorPosWR(this->MousePos.x, this->MousePos.y);
-		ImGui::GetIO().MousePos = this->MousePos;
-		this->API->WndProc.SendToGameOnly(0, WM_MOUSEMOVE, 0, MAKELPARAM(this->MousePos.x, this->MousePos.y));
+		this->SetCursorPosition = GetCursorPosWR(this->MousePos.x, this->MousePos.y);
+		this->SetCursor = true;
 	}
 
 	if (this->WasActionCamActive)
@@ -457,8 +465,6 @@ void CRadialMenu::Release(bool aIsCancel)
 			}
 		}).detach();
 	}
-
-	this->Origin = this->MousePos = ImVec2(-1, -1);
 
 	this->IsActive = false;
 }
