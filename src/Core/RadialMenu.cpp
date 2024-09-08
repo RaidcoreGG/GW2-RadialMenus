@@ -486,6 +486,11 @@ void CRadialMenu::Release(ESelectionMode aReason)
 						Sleep(action->Duration);
 						break;
 					}
+					case EActionType::Return:
+					{
+						/* EXPLICIT RETURN to prevent further actions */
+						return;
+					}
 				}
 
 				previousExecuted = true;
@@ -707,6 +712,23 @@ void CRadialMenu::AddItemAction(std::string aItemId, int aValue, Conditions aAct
 		action->Activation = aActivation;
 		action->OnlyExecuteIfPrevious = aOnlyExecuteIfPrevious;
 		action->Duration = aValue;
+
+		item->Actions.push_back(action);
+	}
+}
+
+void CRadialMenu::AddItemAction(std::string aItemId, EActionType aType, Conditions aActivation, bool aOnlyExecuteIfPrevious)
+{
+	RadialItem* item = this->GetItem(aItemId);
+
+	if (item)
+	{
+		const std::lock_guard<std::mutex> lock(this->Mutex);
+
+		ActionBase* action = new ActionBase();
+		action->Type = aType;
+		action->Activation = aActivation;
+		action->OnlyExecuteIfPrevious = aOnlyExecuteIfPrevious;
 
 		item->Actions.push_back(action);
 	}

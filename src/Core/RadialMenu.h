@@ -124,6 +124,12 @@ class CRadialMenu
 	void AddItemAction(std::string aItemId, int aValue, Conditions aActivation = {}, bool aOnlyExecuteIfPrevious = false);
 
 	///----------------------------------------------------------------------------------------------------
+	/// AddItemAction:
+	/// 	Adds an action to an item.
+	///----------------------------------------------------------------------------------------------------
+	void AddItemAction(std::string aItemId, EActionType aType, Conditions aActivation = {}, bool aOnlyExecuteIfPrevious = false);
+
+	///----------------------------------------------------------------------------------------------------
 	/// RemoveItemAction:
 	/// 	Removes an action from an item.
 	///----------------------------------------------------------------------------------------------------

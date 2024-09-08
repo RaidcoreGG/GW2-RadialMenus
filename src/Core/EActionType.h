@@ -12,7 +12,8 @@ enum class EActionType
 	GameInputBindPress,
 	GameInputBindRelease,
 	Event,
-	Delay
+	Delay,
+	Return
 };
 
 #endif

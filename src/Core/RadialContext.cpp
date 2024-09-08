@@ -1048,6 +1048,7 @@ void CRadialContext::RenderOptions()
 				case EActionType::GameInputBindRelease: actionType = "InputBind Release (Game)"; break;
 				case EActionType::Event: actionType = "Event"; break;
 				case EActionType::Delay: actionType = "Delay"; break;
+				case EActionType::Return: actionType = "Return"; break;
 			}
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
@@ -1138,6 +1139,16 @@ void CRadialContext::RenderOptions()
 						this->EditingItem->Actions[i]->Type = EActionType::Delay;
 					}
 				}
+				if (ImGui::Selectable("Return"))
+				{
+					if (action->Type != EActionType::Return)
+					{
+						delete this->EditingItem->Actions[i];
+						this->EditingItem->Actions[i] = new ActionBase();
+						this->EditingItem->Actions[i]->Type = EActionType::Return;
+					}
+				}
+				ImGui::TooltipGeneric("Return prevents the execution of any further actions.\nUseful when linked with previous conditional actions.");
 				ImGui::EndCombo();
 			}
 
@@ -1398,6 +1409,11 @@ void CRadialContext::RenderOptions()
 					ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100);
 					break;
 				}
+				case EActionType::Return:
+				{
+					/* there's no parameter */
+					break;
+				}
 			}
 
 			ImGui::TableSetColumnIndex(2);
@@ -1651,6 +1667,11 @@ void CRadialContext::LoadInternal()
 							if (!radialActionData["Duration"].is_null()) { radialActionData["Duration"].get_to(actionDuration); }
 
 							radial->AddItemAction(itemId, actionDuration, actionActivation, execCond);
+							break;
+						}
+						case EActionType::Return:
+						{
+							radial->AddItemAction(itemId, EActionType::Return);
 							break;
 						}
 					}
