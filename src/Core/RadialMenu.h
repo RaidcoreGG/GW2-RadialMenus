@@ -33,6 +33,7 @@ class CRadialMenu
 	float                       Scale;
 	int                         HoverTimeout;
 	int                         ItemRotationDegrees;
+	bool                        ShowItemNameTooltip;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor

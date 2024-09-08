@@ -862,6 +862,7 @@ void CRadialContext::RenderOptions()
 
 		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
+		ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
 	}
 	else if (this->EditingItem) /* editing sub item */
 	{
@@ -1580,6 +1581,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["HoverTimeout"].is_null()) { radialData["HoverTimeout"].get_to(hoverTimeout); }
 			int itemRotation = 0;
 			if (!radialData["ItemRotation"].is_null()) { radialData["ItemRotation"].get_to(itemRotation); }
+			bool showTooltip = false;
+			if (!radialData["ShowItemNameTooltip"].is_null()) { radialData["ShowItemNameTooltip"].get_to(showTooltip); }
 
 			bool idCollision = this->IsIDInUse(id);
 
@@ -1597,6 +1600,7 @@ void CRadialContext::LoadInternal()
 			radial->Scale = scale;
 			radial->HoverTimeout = hoverTimeout;
 			radial->ItemRotationDegrees = itemRotation;
+			radial->ShowItemNameTooltip = showTooltip;
 
 			if (radialData["Items"].is_null())
 			{

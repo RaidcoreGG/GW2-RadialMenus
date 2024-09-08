@@ -92,6 +92,7 @@ void CRadialMenu::Save()
 		{"Scale", this->Scale},
 		{"HoverTimeout", this->HoverTimeout},
 		{"ItemRotation", this->ItemRotationDegrees},
+		{"ShowItemNameTooltip", this->ShowItemNameTooltip},
 
 		{"Items", json::array()}
 	};
@@ -191,6 +192,8 @@ bool CRadialMenu::Render()
 	ImVec2 safePad = style.DisplaySafeAreaPadding;
 	style.DisplaySafeAreaPadding = ImVec2(0, 0);
 
+	ImVec2 tooltipPad = style.WindowPadding;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
 	ImGui::SetNextWindowSize(ImVec2(NexusLink->Width, NexusLink->Height), ImGuiCond_Appearing);
@@ -281,6 +284,17 @@ bool CRadialMenu::Render()
 					item->Icon.Texture = this->API->Textures.Get(item->Icon.Value.c_str());
 				}
 			}
+		}
+
+		if (this->ShowItemNameTooltip && this->HoverIndex > -1)
+		{
+			RadialItem* hovItem = this->DrawnItems[this->HoverIndex];
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, tooltipPad);
+			ImGui::BeginTooltip();
+			ImGui::Text(hovItem->Identifier.c_str());
+			ImGui::EndTooltip();
+			ImGui::PopStyleVar();
 		}
 
 		ImGui::EndChild();
