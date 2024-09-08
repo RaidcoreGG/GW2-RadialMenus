@@ -12,7 +12,8 @@ enum class ESelectionMode
 	ReleaseOrClick,
 	Hover,
 
-	Escape /* internal */
+	Escape,    /* internal */
+	SingleItem /* internal */
 };
 
 #endif

@@ -506,7 +506,12 @@ bool CRadialContext::Release(ESelectionMode aMode)
 		}
 		case ESelectionMode::Escape:
 		{
-			this->ActiveRadial->Release(true);
+			this->ActiveRadial->Release(ESelectionMode::Escape);
+			break;
+		}
+		case ESelectionMode::SingleItem:
+		{
+			this->ActiveRadial->Release(ESelectionMode::SingleItem);
 			break;
 		}
 	}

@@ -169,7 +169,7 @@ bool CRadialMenu::Render()
 
 	if (!this->IsActive) { return false; }
 	if (this->DrawnItems.size() <= 0) { return false; }
-	if (this->DrawnItems.size() == 1) { return false; } /* todo skip drawing, just select */
+	if (this->DrawnItems.size() == 1) { RadialCtx->Release(ESelectionMode::SingleItem); return false; }
 
 	ImVec2 size = ImVec2(this->Size.x * NexusLink->Scaling, this->Size.y * NexusLink->Scaling);
 	ImVec2 sizeHalf = ImVec2((size.x / 2.0f), (size.y / 2.0f));
@@ -298,7 +298,13 @@ bool CRadialMenu::Activate()
 		}
 	}
 
-	if (this->DrawnItems.size() < 2)
+	if (this->DrawnItems.size() == 1)
+	{
+		this->IsActive = true;
+		return true;
+	}
+	
+	if (this->DrawnItems.size() <= 0)
 	{
 		this->SegmentRadius = 0;
 		return false;
@@ -370,26 +376,31 @@ bool CRadialMenu::Activate()
 	return true;
 }
 
-void CRadialMenu::Release(bool aIsCancel)
+void CRadialMenu::Release(ESelectionMode aReason)
 {
 	if (!this->IsActive) { return; }
 
 	/* if is cancel, directly set it to -1 to not trigger any release */
-	int idx = aIsCancel ? -1 : this->HoverIndex;
+	int idx = aReason == ESelectionMode::Escape ? -1 : this->HoverIndex;
 
 	/* winapi set cursor */
-	if (this->RestoreCursor)
+	if (this->RestoreCursor && aReason != ESelectionMode::SingleItem)
 	{
 		this->SetCursorPosition = GetCursorPosWR(this->MousePos.x, this->MousePos.y);
 		this->SetCursor = true;
 	}
 
-	if (this->WasActionCamActive)
+	if (this->WasActionCamActive && aReason != ESelectionMode::SingleItem)
 	{
 		this->API->GameBinds.InvokeAsync(EGameBinds_CameraActionMode, 10);
 	}
 
 	this->WasActionCamActive = false;
+
+	if (aReason == ESelectionMode::SingleItem)
+	{
+		idx = 0;
+	}
 
 	if (idx > -1)
 	{

@@ -51,7 +51,7 @@ class CRadialMenu
 
 	///----------------------------------------------------------------------------------------------------
 	/// Render:
-	/// 	Renders the radial menu. Returns true if an item is hovered.
+	/// 	Renders the radial menu. Returns true if a hovered item should activate.
 	///----------------------------------------------------------------------------------------------------
 	bool Render();
 
@@ -66,7 +66,7 @@ class CRadialMenu
 	/// Release:
 	/// 	Releases the radial menu.
 	///----------------------------------------------------------------------------------------------------
-	void Release(bool aIsCancel = false);
+	void Release(ESelectionMode aReason = ESelectionMode::None);
 
 	///----------------------------------------------------------------------------------------------------
 	/// AddItem:
