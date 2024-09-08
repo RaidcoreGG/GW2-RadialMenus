@@ -1938,7 +1938,8 @@ void CRadialContext::ExecuteQueuedItem(RadialItem* aItem)
 
 	if (this->QueuedElapsedTime > this->QueuedItem->ActivationTimeout * 1000)
 	{
-		APIDefs->UI.SendAlert("Cancelled after waiting for timeout.");
+		std::string str = String::Format("Cancelled activation of %s after waiting for %d seconds.", this->QueuedItem->Identifier.c_str(), this->QueuedItem->ActivationTimeout);
+		APIDefs->UI.SendAlert(str.c_str());
 		this->DestroyQueuedItem();
 		return;
 	}
