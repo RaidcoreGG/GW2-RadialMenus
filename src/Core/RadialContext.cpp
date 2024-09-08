@@ -263,21 +263,21 @@ std::string GameBindToString(EGameBinds aGameBind)
 std::string ConditionsToString(Conditions* aConditions)
 {
 	std::string str;
-	if (aConditions->IsCombat         != EObserveState::None) { str.append(aConditions->IsCombat == EObserveState::True ? "- Is in combat\n" : "- Is out of combat\n"); }
-	if (aConditions->IsMounted        != EObserveState::None) { str.append(aConditions->IsMounted == EObserveState::True ? "- Is mounted\n" : "- Is not mounted\n"); }
-	if (aConditions->IsCommander      != EObserveState::None) { str.append(aConditions->IsCommander == EObserveState::True ? "- Has commander tag\n" : "- Does not have commander tag\n"); }
-	if (aConditions->IsCompetitive    != EObserveState::None) { str.append(aConditions->IsCompetitive == EObserveState::True ? "- Is in WvW/PvP\n" : "- Is in PvE\n"); }
-	if (aConditions->IsMapOpen        != EObserveState::None) { str.append(aConditions->IsMapOpen == EObserveState::True ? "- Map is open\n" : "- Map is closed\n"); }
-	if (aConditions->IsTextboxActive  != EObserveState::None) { str.append(aConditions->IsTextboxActive == EObserveState::True ? "- Textbox focused\n" : "- Textbox not focused\n"); }
-	if (aConditions->IsInstance       != EObserveState::None) { str.append(aConditions->IsInstance == EObserveState::True ? "- Is in instance\n" : "- Is not in instance\n"); }
+	if (aConditions->IsCombat         != EObserveBoolean::None) { str.append(aConditions->IsCombat == EObserveBoolean::True ? "- Is in combat\n" : "- Is out of combat\n"); }
+	if (aConditions->IsMounted        != EObserveBoolean::None) { str.append(aConditions->IsMounted == EObserveBoolean::True ? "- Is mounted\n" : "- Is not mounted\n"); }
+	if (aConditions->IsCommander      != EObserveBoolean::None) { str.append(aConditions->IsCommander == EObserveBoolean::True ? "- Has commander tag\n" : "- Does not have commander tag\n"); }
+	if (aConditions->IsCompetitive    != EObserveBoolean::None) { str.append(aConditions->IsCompetitive == EObserveBoolean::True ? "- Is in WvW/PvP\n" : "- Is in PvE\n"); }
+	if (aConditions->IsMapOpen        != EObserveBoolean::None) { str.append(aConditions->IsMapOpen == EObserveBoolean::True ? "- Map is open\n" : "- Map is closed\n"); }
+	if (aConditions->IsTextboxActive  != EObserveBoolean::None) { str.append(aConditions->IsTextboxActive == EObserveBoolean::True ? "- Textbox focused\n" : "- Textbox not focused\n"); }
+	if (aConditions->IsInstance       != EObserveBoolean::None) { str.append(aConditions->IsInstance == EObserveBoolean::True ? "- Is in instance\n" : "- Is not in instance\n"); }
 
 	/* derived game states */
-	if (aConditions->IsGameplay       != EObserveState::None) { str.append(aConditions->IsGameplay == EObserveState::True ? "- Is gameplay\n" : "- Is loading screen/cutscene/character select\n"); }
+	if (aConditions->IsGameplay       != EObserveBoolean::None) { str.append(aConditions->IsGameplay == EObserveBoolean::True ? "- Is gameplay\n" : "- Is loading screen/cutscene/character select\n"); }
 
 	/* derived positional states */
-	if (aConditions->IsUnderwater     != EObserveState::None) { str.append(aConditions->IsUnderwater == EObserveState::True ? "- Is underwater\n" : "- Is terrestrial\n"); }
-	if (aConditions->IsOnWaterSurface != EObserveState::None) { str.append(aConditions->IsOnWaterSurface == EObserveState::True ? "- Is on water surface\n" : "- Is not on water surface\n"); }
-	if (aConditions->IsAirborne       != EObserveState::None) { str.append(aConditions->IsAirborne == EObserveState::True ? "- Is airborne" : "- Is not airborne"); }
+	if (aConditions->IsUnderwater     != EObserveBoolean::None) { str.append(aConditions->IsUnderwater == EObserveBoolean::True ? "- Is underwater\n" : "- Is terrestrial\n"); }
+	if (aConditions->IsOnWaterSurface != EObserveBoolean::None) { str.append(aConditions->IsOnWaterSurface == EObserveBoolean::True ? "- Is on water surface\n" : "- Is not on water surface\n"); }
+	if (aConditions->IsAirborne       != EObserveBoolean::None) { str.append(aConditions->IsAirborne == EObserveBoolean::True ? "- Is airborne" : "- Is not airborne"); }
 
 	if (!str.empty())
 	{
@@ -288,7 +288,7 @@ std::string ConditionsToString(Conditions* aConditions)
 }
 /* helpers end */
 
-bool ConditionSelectable(std::string aName, EObserveState* aState, const char* aHelpTooltip = nullptr)
+bool ConditionSelectable(std::string aName, EObserveBoolean* aState, const char* aHelpTooltip = nullptr)
 {
 	ImGui::TableNextRow();
 	ImGui::TableSetColumnIndex(0);
@@ -303,13 +303,13 @@ bool ConditionSelectable(std::string aName, EObserveState* aState, const char* a
 	std::string state;
 	switch (*aState)
 	{
-		case EObserveState::None:
+		case EObserveBoolean::None:
 			state = "Either";
 			break;
-		case EObserveState::False:
+		case EObserveBoolean::False:
 			state = "Must be false";
 			break;
-		case EObserveState::True:
+		case EObserveBoolean::True:
 			state = "Must be true";
 			break;
 	}
@@ -318,15 +318,15 @@ bool ConditionSelectable(std::string aName, EObserveState* aState, const char* a
 	{
 		if (ImGui::Selectable("Either"))
 		{
-			*aState = EObserveState::None;
+			*aState = EObserveBoolean::None;
 		}
 		if (ImGui::Selectable("Must be false"))
 		{
-			*aState = EObserveState::False;
+			*aState = EObserveBoolean::False;
 		}
 		if (ImGui::Selectable("Must be true"))
 		{
-			*aState = EObserveState::True;
+			*aState = EObserveBoolean::True;
 		}
 		ImGui::EndCombo();
 	}
@@ -663,16 +663,13 @@ void CRadialContext::RenderOptions()
 				i++;
 			}
 
-			if (capacity > items.size())
+			if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
 			{
-				if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
-				{
-					radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
-				}
+				radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
 			}
-			else if (capacity < items.size())
+			if (capacity < items.size())
 			{
-				ImGui::TextColored(ImColor(255, 0, 0, 255), "Too many items!");
+				ImGui::TextColored(ImColor(255, 255, 0, 255), "Only %d items will be drawn.", capacity);
 			}
 
 			ImGui::TreePop();

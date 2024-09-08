@@ -167,9 +167,9 @@ bool CRadialMenu::Render()
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	if (this->DrawnItems.size() > this->ItemsCapacity) { return false; }
-	if (this->DrawnItems.size() < 2) { return false; }
 	if (!this->IsActive) { return false; }
+	if (this->DrawnItems.size() <= 0) { return false; }
+	if (this->DrawnItems.size() == 1) { return false; } /* todo skip drawing, just select */
 
 	ImVec2 size = ImVec2(this->Size.x * NexusLink->Scaling, this->Size.y * NexusLink->Scaling);
 	ImVec2 sizeHalf = ImVec2((size.x / 2.0f), (size.y / 2.0f));
@@ -237,13 +237,21 @@ bool CRadialMenu::Render()
 
 		if (this->SegmentTexture)
 		{
+			/* draw segment backgrounds */
 			for (size_t i = 0; i < this->DrawnItems.size(); i++)
 			{
 				RadialItem* item = this->DrawnItems[i];
 
 				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
 				ImGui::ImageRotated(this->SegmentTexture->Resource, Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
-				
+			}
+
+			/* draw icons */
+			for (size_t i = 0; i < this->DrawnItems.size(); i++)
+			{
+				RadialItem* item = this->DrawnItems[i];
+				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
+
 				if (item->Icon.Texture)
 				{
 					float deg = (segmentStart + (SegmentRadius / 2)) - 90.0f; // center of segment and correct for 0 up
@@ -284,7 +292,7 @@ bool CRadialMenu::Activate()
 	this->DrawnItems.clear();
 	for (RadialItem* item : this->Items)
 	{
-		if (StateObserver::IsMatch(&item->Visibility))
+		if (StateObserver::IsMatch(&item->Visibility) && this->DrawnItems.size() < this->ItemsCapacity)
 		{
 			this->DrawnItems.push_back(item);
 		}
@@ -522,17 +530,6 @@ void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int a
 	} while (exists);
 
 	item->Identifier = itemName;
-
-	switch (this->Type)
-	{
-		case ERadialType::None: return;
-		case ERadialType::Normal:
-			if (this->Items.size() >= ItemsCapacity) { return; }
-			break;
-		case ERadialType::Small:
-			if (this->Items.size() >= ItemsCapacity) { return; }
-			break;
-	}
 
 	switch (item->Icon.Type)
 	{
@@ -846,7 +843,7 @@ void CRadialMenu::ApplyConditionToAll(Conditions* aOrigin, int aConditionIndex, 
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	EObserveState targetState = aOrigin->GetIndex(aStateIndex);
+	EObserveBoolean targetState = aOrigin->GetIndex(aStateIndex);
 	Conditions fullCopy = *aOrigin;
 
 	for (RadialItem* item : this->Items)
@@ -878,7 +875,7 @@ void CRadialMenu::ApplyConditionToAll(RadialItem* aItem, Conditions* aOrigin, in
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	EObserveState targetState = aOrigin->GetIndex(aStateIndex);
+	EObserveBoolean targetState = aOrigin->GetIndex(aStateIndex);
 	Conditions fullCopy = *aOrigin;
 
 	for (ActionBase* action : aItem->Actions)

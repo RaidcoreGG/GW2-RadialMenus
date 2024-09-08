@@ -1,7 +1,7 @@
 #include "Conditions.h"
 
 
-void Conditions::SetIndex(int aIndex, EObserveState aState)
+void Conditions::SetIndex(int aIndex, EObserveBoolean aState)
 {
 	switch (aIndex)
 	{
@@ -21,7 +21,7 @@ void Conditions::SetIndex(int aIndex, EObserveState aState)
 	}
 }
 
-EObserveState Conditions::GetIndex(int aIndex)
+EObserveBoolean Conditions::GetIndex(int aIndex)
 {
 	switch (aIndex)
 	{
@@ -40,7 +40,7 @@ EObserveState Conditions::GetIndex(int aIndex)
 		case 10: return this->IsAirborne;
 	}
 
-	return EObserveState::None;
+	return EObserveBoolean::None;
 }
 
 void to_json(json& j, const Conditions& c)

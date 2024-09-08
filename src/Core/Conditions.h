@@ -5,9 +5,9 @@
 using json = nlohmann::json;
 
 ///----------------------------------------------------------------------------------------------------
-/// EObserveState Enumeration
+/// EObserveBoolean Enumeration
 ///----------------------------------------------------------------------------------------------------
-enum class EObserveState
+enum class EObserveBoolean
 {
 	None,
 	False,
@@ -19,24 +19,24 @@ enum class EObserveState
 ///----------------------------------------------------------------------------------------------------
 struct Conditions
 {
-	EObserveState IsCombat;
-	EObserveState IsMounted;
-	EObserveState IsCommander;
-	EObserveState IsCompetitive;
-	EObserveState IsMapOpen;
-	EObserveState IsTextboxActive;
-	EObserveState IsInstance;
+	EObserveBoolean IsCombat;
+	EObserveBoolean IsMounted;
+	EObserveBoolean IsCommander;
+	EObserveBoolean IsCompetitive;
+	EObserveBoolean IsMapOpen;
+	EObserveBoolean IsTextboxActive;
+	EObserveBoolean IsInstance;
 
 	/* derived game states */
-	EObserveState IsGameplay;
+	EObserveBoolean IsGameplay;
 	
 	/* derived positional states */
-	EObserveState IsUnderwater;
-	EObserveState IsOnWaterSurface;
-	EObserveState IsAirborne;
+	EObserveBoolean IsUnderwater;
+	EObserveBoolean IsOnWaterSurface;
+	EObserveBoolean IsAirborne;
 
-	void SetIndex(int aIndex, EObserveState aState);
-	EObserveState GetIndex(int aIndex);
+	void SetIndex(int aIndex, EObserveBoolean aState);
+	EObserveBoolean GetIndex(int aIndex);
 };
 
 void to_json(json& j, const Conditions& c);
