@@ -11,6 +11,9 @@
 #include "Shared.h"
 #include "Util.h"
 
+#define JUMP_DURATION_MS 800
+#define DISMOUNT_DURATION_MS 700
+
 namespace StateObserver
 {
 	static Conditions CurrentState;
@@ -114,7 +117,7 @@ namespace StateObserver
 			LastDeltaY = deltaY;
 		}
 		
-		if (timestampNow - LastJumpTimestamp <= 700)
+		if (timestampNow - LastJumpTimestamp <= JUMP_DURATION_MS)
 		{
 			IsJumping = true;
 		}
@@ -130,7 +133,7 @@ namespace StateObserver
 			LastDismountTimestamp = timestampNow;
 		}
 
-		if (timestampNow - LastDismountTimestamp <= 700)
+		if (timestampNow - LastDismountTimestamp <= DISMOUNT_DURATION_MS)
 		{
 			IsDismounting = true;
 		}
@@ -193,7 +196,7 @@ namespace StateObserver
 		{
 			unsigned long long timestampNow = Time::GetTimestampMillis();
 
-			if (timestampNow - LastJumpTimestamp > 700 || LastJumpTimestamp == -1)
+			if (timestampNow - LastJumpTimestamp > JUMP_DURATION_MS || LastJumpTimestamp == -1)
 			{
 				LastJumpTimestamp = Time::GetTimestampMillis();
 			}

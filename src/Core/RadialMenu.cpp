@@ -168,6 +168,19 @@ bool CRadialMenu::Render()
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
 	if (!this->IsActive) { return false; }
+
+	this->DrawnItems.clear();
+	for (RadialItem* item : this->Items)
+	{
+		if (StateObserver::IsMatch(&item->Visibility) && this->DrawnItems.size() < this->ItemsCapacity)
+		{
+			this->DrawnItems.push_back(item);
+		}
+	}
+
+	this->LoadSegmentTexture();
+	this->SegmentRadius = 360.0f / this->DrawnItems.size();
+
 	if (this->DrawnItems.size() <= 0) { return false; }
 	if (this->DrawnItems.size() == 1) { RadialCtx->Release(ESelectionMode::SingleItem); return false; }
 
@@ -269,10 +282,7 @@ bool CRadialMenu::Render()
 				}
 			}
 		}
-		else
-		{
-			this->LoadSegmentTexture();
-		}
+
 		ImGui::EndChild();
 	}
 	ImGui::End();
@@ -309,12 +319,6 @@ bool CRadialMenu::Activate()
 		this->SegmentRadius = 0;
 		return false;
 	}
-	else
-	{
-		this->SegmentRadius = 360.0f / this->DrawnItems.size();
-	}
-
-	this->SegmentTexture = nullptr;
 
 	this->Origin = this->MousePos = ImGui::GetMousePos();
 	CURSORINFO curInfo{};
