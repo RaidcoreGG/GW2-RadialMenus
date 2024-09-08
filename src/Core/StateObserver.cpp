@@ -192,7 +192,7 @@ namespace StateObserver
 	{
 		if (!(NexusLink && MumbleLink && MumbleIdentity)) { return uMsg; }
 
-		if (uMsg == WM_KEYDOWN && wParam == VK_SPACE && NexusLink->IsGameplay && MumbleLink->AvatarPosition.Y > 0)
+		if (uMsg == WM_KEYDOWN && wParam == VK_SPACE && NexusLink->IsGameplay)
 		{
 			unsigned long long timestampNow = Time::GetTimestampMillis();
 
