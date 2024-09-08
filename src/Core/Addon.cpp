@@ -87,7 +87,6 @@ namespace Addon
 	{
 		assert(RadialCtx);
 		RadialCtx->RenderOptions();
-		StateObserver::RenderDebug();
 	}
 
 	void OnInputBind(const char* aIdentifier, bool aIsRelease)

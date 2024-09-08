@@ -397,6 +397,7 @@ bool CRadialMenu::Activate()
 void CRadialMenu::Release(ESelectionMode aReason)
 {
 	if (!this->IsActive) { return; }
+	this->IsActive = false;
 
 	/* if is cancel, directly set it to -1 to not trigger any release */
 	int idx = aReason == ESelectionMode::Escape ? -1 : this->HoverIndex;
@@ -424,95 +425,10 @@ void CRadialMenu::Release(ESelectionMode aReason)
 	{
 		RadialItem* item = this->DrawnItems[idx];
 		
-		std::thread([this, item]() {
-			/* FIXME: this needs to be able to abort if another item is selected halfway through execution */
-			int msWaited = 0;
-			while (!StateObserver::IsMatch(&item->Activation))
-			{
-				msWaited += 100;
-				Sleep(100);
-
-				if (msWaited > item->ActivationTimeout * 1000) { break; }
-			}
-
-			if (msWaited > item->ActivationTimeout * 1000)
-			{
-				this->API->UI.SendAlert("Cancelled after waiting for timeout.");
-				return;
-			}
-
-			/* initially set to true, and only in the skip set to false, this way the first action ignores the setting */
-			bool previousExecuted = true;
-			for (ActionBase* act : item->Actions)
-			{
-				if (!StateObserver::IsMatch(&act->Activation))
-				{
-					previousExecuted = false;
-					continue;
-				}
-
-				if (act->OnlyExecuteIfPrevious && !previousExecuted)
-				{
-					previousExecuted = false;
-					continue;
-				}
-
-				switch (act->Type)
-				{
-					case EActionType::InputBind:
-					{
-						ActionGeneric* action = (ActionGeneric*)act;
-						this->API->InputBinds.Invoke(action->Identifier.c_str(), false);
-						this->API->InputBinds.Invoke(action->Identifier.c_str(), true);
-						break;
-					}
-					case EActionType::GameInputBind:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-
-						this->API->GameBinds.Press(action->Identifier);
-						Sleep(50);
-						this->API->GameBinds.Release(action->Identifier);
-
-						break;
-					}
-					case EActionType::GameInputBindPress:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						this->API->GameBinds.Press(action->Identifier);
-						break;
-					}
-					case EActionType::GameInputBindRelease:
-					{
-						ActionGameInputBind* action = (ActionGameInputBind*)act;
-						this->API->GameBinds.Release(action->Identifier);
-						break;
-					}
-					case EActionType::Event:
-					{
-						ActionGeneric* action = (ActionGeneric*)act;
-						this->API->Events.Raise(action->Identifier.c_str(), nullptr);
-						break;
-					}
-					case EActionType::Delay:
-					{
-						ActionDelay* action = (ActionDelay*)act;
-						Sleep(action->Duration);
-						break;
-					}
-					case EActionType::Return:
-					{
-						/* EXPLICIT RETURN to prevent further actions */
-						return;
-					}
-				}
-
-				previousExecuted = true;
-			}
+		std::thread([item]() {
+			RadialCtx->QueueItem(item);
 		}).detach();
 	}
-
-	this->IsActive = false;
 }
 
 void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, Conditions aVisibility, Conditions aActivation, int aActivationTimeout)

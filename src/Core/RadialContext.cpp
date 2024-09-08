@@ -20,6 +20,7 @@ using json = nlohmann::json;
 #include "Shared.h"
 #include "Util.h"
 #include "resource.h"
+#include "StateObserver.h"
 
 #define NORMAL_ITEM_COLOR ImColor(255, 255, 255, 255)
 #define NORMAL_ITEM_COLOR_HOVER ImColor(245, 192, 67, 255)
@@ -532,935 +533,1074 @@ void CRadialContext::Render()
 			this->Release(ESelectionMode::Hover);
 		}
 	}
+
+	this->RenderWidget();
+}
+
+void CRadialContext::RenderWidget()
+{
+	if (this->QueuedItem == nullptr && !this->IsEditingWidget) { return; }
+
+	static Texture* icon = APIDefs->Textures.Get("ICON_GENERIC");
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	float sz = 52.0f * NexusLink->Scaling;
+
+	static bool isHovered = false;
+	bool isEditing = this->IsEditingWidget;
+
+	ImGui::SetNextWindowSize(ImVec2(sz + 32.0f, sz + 32.0f), ImGuiCond_Always);
+	if (ImGui::Begin("RADIAL##ITEMWIDGET", 0, ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | (this->IsEditingWidget ? 0 : ImGuiWindowFlags_NoMove)))
+	{
+		float halfSz = sz / 2.0f;
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+		
+		ImGui::SetCursorPos(ImVec2(16.0f, 16.0f));
+		ImVec2 p = ImGui::GetCursorScreenPos();
+
+		ImU32 color = ImColor(255, 255, 255, 255);
+		ImU32 colorUnder = ImColor(255, 255, 255, 128);
+		float thickness = 3 * NexusLink->Scaling;
+
+		static float spinProgress = 0.0f;
+
+		spinProgress += 0.01f;
+		if (spinProgress > 1.0f) { spinProgress = 0; }
+
+		int amtTotal = 128;
+		float amtDrawnPerc = isEditing ? spinProgress : ((float)this->QueuedElapsedTime / (float)(this->QueuedItem->ActivationTimeout * 1000));
+		int amtDrawn = amtTotal * amtDrawnPerc;
+
+		std::vector<ImVec2> circle;
+		for (size_t i = 0; i < amtDrawn; i++)
+		{
+			float degRad = i * 360 / amtTotal * 3.14159f / 180.0f;
+			constexpr float degOff = 90 * 3.15159f / 180.0f;
+
+			float x = (halfSz * cos(degRad - degOff)) + halfSz + p.x;
+			float y = (halfSz * sin(degRad - degOff)) + halfSz + p.y;
+
+			circle.push_back(ImVec2(x, y));
+
+			if (i > 0)
+			{
+				drawList->AddLine(circle[i - 1], circle[i], colorUnder, thickness * 1.25);
+				drawList->AddLine(circle[i - 1], circle[i], color, thickness);
+			}
+		}
+
+		if (amtTotal == amtDrawn)
+		{
+			drawList->AddLine(circle[amtTotal - 1], circle[0], colorUnder, thickness * 1.25);
+			drawList->AddLine(circle[amtTotal - 1], circle[0], color, thickness);
+		}
+
+		if (icon)
+		{
+			ImVec2 iconSize = isHovered ? ImVec2(sz * 1.2f, sz * 1.2f) : ImVec2(sz, sz);
+
+			ImVec2 iconPos = ImGui::GetCursorPos();
+
+			if (isHovered)
+			{
+				float diff = (iconSize.x - sz) / 2.0f;
+				iconPos = ImVec2(iconPos.x - diff, iconPos.y - diff);
+			}
+			if (this->WidgetBase)
+			{
+				ImGui::SetCursorPos(iconPos);
+				ImGui::Image(this->WidgetBase->Resource, iconSize);
+			}
+			else
+			{
+				this->WidgetBase = APIDefs->Textures.GetOrCreateFromResource("TEX_RADIALWIDGET_BASE", TEX_WIDGET_BASE, SelfModule);
+			}
+
+			ImGui::SetCursorPos(iconPos);
+			ImGui::Image(this->QueuedItem ? this->QueuedItem->Icon.Texture->Resource : icon->Resource, iconSize);
+			
+			if (isEditing)
+			{
+				drawList->AddLine(ImVec2(p.x, p.y),                           ImVec2(p.x + iconSize.x, p.y),              ImColor(255, 0, 0, 255), 2.0f);
+				drawList->AddLine(ImVec2(p.x + iconSize.x, p.y),              ImVec2(p.x + iconSize.x, p.y + iconSize.y), ImColor(255, 0, 0, 255), 2.0f);
+				drawList->AddLine(ImVec2(p.x + iconSize.x, p.y + iconSize.y), ImVec2(p.x, p.y + iconSize.y),              ImColor(255, 0, 0, 255), 2.0f);
+				drawList->AddLine(ImVec2(p.x, p.y + iconSize.y),              ImVec2(p.x, p.y),                           ImColor(255, 0, 0, 255), 2.0f);
+			}
+			else
+			{
+				isHovered = ImGui::IsItemHovered();
+
+				if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+				{
+					/* reset countdown */
+					this->QueuedElapsedTime = 0;
+				}
+				else if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+				{
+					/* cancel action */
+					this->IsCanceled = true;
+				}
+			}
+		}
+	}
+	ImGui::End();
+}
+
+void CRadialContext::RenderEditorTab()
+{
+	float width = ImGui::GetWindowContentRegionWidth();
+
+	if (ImGui::BeginTabItem("Editor##radialmenus"))
+	{
+		if (ImGui::Button("Reload radials"))
+		{
+			this->LoadInternal();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Save changes"))
+		{
+			this->SaveInternal();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Open folder"))
+		{
+			ShellExecuteA(NULL, "explore", PacksDirectory.string().c_str(), NULL, NULL, SW_SHOW);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("New radial"))
+		{
+			std::thread([this]() {
+				OPENFILENAME ofn{};
+				char buff[MAX_PATH]{};
+				char initialDir[MAX_PATH]{};
+				strcpy_s(initialDir, PacksDirectory.string().c_str());
+
+				ofn.lStructSize = sizeof(OPENFILENAME);
+				ofn.hwndOwner = 0;
+				ofn.lpstrFile = buff;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrFilter = "JSON\0*.json";
+				ofn.Flags = OFN_PATHMUSTEXIST | OFN_CREATEPROMPT;
+				ofn.lpstrInitialDir = initialDir;
+
+				if (GetSaveFileName(&ofn))
+				{
+					std::filesystem::path path = ofn.lpstrFile != 0 ? ofn.lpstrFile : std::filesystem::path{};
+
+					if (path.extension() != ".json")
+					{
+						path += ".json";
+					}
+
+					if (!path.empty())
+					{
+						if (std::filesystem::exists(path))
+						{
+							this->Remove(path);
+						}
+						this->Add(path, "New Radial " + std::to_string(this->GetLowestUnusedID()));
+					}
+				}
+			}).detach();
+		}
+
+		ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
+
+		ImGui::TextDisabled("Select Radial Menu:");
+		std::string radDel;
+		for (CRadialMenu* radial : this->Radials)
+		{
+			if (ImGui::TreeNode(radial->GetName().c_str()))
+			{
+				std::string popupName = "RadialCtxMenu#" + radial->GetName();
+				if (ImGui::BeginPopupContextItem(popupName.c_str()))
+				{
+					if (ImGui::Button("Delete"))
+					{
+						radDel = radial->GetName();
+					}
+					ImGui::EndPopup();
+				}
+				ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
+
+				if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), this->EditingMenu == radial && this->EditingItem == nullptr))
+				{
+					this->EditingMenu = radial;
+					this->EditingItem = nullptr;
+				}
+				ImGui::Separator();
+
+				int capacity = radial->GetCapacity();
+				std::vector<RadialItem*> items = radial->GetItems();
+
+				int i = 0;
+				for (RadialItem* item : items)
+				{
+					ImGui::TextDisabled("Item");
+					ImGui::SameLine();
+					
+					float btnSz = ImGui::GetFrameHeight();
+					float btnPad = ImGui::GetStyle().ItemSpacing.x;
+
+					if (ImGui::Selectable(item->Identifier.c_str(), this->EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
+					{
+						this->EditingMenu = radial;
+						this->EditingItem = item;
+					}
+					ImGui::SameLine();
+					if (ImGui::ArrowButtonCondDisabled(("up_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
+					{
+						radial->MoveItemUp(item->Identifier);
+					}
+					ImGui::SameLine();
+					if (ImGui::ArrowButtonCondDisabled(("dn_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == items.size() - 1))
+					{
+						radial->MoveItemDown(item->Identifier);
+					}
+					ImGui::SameLine();
+					if (ImGui::CrossButton(("x_radialitem##" + std::to_string(i)).c_str()))
+					{
+						this->Release(ESelectionMode::Escape);
+						radial->RemoveItem(item->Identifier);
+						if (this->EditingItem == item)
+						{
+							this->EditingItem = nullptr;
+						}
+					}
+
+					i++;
+				}
+
+				if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
+				{
+					radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
+				}
+				if (capacity < items.size())
+				{
+					ImGui::TextColored(ImColor(255, 255, 0, 255), "Only %d items will be drawn.", capacity);
+				}
+
+				ImGui::TreePop();
+			}
+			else
+			{
+				std::string popupName = "RadialCtxMenu#" + radial->GetName();
+				if (ImGui::BeginPopupContextItem(popupName.c_str()))
+				{
+					if (ImGui::Button("Delete"))
+					{
+						radDel = radial->GetName();
+					}
+					ImGui::EndPopup();
+				}
+				ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
+			}
+		}
+
+		if (!radDel.empty())
+		{
+			this->Release(ESelectionMode::Escape);
+			this->Remove(radDel);
+			this->EditingItem = nullptr;
+			this->EditingMenu = nullptr;
+		}
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginChild("##radialitemeditor", ImVec2(width / 6 * 4, 0));
+		if (this->EditingMenu && !this->EditingItem) /* editing general menu settings */
+		{
+			ImGui::TextDisabled("ID: %d", this->EditingMenu->GetID());
+			ImGui::TextDisabled("Path: %s", this->EditingMenu->GetPath().string().c_str());
+			ImGui::TextDisabled("Input Bind");
+			bool modifiedBinds = false;
+			if (ImGui::BeginCombo("##radialinputbind", this->EditingMenu->GetInputBind().c_str()))
+			{
+				for (auto& [bind, radial] : this->RadialIBMap)
+				{
+					if (ImGui::Selectable(bind.c_str()))
+					{
+						if (radial != this->EditingMenu)
+						{
+							int tmp = radial->GetID();
+							radial->SetID(this->EditingMenu->GetID());
+							this->EditingMenu->SetID(tmp);
+
+							APIDefs->Localization.Set(radial->GetInputBind().c_str(), "en", radial->GetName().c_str());
+							APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", this->EditingMenu->GetName().c_str());
+							modifiedBinds = true;
+						}
+					}
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::SameLine();
+			ImGui::TextDisabled("shown as \"%s\"", this->EditingMenu->GetName().c_str());
+
+			if (modifiedBinds)
+			{
+				this->GenerateIBMap();
+			}
+
+			ImGui::TextDisabled("Name");
+			ImGui::HelpMarker("This name has to be unique.");
+
+			static bool editingName;
+			static char inputBuff[MAX_PATH];
+			if (!editingName)
+			{
+				if (ImGui::Button(this->EditingMenu->GetName().c_str()))
+				{
+					editingName = true;
+					strcpy_s(inputBuff, this->EditingMenu->GetName().c_str());
+				}
+			}
+			else
+			{
+				if (ImGui::InputText("##radialname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					std::string newName = this->GetUnusedName(inputBuff, this->EditingMenu);
+
+					this->EditingMenu->SetName(newName);
+					APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", newName.c_str());
+
+					editingName = false;
+				}
+			}
+
+			ImGui::TextDisabled("Type");
+			std::string type;
+			switch (this->EditingMenu->GetType())
+			{
+				case ERadialType::Small:
+					type = "Small";
+					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR, 1);
+					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR_HOVER, 2);
+					break;
+				case ERadialType::Normal:
+					type = "Normal";
+					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR, 1);
+					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR_HOVER, 2);
+					break;
+			}
+			if (ImGui::BeginCombo("##radialtype", type.c_str()))
+			{
+				if (ImGui::Selectable("Small"))
+				{
+					this->EditingMenu->SetType(ERadialType::Small);
+				}
+				if (ImGui::Selectable("Normal"))
+				{
+					this->EditingMenu->SetType(ERadialType::Normal);
+				}
+				ImGui::EndCombo();
+			}
+
+			ImGui::TextDisabled("Scale");
+			if (ImGui::DragFloat("##radialscale", &this->EditingMenu->Scale, 0.01f, 0.1f, 5.0f, "%.2f"))
+			{
+				this->EditingMenu->Invalidate();
+			}
+
+			ImGui::TextDisabled("Selection Mode");
+			std::string selMode;
+			ESelectionMode selectionMode = this->EditingMenu->GetSelectionMode();
+			switch (selectionMode)
+			{
+				case ESelectionMode::Click:
+					selMode = "Click";
+					break;
+				case ESelectionMode::Release:
+					selMode = "Release";
+					break;
+				case ESelectionMode::ReleaseOrClick:
+					selMode = "Release / Click";
+					break;
+				case ESelectionMode::Hover:
+					selMode = "Hover";
+					break;
+			}
+			if (ImGui::BeginCombo("##radialselectionmode", selMode.c_str()))
+			{
+				if (ImGui::Selectable("Click"))
+				{
+					this->EditingMenu->SetSelectionMode(ESelectionMode::Click);
+				}
+				ImGui::TooltipGeneric("Left mouse button will select the element.");
+
+				if (ImGui::Selectable("Release"))
+				{
+					this->EditingMenu->SetSelectionMode(ESelectionMode::Release);
+				}
+				ImGui::TooltipGeneric("Releasing the input bind will select the element.");
+
+				if (ImGui::Selectable("Release / Click"))
+				{
+					this->EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
+				}
+				ImGui::TooltipGeneric("Releasing the input bind or left mouse button will select the element.");
+
+				if (ImGui::Selectable("Hover"))
+				{
+					this->EditingMenu->SetSelectionMode(ESelectionMode::Hover);
+				}
+				ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
+
+				ImGui::EndCombo();
+			}
+
+			if (selectionMode == ESelectionMode::Hover)
+			{
+				ImGui::TextDisabled("Hover Timeout (milliseconds)");
+				ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+				ImGui::InputInt("##radialhovertimeout", &this->EditingMenu->HoverTimeout);
+				ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
+			}
+
+			ImGui::TextDisabled("Items Rotation");
+			ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+			ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180);
+
+			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
+			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
+			ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
+		}
+		else if (this->EditingItem) /* editing sub item */
+		{
+			ImGui::TextDisabled("Name");
+			ImGui::HelpMarker("This name has to be unique.");
+
+			static bool editingName;
+			static char inputBuff[MAX_PATH];
+			if (!editingName)
+			{
+				if (ImGui::Button(this->EditingItem->Identifier.c_str()))
+				{
+					editingName = true;
+					strcpy_s(inputBuff, this->EditingItem->Identifier.c_str());
+				}
+			}
+			else
+			{
+				if (ImGui::InputText("##radialitemname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+				{
+					editingName = false;
+					this->EditingItem->Identifier = inputBuff;
+				}
+			}
+
+			ImGui::BeginTable("##radialcolours", 2, ImGuiTableFlags_SizingFixedFit);
+
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			ImGui::TextDisabled("Color");
+			ImGui::ColorEdit4U32("Color", &this->EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+			ImGui::SameLine();
+			if (ImGui::Button("Apply to all##color"))
+			{
+				this->EditingMenu->ApplyColorToAll(this->EditingItem->Color, 1);
+			}
+			ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::TextDisabled("Color Hover");
+			ImGui::ColorEdit4U32("Color Hover", &this->EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+			ImGui::SameLine();
+			if (ImGui::Button("Apply to all##colorhover"))
+			{
+				this->EditingMenu->ApplyColorToAll(this->EditingItem->ColorHover, 2);
+			}
+			ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
+
+			ImGui::EndTable();
+
+			ImGui::TextDisabled("Icon");
+
+			std::string iconType;
+			switch (this->EditingItem->Icon.Type)
+			{
+				case EIconType::File:
+					iconType = "File";
+					break;
+				case EIconType::URL:
+					iconType = "URL";
+					break;
+			}
+			if (ImGui::BeginCombo("##radialitemicontype", iconType.c_str()))
+			{
+				if (ImGui::Selectable("File"))
+				{
+					this->EditingItem->Icon.Type = EIconType::File;
+				}
+				if (ImGui::Selectable("URL"))
+				{
+					this->EditingItem->Icon.Type = EIconType::URL;
+				}
+				ImGui::EndCombo();
+			}
+
+			if (this->EditingItem->Icon.Type == EIconType::File)
+			{
+				if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
+				{
+					std::thread([this]() {
+						OPENFILENAME ofn{};
+						char buff[MAX_PATH]{};
+						char initialDir[MAX_PATH]{};
+						strcpy_s(initialDir, IconsDirectory.string().c_str());
+
+						ofn.lStructSize = sizeof(OPENFILENAME);
+						ofn.hwndOwner = 0;
+						ofn.lpstrFile = buff;
+						ofn.nMaxFile = MAX_PATH;
+						//ofn.lpstrFilter = "Guild Wars 2 Executable\0*.exe";
+						ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+						ofn.lpstrInitialDir = initialDir;
+
+						if (GetOpenFileName(&ofn))
+						{
+							this->EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
+							if (!this->EditingItem->Icon.Value.empty())
+							{
+								this->EditingItem->Icon.Value = String::Replace(this->EditingItem->Icon.Value, GW2Root.string() + "\\", "");
+								this->EditingItem->Icon.Texture = nullptr;
+								std::filesystem::path iconPath = this->EditingItem->Icon.Value;
+								if (iconPath.is_relative())
+								{
+									APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), (GW2Root / this->EditingItem->Icon.Value).string().c_str(), nullptr);
+								}
+								else
+								{
+									APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
+								}
+							}
+						}
+					}).detach();
+				}
+			}
+			else if (this->EditingItem->Icon.Type == EIconType::URL)
+			{
+				static bool editingUrl;
+				static char inputBuff[MAX_PATH];
+				if (!editingUrl)
+				{
+					if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
+					{
+						editingUrl = true;
+						strcpy_s(inputBuff, this->EditingItem->Icon.Value.c_str());
+					}
+				}
+				else
+				{
+					if (ImGui::InputText("##radialitemiconurl", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						editingUrl = false;
+						this->EditingItem->Icon.Value = inputBuff;
+						if (!this->EditingItem->Icon.Value.empty())
+						{
+							this->EditingItem->Icon.Texture = nullptr;
+							APIDefs->Textures.LoadFromURL(this->EditingItem->Icon.Value.c_str(), URL::GetBase(this->EditingItem->Icon.Value).c_str(), URL::GetEndpoint(this->EditingItem->Icon.Value).c_str(), nullptr);
+						}
+					}
+				}
+			}
+
+			ImGui::TextDisabled("Visibility");
+			ImGui::HelpMarker("These conditions control when this item is visible.");
+			int applyVisToAll = ConditionEditor("Edit Conditions##visibility", &this->EditingItem->Visibility, "\"Apply to all\" will affect the visibility of all items in this radial.");
+			if (applyVisToAll > -1 || applyVisToAll == -99)
+			{
+				this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Visibility, 1, applyVisToAll);
+			}
+			ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
+
+			ImGui::TextDisabled("Activation");
+			ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
+			int applyActToAll = ConditionEditor("Edit Conditions##activation", &this->EditingItem->Activation, "\"Apply to all\" will affect the activation of all items in this radial.");
+			if (applyActToAll > -1 || applyActToAll == -99)
+			{
+				this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Activation, 2, applyActToAll);
+			}
+			ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
+
+			ImGui::TextDisabled("Timeout (seconds)");
+			ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+			ImGui::InputInt("##activationtimeout", &this->EditingItem->ActivationTimeout);
+			ImGui::SameLine();
+			if (ImGui::Button("Apply to all##applyallactivationtimeout"))
+			{
+				this->EditingMenu->ApplyActivationTimeoutToAll(this->EditingItem->ActivationTimeout);
+			}
+
+			ImGui::TextDisabled("Actions");
+			ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
+
+			ImGui::BeginTable("##radialitemactions", 4);
+			int i = 0;
+			int idxDel = -1;
+			for (ActionBase* action : this->EditingItem->Actions)
+			{
+				std::string actionType;
+				switch (action->Type)
+				{
+					case EActionType::InputBind: actionType = "InputBind (Nexus)"; break;
+					case EActionType::GameInputBind: actionType = "InputBind (Game)"; break;
+					case EActionType::GameInputBindPress: actionType = "InputBind Press (Game)"; break;
+					case EActionType::GameInputBindRelease: actionType = "InputBind Release (Game)"; break;
+					case EActionType::Event: actionType = "Event"; break;
+					case EActionType::Delay: actionType = "Delay"; break;
+					case EActionType::Return: actionType = "Return"; break;
+				}
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+				if (ImGui::BeginCombo(("##radialitemactiontype" + std::to_string(i)).c_str(), actionType.c_str()))
+				{
+					if (ImGui::Selectable("InputBind (Nexus)"))
+					{
+						if (action->Type != EActionType::InputBind)
+						{
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionGeneric();
+							this->EditingItem->Actions[i]->Type = EActionType::InputBind;
+						}
+					}
+					if (ImGui::Selectable("InputBind (Game)"))
+					{
+						if (action->Type != EActionType::GameInputBind)
+						{
+							EGameBinds persistBind = (EGameBinds)0;
+
+							if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+							{
+								persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
+							}
+
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionGameInputBind();
+							this->EditingItem->Actions[i]->Type = EActionType::GameInputBind;
+							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+						}
+					}
+					if (ImGui::Selectable("InputBind Press (Game)"))
+					{
+						if (action->Type != EActionType::GameInputBindPress)
+						{
+							EGameBinds persistBind = (EGameBinds)0;
+
+							if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+							{
+								persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
+							}
+
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionGameInputBind();
+							this->EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
+							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+						}
+					}
+					if (ImGui::Selectable("InputBind Release (Game)"))
+					{
+						if (action->Type != EActionType::GameInputBindRelease)
+						{
+							EGameBinds persistBind = (EGameBinds)0;
+
+							if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
+								this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
+							{
+								persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
+							}
+
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionGameInputBind();
+							this->EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
+							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+						}
+					}
+					if (ImGui::Selectable("Event"))
+					{
+						if (action->Type != EActionType::Event)
+						{
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionGeneric();
+							this->EditingItem->Actions[i]->Type = EActionType::Event;
+						}
+					}
+					if (ImGui::Selectable("Delay"))
+					{
+						if (action->Type != EActionType::Delay)
+						{
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionDelay();
+							this->EditingItem->Actions[i]->Type = EActionType::Delay;
+						}
+					}
+					if (ImGui::Selectable("Return"))
+					{
+						if (action->Type != EActionType::Return)
+						{
+							delete this->EditingItem->Actions[i];
+							this->EditingItem->Actions[i] = new ActionBase();
+							this->EditingItem->Actions[i]->Type = EActionType::Return;
+						}
+					}
+					ImGui::TooltipGeneric("Return prevents the execution of any further actions.\nUseful when linked with previous conditional actions.");
+					ImGui::EndCombo();
+				}
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+				switch (action->Type)
+				{
+					case EActionType::InputBind:
+					case EActionType::Event:
+					{
+						static char inputBuff[MAX_PATH];
+						strcpy_s(inputBuff, ((ActionGeneric*)action)->Identifier.c_str());
+
+						if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+						{
+							((ActionGeneric*)action)->Identifier = _strdup(inputBuff);
+						}
+						break;
+					}
+					case EActionType::GameInputBind:
+					case EActionType::GameInputBindPress:
+					case EActionType::GameInputBindRelease:
+					{
+						if (ImGui::BeginCombo(("##actiongamebind" + std::to_string(i)).c_str(), APIDefs->Localization.Translate(GameBindToString(((ActionGameInputBind*)action)->Identifier).c_str())))
+						{
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Movement))")))
+							{
+								GameBindSelectable(action, "((MoveForward))", EGameBinds_MoveForward);
+								GameBindSelectable(action, "((MoveBackward))", EGameBinds_MoveBackward);
+								GameBindSelectable(action, "((MoveLeft))", EGameBinds_MoveLeft);
+								GameBindSelectable(action, "((MoveRight))", EGameBinds_MoveRight);
+								GameBindSelectable(action, "((MoveTurnLeft))", EGameBinds_MoveTurnLeft);
+								GameBindSelectable(action, "((MoveTurnRight))", EGameBinds_MoveTurnRight);
+								GameBindSelectable(action, "((MoveDodge))", EGameBinds_MoveDodge);
+								GameBindSelectable(action, "((MoveAutoRun))", EGameBinds_MoveAutoRun);
+								GameBindSelectable(action, "((MoveWalk))", EGameBinds_MoveWalk);
+								GameBindSelectable(action, "((MoveJump))", EGameBinds_MoveJump);
+								GameBindSelectable(action, "((MoveSwimUp))", EGameBinds_MoveSwimUp);
+								GameBindSelectable(action, "((MoveSwimDown))", EGameBinds_MoveSwimDown);
+								GameBindSelectable(action, "((MoveAboutFace))", EGameBinds_MoveAboutFace);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Skills))")))
+							{
+								GameBindSelectable(action, "((SkillWeaponSwap))", EGameBinds_SkillWeaponSwap);
+								GameBindSelectable(action, "((SkillWeapon1))", EGameBinds_SkillWeapon1);
+								GameBindSelectable(action, "((SkillWeapon2))", EGameBinds_SkillWeapon2);
+								GameBindSelectable(action, "((SkillWeapon3))", EGameBinds_SkillWeapon3);
+								GameBindSelectable(action, "((SkillWeapon4))", EGameBinds_SkillWeapon4);
+								GameBindSelectable(action, "((SkillWeapon5))", EGameBinds_SkillWeapon5);
+								GameBindSelectable(action, "((SkillHeal))", EGameBinds_SkillHeal);
+								GameBindSelectable(action, "((SkillUtility1))", EGameBinds_SkillUtility1);
+								GameBindSelectable(action, "((SkillUtility2))", EGameBinds_SkillUtility2);
+								GameBindSelectable(action, "((SkillUtility3))", EGameBinds_SkillUtility3);
+								GameBindSelectable(action, "((SkillElite))", EGameBinds_SkillElite);
+								GameBindSelectable(action, "((SkillProfession1))", EGameBinds_SkillProfession1);
+								GameBindSelectable(action, "((SkillProfession2))", EGameBinds_SkillProfession2);
+								GameBindSelectable(action, "((SkillProfession3))", EGameBinds_SkillProfession3);
+								GameBindSelectable(action, "((SkillProfession4))", EGameBinds_SkillProfession4);
+								GameBindSelectable(action, "((SkillProfession5))", EGameBinds_SkillProfession5);
+								GameBindSelectable(action, "((SkillProfession6))", EGameBinds_SkillProfession6);
+								GameBindSelectable(action, "((SkillProfession7))", EGameBinds_SkillProfession7);
+								GameBindSelectable(action, "((SkillSpecialAction))", EGameBinds_SkillSpecialAction);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Targeting))")))
+							{
+								GameBindSelectable(action, "((TargetAlert))", EGameBinds_TargetAlert);
+								GameBindSelectable(action, "((TargetCall))", EGameBinds_TargetCall);
+								GameBindSelectable(action, "((TargetTake))", EGameBinds_TargetTake);
+								GameBindSelectable(action, "((TargetCallLocal))", EGameBinds_TargetCallLocal);
+								GameBindSelectable(action, "((TargetTakeLocal))", EGameBinds_TargetTakeLocal);
+								GameBindSelectable(action, "((TargetEnemyNearest))", EGameBinds_TargetEnemyNearest);
+								GameBindSelectable(action, "((TargetEnemyNext))", EGameBinds_TargetEnemyNext);
+								GameBindSelectable(action, "((TargetEnemyPrev))", EGameBinds_TargetEnemyPrev);
+								GameBindSelectable(action, "((TargetAllyNearest))", EGameBinds_TargetAllyNearest);
+								GameBindSelectable(action, "((TargetAllyNext))", EGameBinds_TargetAllyNext);
+								GameBindSelectable(action, "((TargetAllyPrev))", EGameBinds_TargetAllyPrev);
+								GameBindSelectable(action, "((TargetLock))", EGameBinds_TargetLock);
+								GameBindSelectable(action, "((TargetSnapGroundTarget))", EGameBinds_TargetSnapGroundTarget);
+								GameBindSelectable(action, "((TargetSnapGroundTargetToggle))", EGameBinds_TargetSnapGroundTargetToggle);
+								GameBindSelectable(action, "((TargetAutoTargetingDisable))", EGameBinds_TargetAutoTargetingDisable);
+								GameBindSelectable(action, "((TargetAutoTargetingToggle))", EGameBinds_TargetAutoTargetingToggle);
+								GameBindSelectable(action, "((TargetAllyTargetingMode))", EGameBinds_TargetAllyTargetingMode);
+								GameBindSelectable(action, "((TargetAllyTargetingModeToggle))", EGameBinds_TargetAllyTargetingModeToggle);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((User Interface))")))
+							{
+								GameBindSelectable(action, "((UiCommerce))", EGameBinds_UiCommerce);
+								GameBindSelectable(action, "((UiContacts))", EGameBinds_UiContacts);
+								GameBindSelectable(action, "((UiGuild))", EGameBinds_UiGuild);
+								GameBindSelectable(action, "((UiHero))", EGameBinds_UiHero);
+								GameBindSelectable(action, "((UiInventory))", EGameBinds_UiInventory);
+								GameBindSelectable(action, "((UiKennel))", EGameBinds_UiKennel);
+								GameBindSelectable(action, "((UiLogout))", EGameBinds_UiLogout);
+								GameBindSelectable(action, "((UiMail))", EGameBinds_UiMail);
+								GameBindSelectable(action, "((UiOptions))", EGameBinds_UiOptions);
+								GameBindSelectable(action, "((UiParty))", EGameBinds_UiParty);
+								GameBindSelectable(action, "((UiPvp))", EGameBinds_UiPvp);
+								GameBindSelectable(action, "((UiPvpBuild))", EGameBinds_UiPvpBuild);
+								GameBindSelectable(action, "((UiScoreboard))", EGameBinds_UiScoreboard);
+								GameBindSelectable(action, "((UiSeasonalObjectivesShop))", EGameBinds_UiSeasonalObjectivesShop);
+								GameBindSelectable(action, "((UiInformation))", EGameBinds_UiInformation);
+								GameBindSelectable(action, "((UiChatToggle))", EGameBinds_UiChatToggle);
+								GameBindSelectable(action, "((UiChatCommand))", EGameBinds_UiChatCommand);
+								GameBindSelectable(action, "((UiChatFocus))", EGameBinds_UiChatFocus);
+								GameBindSelectable(action, "((UiChatReply))", EGameBinds_UiChatReply);
+								GameBindSelectable(action, "((UiToggle))", EGameBinds_UiToggle);
+								GameBindSelectable(action, "((UiSquadBroadcastChatToggle))", EGameBinds_UiSquadBroadcastChatToggle);
+								GameBindSelectable(action, "((UiSquadBroadcastChatCommand))", EGameBinds_UiSquadBroadcastChatCommand);
+								GameBindSelectable(action, "((UiSquadBroadcastChatFocus))", EGameBinds_UiSquadBroadcastChatFocus);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Camera))")))
+							{
+								GameBindSelectable(action, "((CameraFree))", EGameBinds_CameraFree);
+								GameBindSelectable(action, "((CameraZoomIn))", EGameBinds_CameraZoomIn);
+								GameBindSelectable(action, "((CameraZoomOut))", EGameBinds_CameraZoomOut);
+								GameBindSelectable(action, "((CameraReverse))", EGameBinds_CameraReverse);
+								GameBindSelectable(action, "((CameraActionMode))", EGameBinds_CameraActionMode);
+								GameBindSelectable(action, "((CameraActionModeDisable))", EGameBinds_CameraActionModeDisable);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Screenshot))")))
+							{
+								GameBindSelectable(action, "((ScreenshotNormal))", EGameBinds_ScreenshotNormal);
+								GameBindSelectable(action, "((ScreenshotStereoscopic))", EGameBinds_ScreenshotStereoscopic);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Map))")))
+							{
+								GameBindSelectable(action, "((MapToggle))", EGameBinds_MapToggle);
+								GameBindSelectable(action, "((MapFocusPlayer))", EGameBinds_MapFocusPlayer);
+								GameBindSelectable(action, "((MapFloorDown))", EGameBinds_MapFloorDown);
+								GameBindSelectable(action, "((MapFloorUp))", EGameBinds_MapFloorUp);
+								GameBindSelectable(action, "((MapZoomIn))", EGameBinds_MapZoomIn);
+								GameBindSelectable(action, "((MapZoomOut))", EGameBinds_MapZoomOut);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Mounts))")))
+							{
+								GameBindSelectable(action, "((SpumoniToggle))", EGameBinds_SpumoniToggle);
+								GameBindSelectable(action, "((SpumoniMovement))", EGameBinds_SpumoniMovement);
+								GameBindSelectable(action, "((SpumoniSecondaryMovement))", EGameBinds_SpumoniSecondaryMovement);
+								GameBindSelectable(action, "((SpumoniMAM01))", EGameBinds_SpumoniMAM01);
+								GameBindSelectable(action, "((SpumoniMAM02))", EGameBinds_SpumoniMAM02);
+								GameBindSelectable(action, "((SpumoniMAM03))", EGameBinds_SpumoniMAM03);
+								GameBindSelectable(action, "((SpumoniMAM04))", EGameBinds_SpumoniMAM04);
+								GameBindSelectable(action, "((SpumoniMAM05))", EGameBinds_SpumoniMAM05);
+								GameBindSelectable(action, "((SpumoniMAM06))", EGameBinds_SpumoniMAM06);
+								GameBindSelectable(action, "((SpumoniMAM07))", EGameBinds_SpumoniMAM07);
+								GameBindSelectable(action, "((SpumoniMAM08))", EGameBinds_SpumoniMAM08);
+								GameBindSelectable(action, "((SpumoniMAM09))", EGameBinds_SpumoniMAM09);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Spectators))")))
+							{
+								GameBindSelectable(action, "((SpectatorNearestFixed))", EGameBinds_SpectatorNearestFixed);
+								GameBindSelectable(action, "((SpectatorNearestPlayer))", EGameBinds_SpectatorNearestPlayer);
+								GameBindSelectable(action, "((SpectatorPlayerRed1))", EGameBinds_SpectatorPlayerRed1);
+								GameBindSelectable(action, "((SpectatorPlayerRed2))", EGameBinds_SpectatorPlayerRed2);
+								GameBindSelectable(action, "((SpectatorPlayerRed3))", EGameBinds_SpectatorPlayerRed3);
+								GameBindSelectable(action, "((SpectatorPlayerRed4))", EGameBinds_SpectatorPlayerRed4);
+								GameBindSelectable(action, "((SpectatorPlayerRed5))", EGameBinds_SpectatorPlayerRed5);
+								GameBindSelectable(action, "((SpectatorPlayerBlue1))", EGameBinds_SpectatorPlayerBlue1);
+								GameBindSelectable(action, "((SpectatorPlayerBlue2))", EGameBinds_SpectatorPlayerBlue2);
+								GameBindSelectable(action, "((SpectatorPlayerBlue3))", EGameBinds_SpectatorPlayerBlue3);
+								GameBindSelectable(action, "((SpectatorPlayerBlue4))", EGameBinds_SpectatorPlayerBlue4);
+								GameBindSelectable(action, "((SpectatorPlayerBlue5))", EGameBinds_SpectatorPlayerBlue5);
+								GameBindSelectable(action, "((SpectatorFreeCamera))", EGameBinds_SpectatorFreeCamera);
+								GameBindSelectable(action, "((SpectatorFreeCameraMode))", EGameBinds_SpectatorFreeCameraMode);
+								GameBindSelectable(action, "((SpectatorFreeMoveForward))", EGameBinds_SpectatorFreeMoveForward);
+								GameBindSelectable(action, "((SpectatorFreeMoveBackward))", EGameBinds_SpectatorFreeMoveBackward);
+								GameBindSelectable(action, "((SpectatorFreeMoveLeft))", EGameBinds_SpectatorFreeMoveLeft);
+								GameBindSelectable(action, "((SpectatorFreeMoveRight))", EGameBinds_SpectatorFreeMoveRight);
+								GameBindSelectable(action, "((SpectatorFreeMoveUp))", EGameBinds_SpectatorFreeMoveUp);
+								GameBindSelectable(action, "((SpectatorFreeMoveDown))", EGameBinds_SpectatorFreeMoveDown);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Squad))")))
+							{
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld1))", EGameBinds_SquadMarkerPlaceWorld1);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld2))", EGameBinds_SquadMarkerPlaceWorld2);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld3))", EGameBinds_SquadMarkerPlaceWorld3);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld4))", EGameBinds_SquadMarkerPlaceWorld4);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld5))", EGameBinds_SquadMarkerPlaceWorld5);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld6))", EGameBinds_SquadMarkerPlaceWorld6);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld7))", EGameBinds_SquadMarkerPlaceWorld7);
+								GameBindSelectable(action, "((SquadMarkerPlaceWorld8))", EGameBinds_SquadMarkerPlaceWorld8);
+								GameBindSelectable(action, "((SquadMarkerClearAllWorld))", EGameBinds_SquadMarkerClearAllWorld);
+								GameBindSelectable(action, "((SquadMarkerSetAgent1))", EGameBinds_SquadMarkerSetAgent1);
+								GameBindSelectable(action, "((SquadMarkerSetAgent2))", EGameBinds_SquadMarkerSetAgent2);
+								GameBindSelectable(action, "((SquadMarkerSetAgent3))", EGameBinds_SquadMarkerSetAgent3);
+								GameBindSelectable(action, "((SquadMarkerSetAgent4))", EGameBinds_SquadMarkerSetAgent4);
+								GameBindSelectable(action, "((SquadMarkerSetAgent5))", EGameBinds_SquadMarkerSetAgent5);
+								GameBindSelectable(action, "((SquadMarkerSetAgent6))", EGameBinds_SquadMarkerSetAgent6);
+								GameBindSelectable(action, "((SquadMarkerSetAgent7))", EGameBinds_SquadMarkerSetAgent7);
+								GameBindSelectable(action, "((SquadMarkerSetAgent8))", EGameBinds_SquadMarkerSetAgent8);
+								GameBindSelectable(action, "((SquadMarkerClearAllAgent))", EGameBinds_SquadMarkerClearAllAgent);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Mastery Skills))")))
+							{
+								GameBindSelectable(action, "((MasteryAccess))", EGameBinds_MasteryAccess);
+								GameBindSelectable(action, "((MasteryAccess01))", EGameBinds_MasteryAccess01);
+								GameBindSelectable(action, "((MasteryAccess02))", EGameBinds_MasteryAccess02);
+								GameBindSelectable(action, "((MasteryAccess03))", EGameBinds_MasteryAccess03);
+								GameBindSelectable(action, "((MasteryAccess04))", EGameBinds_MasteryAccess04);
+								GameBindSelectable(action, "((MasteryAccess05))", EGameBinds_MasteryAccess05);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Miscellaneous))")))
+							{
+								GameBindSelectable(action, "((MiscAoELoot))", EGameBinds_MiscAoELoot);
+								GameBindSelectable(action, "((MiscInteract))", EGameBinds_MiscInteract);
+								GameBindSelectable(action, "((MiscShowEnemies))", EGameBinds_MiscShowEnemies);
+								GameBindSelectable(action, "((MiscShowAllies))", EGameBinds_MiscShowAllies);
+								GameBindSelectable(action, "((MiscCombatStance))", EGameBinds_MiscCombatStance);
+								GameBindSelectable(action, "((MiscToggleLanguage))", EGameBinds_MiscToggleLanguage);
+								GameBindSelectable(action, "((MiscTogglePetCombat))", EGameBinds_MiscTogglePetCombat);
+								GameBindSelectable(action, "((MiscToggleFullScreen))", EGameBinds_MiscToggleFullScreen);
+								GameBindSelectable(action, "((ToyUseDefault))", EGameBinds_ToyUseDefault);
+								GameBindSelectable(action, "((ToyUseSlot1))", EGameBinds_ToyUseSlot1);
+								GameBindSelectable(action, "((ToyUseSlot2))", EGameBinds_ToyUseSlot2);
+								GameBindSelectable(action, "((ToyUseSlot3))", EGameBinds_ToyUseSlot3);
+								GameBindSelectable(action, "((ToyUseSlot4))", EGameBinds_ToyUseSlot4);
+								GameBindSelectable(action, "((ToyUseSlot5))", EGameBinds_ToyUseSlot5);
+								ImGui::EndMenu();
+							}
+							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Templates))")))
+							{
+								GameBindSelectable(action, "((Loadout1))", EGameBinds_Loadout1);
+								GameBindSelectable(action, "((Loadout2))", EGameBinds_Loadout2);
+								GameBindSelectable(action, "((Loadout3))", EGameBinds_Loadout3);
+								GameBindSelectable(action, "((Loadout4))", EGameBinds_Loadout4);
+								GameBindSelectable(action, "((Loadout5))", EGameBinds_Loadout5);
+								GameBindSelectable(action, "((Loadout6))", EGameBinds_Loadout6);
+								GameBindSelectable(action, "((Loadout7))", EGameBinds_Loadout7);
+								GameBindSelectable(action, "((Loadout8))", EGameBinds_Loadout8);
+								GameBindSelectable(action, "((GearLoadout1))", EGameBinds_GearLoadout1);
+								GameBindSelectable(action, "((GearLoadout2))", EGameBinds_GearLoadout2);
+								GameBindSelectable(action, "((GearLoadout3))", EGameBinds_GearLoadout3);
+								GameBindSelectable(action, "((GearLoadout4))", EGameBinds_GearLoadout4);
+								GameBindSelectable(action, "((GearLoadout5))", EGameBinds_GearLoadout5);
+								GameBindSelectable(action, "((GearLoadout6))", EGameBinds_GearLoadout6);
+								GameBindSelectable(action, "((GearLoadout7))", EGameBinds_GearLoadout7);
+								GameBindSelectable(action, "((GearLoadout8))", EGameBinds_GearLoadout8);
+								ImGui::EndMenu();
+							}
+							ImGui::EndCombo();
+						}
+
+						break;
+					}
+					case EActionType::Delay:
+					{
+						ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100);
+						break;
+					}
+					case EActionType::Return:
+					{
+						/* there's no parameter */
+						break;
+					}
+				}
+
+				ImGui::TableSetColumnIndex(2);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
+				int applyActionActToAll = ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, "\"Apply to all\" will affect of all actions in this item.", &action->OnlyExecuteIfPrevious);
+				if (applyActionActToAll > -1 || applyActionActToAll == -99)
+				{
+					this->EditingMenu->ApplyConditionToAll(this->EditingItem, &action->Activation, applyActionActToAll);
+				}
+				ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
+
+				ImGui::TableSetColumnIndex(3);
+				if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
+				{
+					ActionBase* tmp = this->EditingItem->Actions[i - 1];
+					this->EditingItem->Actions[i - 1] = this->EditingItem->Actions[i];
+					this->EditingItem->Actions[i] = tmp;
+				}
+				ImGui::SameLine();
+				if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == this->EditingItem->Actions.size() - 1))
+				{
+					ActionBase* tmp = this->EditingItem->Actions[i + 1];
+					this->EditingItem->Actions[i + 1] = this->EditingItem->Actions[i];
+					this->EditingItem->Actions[i] = tmp;
+				}
+				ImGui::SameLine();
+				if (ImGui::CrossButton(("x_action##" + std::to_string(i)).c_str()))
+				{
+					idxDel = i;
+				}
+
+				i++;
+			}
+			ImGui::EndTable();
+
+			if (ImGui::Button("Add Action"))
+			{
+				this->EditingMenu->AddItemAction(this->EditingItem->Identifier, EActionType::InputBind, "");
+			}
+
+			if (idxDel != -1)
+			{
+				this->EditingMenu->RemoveItemAction(this->EditingItem->Identifier, idxDel);
+			}
+		}
+		ImGui::EndChild();
+
+		ImGui::EndTabItem();
+	}
+}
+
+void CRadialContext::RenderSettingsTab()
+{
+	if (ImGui::BeginTabItem("Settings##radialmenus"))
+	{
+		ImGui::TextDisabled("Widget");
+		ImGui::HelpMarker("The widget indicates the currently queued action.\nIt has a circular countdown, waiting for the action to start execution.\n\nYou can left-click to refresh the countdown or right-click to cancel the action.");
+
+		ImGui::Checkbox("Edit position##radialmenus_widget", &this->IsEditingWidget);
+
+		ImGui::EndTabItem();
+	}
 }
 
 void CRadialContext::RenderOptions()
 {
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	float width = ImGui::GetWindowContentRegionWidth();
-
-	if (ImGui::Button("Reload radials"))
+	if (ImGui::BeginTabBar("##radialmenustabbar"))
 	{
-		this->LoadInternal();
+		RenderEditorTab();
+		RenderSettingsTab();
+
+		if (ImGui::BeginTabItem("Debug##radialmenus"))
+		{
+			StateObserver::RenderDebug();
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
 	}
-	ImGui::SameLine();
-	if (ImGui::Button("Save changes"))
-	{
-		this->SaveInternal();
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("Open folder"))
-	{
-		ShellExecuteA(NULL, "explore", PacksDirectory.string().c_str(), NULL, NULL, SW_SHOW);
-	}
-	ImGui::SameLine();
-	if (ImGui::Button("New radial"))
-	{
-		std::thread([this]() {
-			OPENFILENAME ofn{};
-			char buff[MAX_PATH]{};
-			char initialDir[MAX_PATH]{};
-			strcpy_s(initialDir, PacksDirectory.string().c_str());
-
-			ofn.lStructSize = sizeof(OPENFILENAME);
-			ofn.hwndOwner = 0;
-			ofn.lpstrFile = buff;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.lpstrFilter = "JSON\0*.json";
-			ofn.Flags = OFN_PATHMUSTEXIST | OFN_CREATEPROMPT;
-			ofn.lpstrInitialDir = initialDir;
-
-			if (GetSaveFileName(&ofn))
-			{
-				std::filesystem::path path = ofn.lpstrFile != 0 ? ofn.lpstrFile : std::filesystem::path{};
-
-				if (path.extension() != ".json")
-				{
-					path += ".json";
-				}
-
-				if (!path.empty())
-				{
-					if (std::filesystem::exists(path))
-					{
-						this->Remove(path);
-					}
-					this->Add(path, "New Radial " + std::to_string(this->GetLowestUnusedID()));
-				}
-			}
-		}).detach();
-	}
-
-	ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
-	
-	ImGui::TextDisabled("Select Radial Menu:");
-	std::string radDel;
-	for (CRadialMenu* radial : this->Radials)
-	{
-		if (ImGui::TreeNode(radial->GetName().c_str()))
-		{
-			std::string popupName = "RadialCtxMenu#" + radial->GetName();
-			if (ImGui::BeginPopupContextItem(popupName.c_str()))
-			{
-				if (ImGui::Button("Delete"))
-				{
-					radDel = radial->GetName();
-				}
-				ImGui::EndPopup();
-			}
-			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
-
-			if (ImGui::Selectable(("Settings##" + radial->GetName()).c_str(), this->EditingMenu == radial && this->EditingItem == nullptr))
-			{
-				this->EditingMenu = radial;
-				this->EditingItem = nullptr;
-			}
-			ImGui::Separator();
-
-			int capacity = radial->GetCapacity();
-			std::vector<RadialItem*> items = radial->GetItems();
-
-			int i = 0;
-			for (RadialItem* item : items)
-			{
-				ImGui::TextDisabled("Item");
-				ImGui::SameLine();
-				if (i + 1 > capacity) /* max capacity reached colour override */
-				{
-					ImGui::PushStyleColor(ImGuiCol_Text, (ImVec4)ImColor(255, 255, 0, 255));
-				}
-
-				float btnSz = ImGui::GetFrameHeight();
-				float btnPad = ImGui::GetStyle().ItemSpacing.x;
-
-				if (ImGui::Selectable(item->Identifier.c_str(), this->EditingItem == item, 0, ImVec2(ImGui::GetContentRegionAvailWidth() - ((btnSz * 3) + (btnPad) * 3), 0)))
-				{
-					this->EditingMenu = radial;
-					this->EditingItem = item;
-				}
-				ImGui::SameLine();
-				if (ImGui::ArrowButtonCondDisabled(("up_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
-				{
-					radial->MoveItemUp(item->Identifier);
-				}
-				ImGui::SameLine();
-				if (ImGui::ArrowButtonCondDisabled(("dn_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == items.size() - 1))
-				{
-					radial->MoveItemDown(item->Identifier);
-				}
-				ImGui::SameLine();
-				if (ImGui::CrossButton(("x_radialitem##" + std::to_string(i)).c_str()))
-				{
-					this->Release(ESelectionMode::Escape);
-					radial->RemoveItem(item->Identifier);
-					if (this->EditingItem == item)
-					{
-						this->EditingItem = nullptr;
-					}
-				}
-
-				if (i + 1 > capacity) /* max capacity reached colour override */
-				{
-					ImGui::PopStyleColor();
-				}
-
-				i++;
-			}
-
-			if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
-			{
-				radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
-			}
-			if (capacity < items.size())
-			{
-				ImGui::TextColored(ImColor(255, 255, 0, 255), "Only %d items will be drawn.", capacity);
-			}
-
-			ImGui::TreePop();
-		}
-		else
-		{
-			std::string popupName = "RadialCtxMenu#" + radial->GetName();
-			if (ImGui::BeginPopupContextItem(popupName.c_str()))
-			{
-				if (ImGui::Button("Delete"))
-				{
-					radDel = radial->GetName();
-				}
-				ImGui::EndPopup();
-			}
-			ImGui::OpenPopupOnItemClick(popupName.c_str(), 1);
-		}
-	}
-
-	if (!radDel.empty())
-	{
-		this->Release(ESelectionMode::Escape);
-		this->Remove(radDel);
-		this->EditingItem = nullptr;
-		this->EditingMenu = nullptr;
-	}
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	ImGui::BeginChild("##radialitemeditor", ImVec2(width / 6 * 4, 0));
-	if (this->EditingMenu && !this->EditingItem) /* editing general menu settings */
-	{
-		ImGui::TextDisabled("ID: %d", this->EditingMenu->GetID());
-		ImGui::TextDisabled("Path: %s", this->EditingMenu->GetPath().string().c_str());
-		ImGui::TextDisabled("Input Bind");
-		bool modifiedBinds = false;
-		if (ImGui::BeginCombo("##radialinputbind", this->EditingMenu->GetInputBind().c_str()))
-		{
-			for (auto& [bind, radial] : this->RadialIBMap)
-			{
-				if (ImGui::Selectable(bind.c_str()))
-				{
-					if (radial != this->EditingMenu)
-					{
-						int tmp = radial->GetID();
-						radial->SetID(this->EditingMenu->GetID());
-						this->EditingMenu->SetID(tmp);
-
-						APIDefs->Localization.Set(radial->GetInputBind().c_str(), "en", radial->GetName().c_str());
-						APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", this->EditingMenu->GetName().c_str());
-						modifiedBinds = true;
-					}
-				}
-			}
-			ImGui::EndCombo();
-		}
-		ImGui::SameLine();
-		ImGui::TextDisabled("shown as \"%s\"", this->EditingMenu->GetName().c_str());
-
-		if (modifiedBinds)
-		{
-			this->GenerateIBMap();
-		}
-
-		ImGui::TextDisabled("Name");
-		ImGui::HelpMarker("This name has to be unique.");
-
-		static bool editingName;
-		static char inputBuff[MAX_PATH];
-		if (!editingName)
-		{
-			if (ImGui::Button(this->EditingMenu->GetName().c_str()))
-			{
-				editingName = true;
-				strcpy_s(inputBuff, this->EditingMenu->GetName().c_str());
-			}
-		}
-		else
-		{
-			if (ImGui::InputText("##radialname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				std::string newName = this->GetUnusedName(inputBuff, this->EditingMenu);
-
-				this->EditingMenu->SetName(newName);
-				APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", newName.c_str());
-
-				editingName = false;
-			}
-		}
-
-		ImGui::TextDisabled("Type");
-		std::string type;
-		switch (this->EditingMenu->GetType())
-		{
-			case ERadialType::Small:
-				type = "Small";
-				this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR, 1);
-				this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR_HOVER, 2);
-				break;
-			case ERadialType::Normal:
-				type = "Normal";
-				this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR, 1);
-				this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR_HOVER, 2);
-				break;
-		}
-		if (ImGui::BeginCombo("##radialtype", type.c_str()))
-		{
-			if (ImGui::Selectable("Small"))
-			{
-				this->EditingMenu->SetType(ERadialType::Small);
-			}
-			if (ImGui::Selectable("Normal"))
-			{
-				this->EditingMenu->SetType(ERadialType::Normal);
-			}
-			ImGui::EndCombo();
-		}
-
-		ImGui::TextDisabled("Scale");
-		if (ImGui::DragFloat("##radialscale", &this->EditingMenu->Scale, 0.01f, 0.1f, 5.0f, "%.2f"))
-		{
-			this->EditingMenu->Invalidate();
-		}
-
-		ImGui::TextDisabled("Selection Mode");
-		std::string selMode;
-		ESelectionMode selectionMode = this->EditingMenu->GetSelectionMode();
-		switch (selectionMode)
-		{
-			case ESelectionMode::Click:
-				selMode = "Click";
-				break;
-			case ESelectionMode::Release:
-				selMode = "Release";
-				break;
-			case ESelectionMode::ReleaseOrClick:
-				selMode = "Release / Click";
-				break;
-			case ESelectionMode::Hover:
-				selMode = "Hover";
-				break;
-		}
-		if (ImGui::BeginCombo("##radialselectionmode", selMode.c_str()))
-		{
-			if (ImGui::Selectable("Click"))
-			{
-				this->EditingMenu->SetSelectionMode(ESelectionMode::Click);
-			}
-			ImGui::TooltipGeneric("Left mouse button will select the element.");
-
-			if (ImGui::Selectable("Release"))
-			{
-				this->EditingMenu->SetSelectionMode(ESelectionMode::Release);
-			}
-			ImGui::TooltipGeneric("Releasing the input bind will select the element.");
-
-			if (ImGui::Selectable("Release / Click"))
-			{
-				this->EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
-			}
-			ImGui::TooltipGeneric("Releasing the input bind or left mouse button will select the element.");
-
-			if (ImGui::Selectable("Hover"))
-			{
-				this->EditingMenu->SetSelectionMode(ESelectionMode::Hover);
-			}
-			ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
-
-			ImGui::EndCombo();
-		}
-
-		if (selectionMode == ESelectionMode::Hover)
-		{
-			ImGui::TextDisabled("Hover Timeout (milliseconds)");
-			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-			ImGui::InputInt("##radialhovertimeout", &this->EditingMenu->HoverTimeout);
-			ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
-		}
-
-		ImGui::TextDisabled("Items Rotation");
-		ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
-		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-		ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180);
-
-		ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
-		ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
-		ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
-	}
-	else if (this->EditingItem) /* editing sub item */
-	{
-		ImGui::TextDisabled("Name");
-		ImGui::HelpMarker("This name has to be unique.");
-
-		static bool editingName;
-		static char inputBuff[MAX_PATH];
-		if (!editingName)
-		{
-			if (ImGui::Button(this->EditingItem->Identifier.c_str()))
-			{
-				editingName = true;
-				strcpy_s(inputBuff, this->EditingItem->Identifier.c_str());
-			}
-		}
-		else
-		{
-			if (ImGui::InputText("##radialitemname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-			{
-				editingName = false;
-				this->EditingItem->Identifier = inputBuff;
-			}
-		}
-
-		ImGui::BeginTable("##radialcolours", 2, ImGuiTableFlags_SizingFixedFit);
-
-		ImGui::TableNextRow();
-		ImGui::TableSetColumnIndex(0);
-		ImGui::TextDisabled("Color");
-		ImGui::ColorEdit4U32("Color", &this->EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-		ImGui::SameLine();
-		if (ImGui::Button("Apply to all##color"))
-		{
-			this->EditingMenu->ApplyColorToAll(this->EditingItem->Color, 1);
-		}
-		ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
-
-		ImGui::TableSetColumnIndex(1);
-		ImGui::TextDisabled("Color Hover");
-		ImGui::ColorEdit4U32("Color Hover", &this->EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
-		ImGui::SameLine();
-		if (ImGui::Button("Apply to all##colorhover"))
-		{
-			this->EditingMenu->ApplyColorToAll(this->EditingItem->ColorHover, 2);
-		}
-		ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
-
-		ImGui::EndTable();
-		
-		ImGui::TextDisabled("Icon");
-
-		std::string iconType;
-		switch (this->EditingItem->Icon.Type)
-		{
-			case EIconType::File:
-				iconType = "File";
-				break;
-			case EIconType::URL:
-				iconType = "URL";
-				break;
-		}
-		if (ImGui::BeginCombo("##radialitemicontype", iconType.c_str()))
-		{
-			if (ImGui::Selectable("File"))
-			{
-				this->EditingItem->Icon.Type = EIconType::File;
-			}
-			if (ImGui::Selectable("URL"))
-			{
-				this->EditingItem->Icon.Type = EIconType::URL;
-			}
-			ImGui::EndCombo();
-		}
-
-		if (this->EditingItem->Icon.Type == EIconType::File)
-		{
-			if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
-			{
-				std::thread([this]() {
-					OPENFILENAME ofn{};
-					char buff[MAX_PATH]{};
-					char initialDir[MAX_PATH]{};
-					strcpy_s(initialDir, IconsDirectory.string().c_str());
-
-					ofn.lStructSize = sizeof(OPENFILENAME);
-					ofn.hwndOwner = 0;
-					ofn.lpstrFile = buff;
-					ofn.nMaxFile = MAX_PATH;
-					//ofn.lpstrFilter = "Guild Wars 2 Executable\0*.exe";
-					ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-					ofn.lpstrInitialDir = initialDir;
-
-					if (GetOpenFileName(&ofn))
-					{
-						this->EditingItem->Icon.Value = ofn.lpstrFile != 0 ? ofn.lpstrFile : "";
-						if (!this->EditingItem->Icon.Value.empty())
-						{
-							this->EditingItem->Icon.Value = String::Replace(this->EditingItem->Icon.Value, GW2Root.string() + "\\", "");
-							this->EditingItem->Icon.Texture = nullptr;
-							std::filesystem::path iconPath = this->EditingItem->Icon.Value;
-							if (iconPath.is_relative())
-							{
-								APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), (GW2Root / this->EditingItem->Icon.Value).string().c_str(), nullptr);
-							}
-							else
-							{
-								APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
-							}
-						}
-					}
-				}).detach();
-			}
-		}
-		else if (this->EditingItem->Icon.Type == EIconType::URL)
-		{
-			static bool editingUrl;
-			static char inputBuff[MAX_PATH];
-			if (!editingUrl)
-			{
-				if (ImGui::Button(this->EditingItem->Icon.Value.c_str(), ImVec2(ImGui::CalcItemWidth(), 0)))
-				{
-					editingUrl = true;
-					strcpy_s(inputBuff, this->EditingItem->Icon.Value.c_str());
-				}
-			}
-			else
-			{
-				if (ImGui::InputText("##radialitemiconurl", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-				{
-					editingUrl = false;
-					this->EditingItem->Icon.Value = inputBuff;
-					if (!this->EditingItem->Icon.Value.empty())
-					{
-						this->EditingItem->Icon.Texture = nullptr;
-						APIDefs->Textures.LoadFromURL(this->EditingItem->Icon.Value.c_str(), URL::GetBase(this->EditingItem->Icon.Value).c_str(), URL::GetEndpoint(this->EditingItem->Icon.Value).c_str(), nullptr);
-					}
-				}
-			}
-		}
-
-		ImGui::TextDisabled("Visibility");
-		ImGui::HelpMarker("These conditions control when this item is visible.");
-		int applyVisToAll = ConditionEditor("Edit Conditions##visibility", &this->EditingItem->Visibility, "\"Apply to all\" will affect the visibility of all items in this radial.");
-		if (applyVisToAll > -1 || applyVisToAll == -99)
-		{
-			this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Visibility, 1, applyVisToAll);
-		}
-		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
-
-		ImGui::TextDisabled("Activation");
-		ImGui::HelpMarker("These conditions control whether to queue the item until they are met or if it can be immediately activated.");
-		int applyActToAll = ConditionEditor("Edit Conditions##activation", &this->EditingItem->Activation, "\"Apply to all\" will affect the activation of all items in this radial.");
-		if (applyActToAll > -1 || applyActToAll == -99)
-		{
-			this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Activation, 2, applyActToAll);
-		}
-		ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
-		
-		ImGui::TextDisabled("Timeout (seconds)");
-		ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
-		ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-		ImGui::InputInt("##activationtimeout", &this->EditingItem->ActivationTimeout);
-		ImGui::SameLine();
-		if (ImGui::Button("Apply to all##applyallactivationtimeout"))
-		{
-			this->EditingMenu->ApplyActivationTimeoutToAll(this->EditingItem->ActivationTimeout);
-		}
-
-		ImGui::TextDisabled("Actions");
-		ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
-
-		ImGui::BeginTable("##radialitemactions", 4);
-		int i = 0;
-		int idxDel = -1;
-		for (ActionBase* action : this->EditingItem->Actions)
-		{
-			std::string actionType;
-			switch (action->Type)
-			{
-				case EActionType::InputBind: actionType = "InputBind (Nexus)"; break;
-				case EActionType::GameInputBind: actionType = "InputBind (Game)"; break;
-				case EActionType::GameInputBindPress: actionType = "InputBind Press (Game)"; break;
-				case EActionType::GameInputBindRelease: actionType = "InputBind Release (Game)"; break;
-				case EActionType::Event: actionType = "Event"; break;
-				case EActionType::Delay: actionType = "Delay"; break;
-				case EActionType::Return: actionType = "Return"; break;
-			}
-			ImGui::TableNextRow();
-			ImGui::TableSetColumnIndex(0);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-			if (ImGui::BeginCombo(("##radialitemactiontype" + std::to_string(i)).c_str(), actionType.c_str()))
-			{
-				if (ImGui::Selectable("InputBind (Nexus)"))
-				{
-					if (action->Type != EActionType::InputBind)
-					{
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionGeneric();
-						this->EditingItem->Actions[i]->Type = EActionType::InputBind;
-					}
-				}
-				if (ImGui::Selectable("InputBind (Game)"))
-				{
-					if (action->Type != EActionType::GameInputBind)
-					{
-						EGameBinds persistBind = (EGameBinds)0;
-
-						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind || 
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
-						{
-							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
-						}
-
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionGameInputBind();
-						this->EditingItem->Actions[i]->Type = EActionType::GameInputBind;
-						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
-					}
-				}
-				if (ImGui::Selectable("InputBind Press (Game)"))
-				{
-					if (action->Type != EActionType::GameInputBindPress)
-					{
-						EGameBinds persistBind = (EGameBinds)0;
-
-						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
-						{
-							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
-						}
-
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionGameInputBind();
-						this->EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
-						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
-					}
-				}
-				if (ImGui::Selectable("InputBind Release (Game)"))
-				{
-					if (action->Type != EActionType::GameInputBindRelease)
-					{
-						EGameBinds persistBind = (EGameBinds)0;
-
-						if (this->EditingItem->Actions[i]->Type == EActionType::GameInputBind ||
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindPress ||
-							this->EditingItem->Actions[i]->Type == EActionType::GameInputBindRelease)
-						{
-							persistBind = ((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier;
-						}
-
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionGameInputBind();
-						this->EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
-						((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
-					}
-				}
-				if (ImGui::Selectable("Event"))
-				{
-					if (action->Type != EActionType::Event)
-					{
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionGeneric();
-						this->EditingItem->Actions[i]->Type = EActionType::Event;
-					}
-				}
-				if (ImGui::Selectable("Delay"))
-				{
-					if (action->Type != EActionType::Delay)
-					{
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionDelay();
-						this->EditingItem->Actions[i]->Type = EActionType::Delay;
-					}
-				}
-				if (ImGui::Selectable("Return"))
-				{
-					if (action->Type != EActionType::Return)
-					{
-						delete this->EditingItem->Actions[i];
-						this->EditingItem->Actions[i] = new ActionBase();
-						this->EditingItem->Actions[i]->Type = EActionType::Return;
-					}
-				}
-				ImGui::TooltipGeneric("Return prevents the execution of any further actions.\nUseful when linked with previous conditional actions.");
-				ImGui::EndCombo();
-			}
-
-			ImGui::TableSetColumnIndex(1);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-			switch (action->Type)
-			{
-				case EActionType::InputBind:
-				case EActionType::Event:
-				{
-					static char inputBuff[MAX_PATH];
-					strcpy_s(inputBuff, ((ActionGeneric*)action)->Identifier.c_str());
-
-					if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
-					{
-						((ActionGeneric*)action)->Identifier = _strdup(inputBuff);
-					}
-					break;
-				}
-				case EActionType::GameInputBind:
-				case EActionType::GameInputBindPress:
-				case EActionType::GameInputBindRelease:
-				{
-					if (ImGui::BeginCombo(("##actiongamebind" + std::to_string(i)).c_str(), APIDefs->Localization.Translate(GameBindToString(((ActionGameInputBind*)action)->Identifier).c_str())))
-					{
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Movement))")))
-						{
-							GameBindSelectable(action, "((MoveForward))", EGameBinds_MoveForward);
-							GameBindSelectable(action, "((MoveBackward))", EGameBinds_MoveBackward);
-							GameBindSelectable(action, "((MoveLeft))", EGameBinds_MoveLeft);
-							GameBindSelectable(action, "((MoveRight))", EGameBinds_MoveRight);
-							GameBindSelectable(action, "((MoveTurnLeft))", EGameBinds_MoveTurnLeft);
-							GameBindSelectable(action, "((MoveTurnRight))", EGameBinds_MoveTurnRight);
-							GameBindSelectable(action, "((MoveDodge))", EGameBinds_MoveDodge);
-							GameBindSelectable(action, "((MoveAutoRun))", EGameBinds_MoveAutoRun);
-							GameBindSelectable(action, "((MoveWalk))", EGameBinds_MoveWalk);
-							GameBindSelectable(action, "((MoveJump))", EGameBinds_MoveJump);
-							GameBindSelectable(action, "((MoveSwimUp))", EGameBinds_MoveSwimUp);
-							GameBindSelectable(action, "((MoveSwimDown))", EGameBinds_MoveSwimDown);
-							GameBindSelectable(action, "((MoveAboutFace))", EGameBinds_MoveAboutFace);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Skills))")))
-						{
-							GameBindSelectable(action, "((SkillWeaponSwap))", EGameBinds_SkillWeaponSwap);
-							GameBindSelectable(action, "((SkillWeapon1))", EGameBinds_SkillWeapon1);
-							GameBindSelectable(action, "((SkillWeapon2))", EGameBinds_SkillWeapon2);
-							GameBindSelectable(action, "((SkillWeapon3))", EGameBinds_SkillWeapon3);
-							GameBindSelectable(action, "((SkillWeapon4))", EGameBinds_SkillWeapon4);
-							GameBindSelectable(action, "((SkillWeapon5))", EGameBinds_SkillWeapon5);
-							GameBindSelectable(action, "((SkillHeal))", EGameBinds_SkillHeal);
-							GameBindSelectable(action, "((SkillUtility1))", EGameBinds_SkillUtility1);
-							GameBindSelectable(action, "((SkillUtility2))", EGameBinds_SkillUtility2);
-							GameBindSelectable(action, "((SkillUtility3))", EGameBinds_SkillUtility3);
-							GameBindSelectable(action, "((SkillElite))", EGameBinds_SkillElite);
-							GameBindSelectable(action, "((SkillProfession1))", EGameBinds_SkillProfession1);
-							GameBindSelectable(action, "((SkillProfession2))", EGameBinds_SkillProfession2);
-							GameBindSelectable(action, "((SkillProfession3))", EGameBinds_SkillProfession3);
-							GameBindSelectable(action, "((SkillProfession4))", EGameBinds_SkillProfession4);
-							GameBindSelectable(action, "((SkillProfession5))", EGameBinds_SkillProfession5);
-							GameBindSelectable(action, "((SkillProfession6))", EGameBinds_SkillProfession6);
-							GameBindSelectable(action, "((SkillProfession7))", EGameBinds_SkillProfession7);
-							GameBindSelectable(action, "((SkillSpecialAction))", EGameBinds_SkillSpecialAction);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Targeting))")))
-						{
-							GameBindSelectable(action, "((TargetAlert))", EGameBinds_TargetAlert);
-							GameBindSelectable(action, "((TargetCall))", EGameBinds_TargetCall);
-							GameBindSelectable(action, "((TargetTake))", EGameBinds_TargetTake);
-							GameBindSelectable(action, "((TargetCallLocal))", EGameBinds_TargetCallLocal);
-							GameBindSelectable(action, "((TargetTakeLocal))", EGameBinds_TargetTakeLocal);
-							GameBindSelectable(action, "((TargetEnemyNearest))", EGameBinds_TargetEnemyNearest);
-							GameBindSelectable(action, "((TargetEnemyNext))", EGameBinds_TargetEnemyNext);
-							GameBindSelectable(action, "((TargetEnemyPrev))", EGameBinds_TargetEnemyPrev);
-							GameBindSelectable(action, "((TargetAllyNearest))", EGameBinds_TargetAllyNearest);
-							GameBindSelectable(action, "((TargetAllyNext))", EGameBinds_TargetAllyNext);
-							GameBindSelectable(action, "((TargetAllyPrev))", EGameBinds_TargetAllyPrev);
-							GameBindSelectable(action, "((TargetLock))", EGameBinds_TargetLock);
-							GameBindSelectable(action, "((TargetSnapGroundTarget))", EGameBinds_TargetSnapGroundTarget);
-							GameBindSelectable(action, "((TargetSnapGroundTargetToggle))", EGameBinds_TargetSnapGroundTargetToggle);
-							GameBindSelectable(action, "((TargetAutoTargetingDisable))", EGameBinds_TargetAutoTargetingDisable);
-							GameBindSelectable(action, "((TargetAutoTargetingToggle))", EGameBinds_TargetAutoTargetingToggle);
-							GameBindSelectable(action, "((TargetAllyTargetingMode))", EGameBinds_TargetAllyTargetingMode);
-							GameBindSelectable(action, "((TargetAllyTargetingModeToggle))", EGameBinds_TargetAllyTargetingModeToggle);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((User Interface))")))
-						{
-							GameBindSelectable(action, "((UiCommerce))", EGameBinds_UiCommerce);
-							GameBindSelectable(action, "((UiContacts))", EGameBinds_UiContacts);
-							GameBindSelectable(action, "((UiGuild))", EGameBinds_UiGuild);
-							GameBindSelectable(action, "((UiHero))", EGameBinds_UiHero);
-							GameBindSelectable(action, "((UiInventory))", EGameBinds_UiInventory);
-							GameBindSelectable(action, "((UiKennel))", EGameBinds_UiKennel);
-							GameBindSelectable(action, "((UiLogout))", EGameBinds_UiLogout);
-							GameBindSelectable(action, "((UiMail))", EGameBinds_UiMail);
-							GameBindSelectable(action, "((UiOptions))", EGameBinds_UiOptions);
-							GameBindSelectable(action, "((UiParty))", EGameBinds_UiParty);
-							GameBindSelectable(action, "((UiPvp))", EGameBinds_UiPvp);
-							GameBindSelectable(action, "((UiPvpBuild))", EGameBinds_UiPvpBuild);
-							GameBindSelectable(action, "((UiScoreboard))", EGameBinds_UiScoreboard);
-							GameBindSelectable(action, "((UiSeasonalObjectivesShop))", EGameBinds_UiSeasonalObjectivesShop);
-							GameBindSelectable(action, "((UiInformation))", EGameBinds_UiInformation);
-							GameBindSelectable(action, "((UiChatToggle))", EGameBinds_UiChatToggle);
-							GameBindSelectable(action, "((UiChatCommand))", EGameBinds_UiChatCommand);
-							GameBindSelectable(action, "((UiChatFocus))", EGameBinds_UiChatFocus);
-							GameBindSelectable(action, "((UiChatReply))", EGameBinds_UiChatReply);
-							GameBindSelectable(action, "((UiToggle))", EGameBinds_UiToggle);
-							GameBindSelectable(action, "((UiSquadBroadcastChatToggle))", EGameBinds_UiSquadBroadcastChatToggle);
-							GameBindSelectable(action, "((UiSquadBroadcastChatCommand))", EGameBinds_UiSquadBroadcastChatCommand);
-							GameBindSelectable(action, "((UiSquadBroadcastChatFocus))", EGameBinds_UiSquadBroadcastChatFocus);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Camera))")))
-						{
-							GameBindSelectable(action, "((CameraFree))", EGameBinds_CameraFree);
-							GameBindSelectable(action, "((CameraZoomIn))", EGameBinds_CameraZoomIn);
-							GameBindSelectable(action, "((CameraZoomOut))", EGameBinds_CameraZoomOut);
-							GameBindSelectable(action, "((CameraReverse))", EGameBinds_CameraReverse);
-							GameBindSelectable(action, "((CameraActionMode))", EGameBinds_CameraActionMode);
-							GameBindSelectable(action, "((CameraActionModeDisable))", EGameBinds_CameraActionModeDisable);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Screenshot))")))
-						{
-							GameBindSelectable(action, "((ScreenshotNormal))", EGameBinds_ScreenshotNormal);
-							GameBindSelectable(action, "((ScreenshotStereoscopic))", EGameBinds_ScreenshotStereoscopic);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Map))")))
-						{
-							GameBindSelectable(action, "((MapToggle))", EGameBinds_MapToggle);
-							GameBindSelectable(action, "((MapFocusPlayer))", EGameBinds_MapFocusPlayer);
-							GameBindSelectable(action, "((MapFloorDown))", EGameBinds_MapFloorDown);
-							GameBindSelectable(action, "((MapFloorUp))", EGameBinds_MapFloorUp);
-							GameBindSelectable(action, "((MapZoomIn))", EGameBinds_MapZoomIn);
-							GameBindSelectable(action, "((MapZoomOut))", EGameBinds_MapZoomOut);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Mounts))")))
-						{
-							GameBindSelectable(action, "((SpumoniToggle))", EGameBinds_SpumoniToggle);
-							GameBindSelectable(action, "((SpumoniMovement))", EGameBinds_SpumoniMovement);
-							GameBindSelectable(action, "((SpumoniSecondaryMovement))", EGameBinds_SpumoniSecondaryMovement);
-							GameBindSelectable(action, "((SpumoniMAM01))", EGameBinds_SpumoniMAM01);
-							GameBindSelectable(action, "((SpumoniMAM02))", EGameBinds_SpumoniMAM02);
-							GameBindSelectable(action, "((SpumoniMAM03))", EGameBinds_SpumoniMAM03);
-							GameBindSelectable(action, "((SpumoniMAM04))", EGameBinds_SpumoniMAM04);
-							GameBindSelectable(action, "((SpumoniMAM05))", EGameBinds_SpumoniMAM05);
-							GameBindSelectable(action, "((SpumoniMAM06))", EGameBinds_SpumoniMAM06);
-							GameBindSelectable(action, "((SpumoniMAM07))", EGameBinds_SpumoniMAM07);
-							GameBindSelectable(action, "((SpumoniMAM08))", EGameBinds_SpumoniMAM08);
-							GameBindSelectable(action, "((SpumoniMAM09))", EGameBinds_SpumoniMAM09);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Spectators))")))
-						{
-							GameBindSelectable(action, "((SpectatorNearestFixed))", EGameBinds_SpectatorNearestFixed);
-							GameBindSelectable(action, "((SpectatorNearestPlayer))", EGameBinds_SpectatorNearestPlayer);
-							GameBindSelectable(action, "((SpectatorPlayerRed1))", EGameBinds_SpectatorPlayerRed1);
-							GameBindSelectable(action, "((SpectatorPlayerRed2))", EGameBinds_SpectatorPlayerRed2);
-							GameBindSelectable(action, "((SpectatorPlayerRed3))", EGameBinds_SpectatorPlayerRed3);
-							GameBindSelectable(action, "((SpectatorPlayerRed4))", EGameBinds_SpectatorPlayerRed4);
-							GameBindSelectable(action, "((SpectatorPlayerRed5))", EGameBinds_SpectatorPlayerRed5);
-							GameBindSelectable(action, "((SpectatorPlayerBlue1))", EGameBinds_SpectatorPlayerBlue1);
-							GameBindSelectable(action, "((SpectatorPlayerBlue2))", EGameBinds_SpectatorPlayerBlue2);
-							GameBindSelectable(action, "((SpectatorPlayerBlue3))", EGameBinds_SpectatorPlayerBlue3);
-							GameBindSelectable(action, "((SpectatorPlayerBlue4))", EGameBinds_SpectatorPlayerBlue4);
-							GameBindSelectable(action, "((SpectatorPlayerBlue5))", EGameBinds_SpectatorPlayerBlue5);
-							GameBindSelectable(action, "((SpectatorFreeCamera))", EGameBinds_SpectatorFreeCamera);
-							GameBindSelectable(action, "((SpectatorFreeCameraMode))", EGameBinds_SpectatorFreeCameraMode);
-							GameBindSelectable(action, "((SpectatorFreeMoveForward))", EGameBinds_SpectatorFreeMoveForward);
-							GameBindSelectable(action, "((SpectatorFreeMoveBackward))", EGameBinds_SpectatorFreeMoveBackward);
-							GameBindSelectable(action, "((SpectatorFreeMoveLeft))", EGameBinds_SpectatorFreeMoveLeft);
-							GameBindSelectable(action, "((SpectatorFreeMoveRight))", EGameBinds_SpectatorFreeMoveRight);
-							GameBindSelectable(action, "((SpectatorFreeMoveUp))", EGameBinds_SpectatorFreeMoveUp);
-							GameBindSelectable(action, "((SpectatorFreeMoveDown))", EGameBinds_SpectatorFreeMoveDown);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Squad))")))
-						{
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld1))", EGameBinds_SquadMarkerPlaceWorld1);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld2))", EGameBinds_SquadMarkerPlaceWorld2);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld3))", EGameBinds_SquadMarkerPlaceWorld3);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld4))", EGameBinds_SquadMarkerPlaceWorld4);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld5))", EGameBinds_SquadMarkerPlaceWorld5);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld6))", EGameBinds_SquadMarkerPlaceWorld6);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld7))", EGameBinds_SquadMarkerPlaceWorld7);
-							GameBindSelectable(action, "((SquadMarkerPlaceWorld8))", EGameBinds_SquadMarkerPlaceWorld8);
-							GameBindSelectable(action, "((SquadMarkerClearAllWorld))", EGameBinds_SquadMarkerClearAllWorld);
-							GameBindSelectable(action, "((SquadMarkerSetAgent1))", EGameBinds_SquadMarkerSetAgent1);
-							GameBindSelectable(action, "((SquadMarkerSetAgent2))", EGameBinds_SquadMarkerSetAgent2);
-							GameBindSelectable(action, "((SquadMarkerSetAgent3))", EGameBinds_SquadMarkerSetAgent3);
-							GameBindSelectable(action, "((SquadMarkerSetAgent4))", EGameBinds_SquadMarkerSetAgent4);
-							GameBindSelectable(action, "((SquadMarkerSetAgent5))", EGameBinds_SquadMarkerSetAgent5);
-							GameBindSelectable(action, "((SquadMarkerSetAgent6))", EGameBinds_SquadMarkerSetAgent6);
-							GameBindSelectable(action, "((SquadMarkerSetAgent7))", EGameBinds_SquadMarkerSetAgent7);
-							GameBindSelectable(action, "((SquadMarkerSetAgent8))", EGameBinds_SquadMarkerSetAgent8);
-							GameBindSelectable(action, "((SquadMarkerClearAllAgent))", EGameBinds_SquadMarkerClearAllAgent);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Mastery Skills))")))
-						{
-							GameBindSelectable(action, "((MasteryAccess))", EGameBinds_MasteryAccess);
-							GameBindSelectable(action, "((MasteryAccess01))", EGameBinds_MasteryAccess01);
-							GameBindSelectable(action, "((MasteryAccess02))", EGameBinds_MasteryAccess02);
-							GameBindSelectable(action, "((MasteryAccess03))", EGameBinds_MasteryAccess03);
-							GameBindSelectable(action, "((MasteryAccess04))", EGameBinds_MasteryAccess04);
-							GameBindSelectable(action, "((MasteryAccess05))", EGameBinds_MasteryAccess05);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Miscellaneous))")))
-						{
-							GameBindSelectable(action, "((MiscAoELoot))", EGameBinds_MiscAoELoot);
-							GameBindSelectable(action, "((MiscInteract))", EGameBinds_MiscInteract);
-							GameBindSelectable(action, "((MiscShowEnemies))", EGameBinds_MiscShowEnemies);
-							GameBindSelectable(action, "((MiscShowAllies))", EGameBinds_MiscShowAllies);
-							GameBindSelectable(action, "((MiscCombatStance))", EGameBinds_MiscCombatStance);
-							GameBindSelectable(action, "((MiscToggleLanguage))", EGameBinds_MiscToggleLanguage);
-							GameBindSelectable(action, "((MiscTogglePetCombat))", EGameBinds_MiscTogglePetCombat);
-							GameBindSelectable(action, "((MiscToggleFullScreen))", EGameBinds_MiscToggleFullScreen);
-							GameBindSelectable(action, "((ToyUseDefault))", EGameBinds_ToyUseDefault);
-							GameBindSelectable(action, "((ToyUseSlot1))", EGameBinds_ToyUseSlot1);
-							GameBindSelectable(action, "((ToyUseSlot2))", EGameBinds_ToyUseSlot2);
-							GameBindSelectable(action, "((ToyUseSlot3))", EGameBinds_ToyUseSlot3);
-							GameBindSelectable(action, "((ToyUseSlot4))", EGameBinds_ToyUseSlot4);
-							GameBindSelectable(action, "((ToyUseSlot5))", EGameBinds_ToyUseSlot5);
-							ImGui::EndMenu();
-						}
-						if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Templates))")))
-						{
-							GameBindSelectable(action, "((Loadout1))", EGameBinds_Loadout1);
-							GameBindSelectable(action, "((Loadout2))", EGameBinds_Loadout2);
-							GameBindSelectable(action, "((Loadout3))", EGameBinds_Loadout3);
-							GameBindSelectable(action, "((Loadout4))", EGameBinds_Loadout4);
-							GameBindSelectable(action, "((Loadout5))", EGameBinds_Loadout5);
-							GameBindSelectable(action, "((Loadout6))", EGameBinds_Loadout6);
-							GameBindSelectable(action, "((Loadout7))", EGameBinds_Loadout7);
-							GameBindSelectable(action, "((Loadout8))", EGameBinds_Loadout8);
-							GameBindSelectable(action, "((GearLoadout1))", EGameBinds_GearLoadout1);
-							GameBindSelectable(action, "((GearLoadout2))", EGameBinds_GearLoadout2);
-							GameBindSelectable(action, "((GearLoadout3))", EGameBinds_GearLoadout3);
-							GameBindSelectable(action, "((GearLoadout4))", EGameBinds_GearLoadout4);
-							GameBindSelectable(action, "((GearLoadout5))", EGameBinds_GearLoadout5);
-							GameBindSelectable(action, "((GearLoadout6))", EGameBinds_GearLoadout6);
-							GameBindSelectable(action, "((GearLoadout7))", EGameBinds_GearLoadout7);
-							GameBindSelectable(action, "((GearLoadout8))", EGameBinds_GearLoadout8);
-							ImGui::EndMenu();
-						}
-						ImGui::EndCombo();
-					}
-
-					break;
-				}
-				case EActionType::Delay:
-				{
-					ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100);
-					break;
-				}
-				case EActionType::Return:
-				{
-					/* there's no parameter */
-					break;
-				}
-			}
-
-			ImGui::TableSetColumnIndex(2);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth());
-			int applyActionActToAll = ConditionEditor("Edit Conditions##conditionalactivation" + std::to_string(i), &action->Activation, "\"Apply to all\" will affect of all actions in this item.", &action->OnlyExecuteIfPrevious);
-			if (applyActionActToAll > -1 || applyActionActToAll == -99)
-			{
-				this->EditingMenu->ApplyConditionToAll(this->EditingItem, &action->Activation, applyActionActToAll);
-			}
-			ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
-
-			ImGui::TableSetColumnIndex(3);
-			if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
-			{
-				ActionBase* tmp = this->EditingItem->Actions[i - 1];
-				this->EditingItem->Actions[i - 1] = this->EditingItem->Actions[i];
-				this->EditingItem->Actions[i] = tmp;
-			}
-			ImGui::SameLine();
-			if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == this->EditingItem->Actions.size() - 1))
-			{
-				ActionBase* tmp = this->EditingItem->Actions[i + 1];
-				this->EditingItem->Actions[i + 1] = this->EditingItem->Actions[i];
-				this->EditingItem->Actions[i] = tmp;
-			}
-			ImGui::SameLine();
-			if (ImGui::CrossButton(("x_action##" + std::to_string(i)).c_str()))
-			{
-				idxDel = i;
-			}
-
-			i++;
-		}
-		ImGui::EndTable();
-
-		if (ImGui::Button("Add Action"))
-		{
-			this->EditingMenu->AddItemAction(this->EditingItem->Identifier, EActionType::InputBind, "");
-		}
-
-		if (idxDel != -1)
-		{
-			this->EditingMenu->RemoveItemAction(this->EditingItem->Identifier, idxDel);
-		}
-	}
-	ImGui::EndChild();
 }
 
 void CRadialContext::OnInputBind(std::string aIdentifier, bool aIsRelease)
@@ -1522,6 +1662,69 @@ UINT CRadialContext::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	}
 
 	return uMsg;
+}
+
+void CRadialContext::QueueItem(RadialItem* aItem)
+{
+	{
+		const std::lock_guard<std::mutex> lock(this->QueuedItemMutex);
+
+		if (this->QueuedItem)
+		{
+			if (this->QueuedItem->Identifier == aItem->Identifier)
+			{
+				/* cancel */
+				this->IsCanceled = true;
+				return;
+			}
+			else
+			{
+				/* cancel & replace */
+				this->IsCanceled = true;
+			}
+		}
+	}
+	
+	RadialItem* newItem = new RadialItem(*aItem);
+	newItem->Actions.clear();
+
+	for (ActionBase* act : aItem->Actions)
+	{
+		ActionBase* action = nullptr;
+
+		switch (act->Type)
+		{
+			case EActionType::InputBind:
+			case EActionType::Event:
+			{
+				action = new ActionGeneric(*(ActionGeneric*)act);
+				break;
+			}
+			case EActionType::GameInputBind:
+			case EActionType::GameInputBindPress:
+			case EActionType::GameInputBindRelease:
+			{
+				action = new ActionGameInputBind(*(ActionGameInputBind*)act);
+				break;
+			}
+			case EActionType::Delay:
+			{
+				action = new ActionDelay(*(ActionDelay*)act);
+				break;
+			}
+			case EActionType::Return:
+			{
+				action = new ActionBase(*(ActionBase*)act);
+				break;
+			}
+		}
+
+		newItem->Actions.push_back(action);
+	}
+
+	std::thread([this, newItem]() {
+		this->ExecuteQueuedItem(newItem);
+	}).detach();
 }
 
 void CRadialContext::LoadInternal()
@@ -1703,7 +1906,6 @@ void CRadialContext::LoadInternal()
 		}
 	}
 }
-
 void CRadialContext::SaveInternal()
 {
 	/* FIXME: save mappings */
@@ -1712,6 +1914,120 @@ void CRadialContext::SaveInternal()
 	{
 		radial->Save();
 	}
+}
+
+void CRadialContext::ExecuteQueuedItem(RadialItem* aItem)
+{
+	while (this->QueuedItem != nullptr)
+	{
+		Sleep(1);
+	}
+
+	this->QueuedItem = aItem;
+	this->IsCanceled = false;
+	this->QueuedElapsedTime = 0;
+
+	while (!StateObserver::IsMatch(&this->QueuedItem->Activation))
+	{
+		this->QueuedElapsedTime += 100;
+		Sleep(100);
+
+		if (this->IsCanceled) { this->DestroyQueuedItem(); return; }
+		if (this->QueuedElapsedTime > this->QueuedItem->ActivationTimeout * 1000) { break; }
+	}
+
+	if (this->QueuedElapsedTime > this->QueuedItem->ActivationTimeout * 1000)
+	{
+		APIDefs->UI.SendAlert("Cancelled after waiting for timeout.");
+		this->DestroyQueuedItem();
+		return;
+	}
+
+	/* initially set to true, and only in the skip set to false, this way the first action ignores the setting */
+	bool previousExecuted = true;
+	for (ActionBase* act : this->QueuedItem->Actions)
+	{
+		if (this->IsCanceled) { this->DestroyQueuedItem(); return; }
+
+		if (!StateObserver::IsMatch(&act->Activation))
+		{
+			previousExecuted = false;
+			continue;
+		}
+
+		if (act->OnlyExecuteIfPrevious && !previousExecuted)
+		{
+			previousExecuted = false;
+			continue;
+		}
+
+		switch (act->Type)
+		{
+			case EActionType::InputBind:
+			{
+				ActionGeneric* action = (ActionGeneric*)act;
+				APIDefs->InputBinds.Invoke(action->Identifier.c_str(), false);
+				APIDefs->InputBinds.Invoke(action->Identifier.c_str(), true);
+				break;
+			}
+			case EActionType::GameInputBind:
+			{
+				ActionGameInputBind* action = (ActionGameInputBind*)act;
+
+				APIDefs->GameBinds.Press(action->Identifier);
+				Sleep(50);
+				APIDefs->GameBinds.Release(action->Identifier);
+
+				break;
+			}
+			case EActionType::GameInputBindPress:
+			{
+				ActionGameInputBind* action = (ActionGameInputBind*)act;
+				APIDefs->GameBinds.Press(action->Identifier);
+				break;
+			}
+			case EActionType::GameInputBindRelease:
+			{
+				ActionGameInputBind* action = (ActionGameInputBind*)act;
+				APIDefs->GameBinds.Release(action->Identifier);
+				break;
+			}
+			case EActionType::Event:
+			{
+				ActionGeneric* action = (ActionGeneric*)act;
+				APIDefs->Events.Raise(action->Identifier.c_str(), nullptr);
+				break;
+			}
+			case EActionType::Delay:
+			{
+				ActionDelay* action = (ActionDelay*)act;
+				Sleep(action->Duration);
+				break;
+			}
+			case EActionType::Return:
+			{
+				/* EXPLICIT RETURN to prevent further actions */
+				this->DestroyQueuedItem();
+				return;
+			}
+		}
+
+		previousExecuted = true;
+	}
+
+	this->DestroyQueuedItem();
+}
+void CRadialContext::DestroyQueuedItem()
+{
+	const std::lock_guard<std::mutex> lock(this->QueuedItemMutex);
+
+	for (ActionBase* act : this->QueuedItem->Actions)
+	{
+		delete act;
+	}
+
+	delete this->QueuedItem;
+	this->QueuedItem = nullptr;
 }
 
 CRadialMenu* CRadialContext::Add(std::filesystem::path aPath, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode, int aID)

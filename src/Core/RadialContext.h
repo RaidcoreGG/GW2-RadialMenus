@@ -58,19 +58,35 @@ class CRadialContext
 	void OnInputBind(std::string aIdentifier, bool aIsRelease);
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+	void QueueItem(RadialItem* aItem);
+
 	private:
 	std::mutex                          Mutex;
 	std::vector<CRadialMenu*>           Radials;
 	std::map<std::string, CRadialMenu*> RadialIBMap;
 	CRadialMenu*                        ActiveRadial = nullptr;
+
+	/* Queued Item */
+	std::mutex                          QueuedItemMutex;
+	bool                                IsCanceled = false;
 	RadialItem*                         QueuedItem = nullptr;
+	int                                 QueuedElapsedTime = 0;
+	Texture*                            WidgetBase = nullptr;
 
 	/* Editor */
 	CRadialMenu*                        EditingMenu = nullptr;
 	RadialItem*                         EditingItem = nullptr;
+	bool                                IsEditingWidget = false;
+
+	void RenderEditorTab();
+	void RenderSettingsTab();
+	void RenderWidget();
 
 	void LoadInternal();
 	void SaveInternal();
+
+	void ExecuteQueuedItem(RadialItem* aItem);
+	void DestroyQueuedItem();
 
 	CRadialMenu* Add(std::filesystem::path aPath, std::string aIdentifier, ERadialType aRadialMenuType = ERadialType::Normal, ESelectionMode aSelectionMode = ESelectionMode::ReleaseOrClick, int aID = -1);
 	void Remove(std::string aIdentifier);

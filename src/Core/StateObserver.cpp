@@ -226,35 +226,32 @@ namespace StateObserver
 
 	void RenderDebug()
 	{
-		if (ImGui::CollapsingHeader("Debug##RadialMenus"))
-		{
-			ImGui::Text("DeltaY: %f", LastDeltaY);
+		ImGui::Text("DeltaY: %f", LastDeltaY);
 
-			ImGui::Separator();
+		ImGui::Separator();
 
-			ImGui::Text("Falling: %s", IsFalling ? "true" : "false");
-			ImGui::Text("Gliding: %s", IsGliding ? "true" : "false");
-			ImGui::Text("Ascending: %s", IsAscending ? "true" : "false");
-			ImGui::Text("Jumping: %s", IsJumping ? "true" : "false");
-			ImGui::Text("Dismounting: %s", IsDismounting ? "true" : "false");
+		ImGui::Text("Falling: %s", IsFalling ? "true" : "false");
+		ImGui::Text("Gliding: %s", IsGliding ? "true" : "false");
+		ImGui::Text("Ascending: %s", IsAscending ? "true" : "false");
+		ImGui::Text("Jumping: %s", IsJumping ? "true" : "false");
+		ImGui::Text("Dismounting: %s", IsDismounting ? "true" : "false");
 
-			ImGui::Separator();
+		ImGui::Separator();
 
-			ImGui::Text("IsCombat: %s", StateToString(CurrentState.IsCombat).c_str());
-			ImGui::Text("IsMounted: %s", StateToString(CurrentState.IsMounted).c_str());
-			ImGui::Text("IsCommander: %s", StateToString(CurrentState.IsCommander).c_str());
-			ImGui::Text("IsCompetitive: %s", StateToString(CurrentState.IsCompetitive).c_str());
-			ImGui::Text("IsMapOpen: %s", StateToString(CurrentState.IsMapOpen).c_str());
-			ImGui::Text("IsTextboxActive: %s", StateToString(CurrentState.IsTextboxActive).c_str());
-			ImGui::Text("IsInstance: %s", StateToString(CurrentState.IsInstance).c_str());
+		ImGui::Text("IsCombat: %s", StateToString(CurrentState.IsCombat).c_str());
+		ImGui::Text("IsMounted: %s", StateToString(CurrentState.IsMounted).c_str());
+		ImGui::Text("IsCommander: %s", StateToString(CurrentState.IsCommander).c_str());
+		ImGui::Text("IsCompetitive: %s", StateToString(CurrentState.IsCompetitive).c_str());
+		ImGui::Text("IsMapOpen: %s", StateToString(CurrentState.IsMapOpen).c_str());
+		ImGui::Text("IsTextboxActive: %s", StateToString(CurrentState.IsTextboxActive).c_str());
+		ImGui::Text("IsInstance: %s", StateToString(CurrentState.IsInstance).c_str());
 
-			/* derived game states */
-			ImGui::Text("IsGameplay: %s", StateToString(CurrentState.IsGameplay).c_str());
+		/* derived game states */
+		ImGui::Text("IsGameplay: %s", StateToString(CurrentState.IsGameplay).c_str());
 
-			/* derived positional states */
-			ImGui::Text("IsUnderwater: %s", StateToString(CurrentState.IsUnderwater).c_str());
-			ImGui::Text("IsOnWaterSurface: %s", StateToString(CurrentState.IsOnWaterSurface).c_str());
-			ImGui::Text("IsAirborne: %s", StateToString(CurrentState.IsAirborne).c_str());
-		}
+		/* derived positional states */
+		ImGui::Text("IsUnderwater: %s", StateToString(CurrentState.IsUnderwater).c_str());
+		ImGui::Text("IsOnWaterSurface: %s", StateToString(CurrentState.IsOnWaterSurface).c_str());
+		ImGui::Text("IsAirborne: %s", StateToString(CurrentState.IsAirborne).c_str());
 	}
 }

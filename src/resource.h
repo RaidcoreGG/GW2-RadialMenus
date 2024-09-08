@@ -35,6 +35,8 @@
 #define ICON_SKYSCALE				307
 #define ICON_SIEGETURTLE			308
 
+#define TEX_WIDGET_BASE				400
+
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
