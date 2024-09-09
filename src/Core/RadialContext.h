@@ -23,8 +23,8 @@
 class CRadialContext
 {
 	public:
-	bool IsLeftClickHeld = false;
-	bool IsRightClickHeld = false;
+	bool                                IsLeftClickHeld    = false;
+	bool                                IsRightClickHeld   = false;
 
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
@@ -64,19 +64,20 @@ class CRadialContext
 	std::mutex                          Mutex;
 	std::vector<CRadialMenu*>           Radials;
 	std::map<std::string, CRadialMenu*> RadialIBMap;
-	CRadialMenu*                        ActiveRadial = nullptr;
+	CRadialMenu*                        ActiveRadial       = nullptr;
 
 	/* Queued Item */
 	std::mutex                          QueuedItemMutex;
-	bool                                IsCanceled = false;
-	RadialItem*                         QueuedItem = nullptr;
-	int                                 QueuedElapsedTime = 0;
-	Texture*                            WidgetBase = nullptr;
+	bool                                IsCanceled         = false;
+	RadialItem*                         QueuedItem         = nullptr;
+	int                                 QueuedElapsedTime  = 0;
+	Texture*                            WidgetBase         = nullptr;
+	Texture*                            WidgetFallbackIcon = nullptr;
 
 	/* Editor */
-	CRadialMenu*                        EditingMenu = nullptr;
-	RadialItem*                         EditingItem = nullptr;
-	bool                                IsEditingWidget = false;
+	CRadialMenu*                        EditingMenu        = nullptr;
+	RadialItem*                         EditingItem        = nullptr;
+	bool                                IsEditingWidget    = false;
 
 	void RenderEditorTab();
 	void RenderSettingsTab();

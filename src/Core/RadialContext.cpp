@@ -541,8 +541,6 @@ void CRadialContext::RenderWidget()
 {
 	if (this->QueuedItem == nullptr && !this->IsEditingWidget) { return; }
 
-	static Texture* icon = APIDefs->Textures.Get("ICON_GENERIC");
-
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	float sz = 52.0f * NexusLink->Scaling;
@@ -597,6 +595,9 @@ void CRadialContext::RenderWidget()
 			drawList->AddLine(circle[amtTotal - 1], circle[0], color, thickness);
 		}
 
+		bool useFallback = this->QueuedItem->Icon.Type == EIconType::None || this->QueuedItem->Icon.Value.empty();
+		Texture* icon = !useFallback ? this->QueuedItem->Icon.Texture : this->WidgetFallbackIcon;
+
 		if (icon)
 		{
 			ImVec2 iconSize = isHovered ? ImVec2(sz * 1.2f, sz * 1.2f) : ImVec2(sz, sz);
@@ -608,6 +609,7 @@ void CRadialContext::RenderWidget()
 				float diff = (iconSize.x - sz) / 2.0f;
 				iconPos = ImVec2(iconPos.x - diff, iconPos.y - diff);
 			}
+
 			if (this->WidgetBase)
 			{
 				ImGui::SetCursorPos(iconPos);
@@ -619,7 +621,7 @@ void CRadialContext::RenderWidget()
 			}
 
 			ImGui::SetCursorPos(iconPos);
-			ImGui::Image(this->QueuedItem ? this->QueuedItem->Icon.Texture->Resource : icon->Resource, iconSize);
+			ImGui::Image(icon->Resource, iconSize);
 			
 			if (isEditing)
 			{
@@ -643,6 +645,16 @@ void CRadialContext::RenderWidget()
 					this->IsCanceled = true;
 				}
 			}
+		}
+		else
+		{
+			if (!icon && !useFallback)
+			{
+				this->QueuedItem->Icon.Type = EIconType::None;
+				this->QueuedItem->Icon.Value = {};
+			}
+
+			this->WidgetFallbackIcon = APIDefs->Textures.GetOrCreateFromResource("ICON_RADIALWIDGET_FALLBACK", ICON_FALLBACK, SelfModule);
 		}
 	}
 	ImGui::End();

@@ -36,6 +36,7 @@
 #define ICON_SIEGETURTLE			308
 
 #define TEX_WIDGET_BASE				400
+#define ICON_FALLBACK				401
 
 // Next default values for new objects
 // 
