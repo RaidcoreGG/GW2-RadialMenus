@@ -595,7 +595,7 @@ void CRadialContext::RenderWidget()
 			drawList->AddLine(circle[amtTotal - 1], circle[0], color, thickness);
 		}
 
-		bool useFallback = this->QueuedItem->Icon.Type == EIconType::None || this->QueuedItem->Icon.Value.empty();
+		bool useFallback = !this->QueuedItem || this->QueuedItem->Icon.Type == EIconType::None || this->QueuedItem->Icon.Value.empty();
 		Texture* icon = !useFallback ? this->QueuedItem->Icon.Texture : this->WidgetFallbackIcon;
 
 		if (icon)
