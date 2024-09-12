@@ -1477,6 +1477,7 @@ void CRadialContext::RenderEditorTab()
 								GameBindSelectable(action, "((MasteryAccess03))", EGameBinds_MasteryAccess03);
 								GameBindSelectable(action, "((MasteryAccess04))", EGameBinds_MasteryAccess04);
 								GameBindSelectable(action, "((MasteryAccess05))", EGameBinds_MasteryAccess05);
+								GameBindSelectable(action, "((MasteryAccess06))", EGameBinds_MasteryAccess06);
 								ImGui::EndMenu();
 							}
 							if (ImGui::BeginMenu(APIDefs->Localization.Translate("((Miscellaneous))")))
@@ -1489,6 +1490,7 @@ void CRadialContext::RenderEditorTab()
 								GameBindSelectable(action, "((MiscToggleLanguage))", EGameBinds_MiscToggleLanguage);
 								GameBindSelectable(action, "((MiscTogglePetCombat))", EGameBinds_MiscTogglePetCombat);
 								GameBindSelectable(action, "((MiscToggleFullScreen))", EGameBinds_MiscToggleFullScreen);
+								GameBindSelectable(action, "((MiscToggleDecorationMode))", EGameBinds_MiscToggleDecorationMode);
 								GameBindSelectable(action, "((ToyUseDefault))", EGameBinds_ToyUseDefault);
 								GameBindSelectable(action, "((ToyUseSlot1))", EGameBinds_ToyUseSlot1);
 								GameBindSelectable(action, "((ToyUseSlot2))", EGameBinds_ToyUseSlot2);
