@@ -217,6 +217,7 @@ std::string GameBindToString(EGameBinds aGameBind)
 		{ EGameBinds_MasteryAccess03, "((MasteryAccess03))" }, // Jade Bot Waypoint
 		{ EGameBinds_MasteryAccess04, "((MasteryAccess04))" }, // Rift Scan
 		{ EGameBinds_MasteryAccess05, "((MasteryAccess05))" }, // Skyscale
+		{ EGameBinds_MasteryAccess06, "((MasteryAccess06))" }, // Homestead Doorway
 
 		// Miscellaneous Binds
 		{ EGameBinds_MiscAoELoot, "((MiscAoELoot))" },
@@ -227,6 +228,7 @@ std::string GameBindToString(EGameBinds aGameBind)
 		{ EGameBinds_MiscToggleLanguage, "((MiscToggleLanguage))" },
 		{ EGameBinds_MiscTogglePetCombat, "((MiscTogglePetCombat))" },
 		{ EGameBinds_MiscToggleFullScreen, "((MiscToggleFullScreen))" },
+		{ EGameBinds_MiscToggleDecorationMode, "((MiscToggleDecorationMode))" }, // Decoration Mode
 
 		// Toys/Novelties
 		{ EGameBinds_ToyUseDefault, "((ToyUseDefault))" },
