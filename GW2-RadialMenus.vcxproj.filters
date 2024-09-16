@@ -126,6 +126,9 @@
     <ClInclude Include="src\thirdparty\nlohmann\json.hpp">
       <Filter>_EXTERNAL</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\ItemProcessor.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
@@ -169,6 +172,9 @@
     </ClCompile>
     <ClCompile Include="src\Core\Conditions.cpp">
       <Filter>Core\Structs</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Core\ItemProcessor.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

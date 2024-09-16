@@ -116,6 +116,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\Core\Icon.h" />
     <ClInclude Include="src\Core\RadialContext.h" />
     <ClInclude Include="src\Core\RadialItem.h" />
+    <ClInclude Include="src\Core\ItemProcessor.h" />
     <ClInclude Include="src\Core\StateObserver.h" />
     <ClInclude Include="src\Language.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
@@ -139,6 +140,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\Core\Addon.cpp" />
     <ClCompile Include="src\Core\Conditions.cpp" />
     <ClCompile Include="src\Core\RadialContext.cpp" />
+    <ClCompile Include="src\Core\ItemProcessor.cpp" />
     <ClCompile Include="src\Core\StateObserver.cpp" />
     <ClCompile Include="src\entry.cpp" />
     <ClCompile Include="src\imgui_extensions.cpp" />
