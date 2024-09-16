@@ -355,7 +355,7 @@ void CItemProcessor::DestroyActiveActions()
 {
 	for (ActionBase* act : this->ActiveItem.Actions)
 	{
-		/*switch (act->Type)
+		switch (act->Type)
 		{
 			case EActionType::InputBind:
 			case EActionType::Event:
@@ -380,8 +380,7 @@ void CItemProcessor::DestroyActiveActions()
 				delete (ActionBase*)act;
 				break;
 			}
-		}*/
-		delete act;
+		}
 	}
 
 	this->ActiveItem.Actions.clear();
