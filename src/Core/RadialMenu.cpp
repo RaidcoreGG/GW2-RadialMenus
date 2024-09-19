@@ -234,7 +234,7 @@ bool CRadialMenu::Render()
 			{
 				for (size_t i = 0; i < this->DrawnItems.size(); i++)
 				{
-					ImGui::ImageRotated(this->DividerTexture->Resource, Origin, size, SegmentRadius * i);
+					ImGui::ImageRotated(this->DividerTexture->Resource, this->Origin, size, this->SegmentRadius * i);
 				}
 			}
 			else
@@ -250,6 +250,7 @@ bool CRadialMenu::Render()
 		float contentDistance = this->SegmentContentDistance * NexusLink->Scaling;
 		ImVec2 contentSize = ImVec2(this->SegmentContentSize.x * NexusLink->Scaling, this->SegmentContentSize.y * NexusLink->Scaling);
 		ImVec2 contentSizeHalf = ImVec2(contentSize.x / 2.0f, contentSize.y / 2.0f);
+		ImVec2 contentSizeHover = ImVec2(contentSize.x * 1.2f, contentSize.y * 1.2f);
 
 		if (this->SegmentTexture)
 		{
@@ -259,25 +260,33 @@ bool CRadialMenu::Render()
 				RadialItem* item = this->DrawnItems[i];
 
 				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
-				ImGui::ImageRotated(this->SegmentTexture->Resource, Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
+				ImGui::ImageRotated(this->SegmentTexture->Resource, this->Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
 			}
 
 			/* draw icons */
 			for (size_t i = 0; i < this->DrawnItems.size(); i++)
 			{
 				RadialItem* item = this->DrawnItems[i];
-				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
+				float segmentStart = (this->SegmentRadius * i) + this->ItemRotationDegrees;
+
+				float szDiff = hoverIndex == i ? (contentSizeHover.x - contentSize.x) / 2.0f : 0;
 
 				if (item->Icon.Texture)
 				{
-					float deg = (segmentStart + (SegmentRadius / 2)) - 90.0f; // center of segment and correct for 0 up
+					float deg = (segmentStart + (this->SegmentRadius / 2)) - 90.0f; // center of segment and correct for 0 up
 					float degRad = deg * 3.14159f / 180.0f;
 
 					float x = contentDistance * cos(degRad) + center.x;
 					float y = contentDistance * sin(degRad) + center.y;
-
-					ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x, y - contentSizeHalf.y));
-					ImGui::Image(item->Icon.Texture->Resource, contentSize);
+					if (hoverIndex == i)
+					{
+						ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x - szDiff, y - contentSizeHalf.y - szDiff));
+					}
+					else
+					{
+						ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x, y - contentSizeHalf.y));
+					}
+					ImGui::Image(item->Icon.Texture->Resource, hoverIndex == i ? contentSizeHover : contentSize);
 				}
 				else
 				{
