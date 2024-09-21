@@ -28,6 +28,8 @@ using json = nlohmann::json;
 #define SMALL_ITEM_COLOR_HOVER ImColor(255, 255, 255, 255)
 
 /* helpers start */
+static bool HasChanges = false;
+
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
 {
 	bool isBound = APIDefs->GameBinds.IsBound(aGameBind);
@@ -40,6 +42,7 @@ void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGam
 	if (ImGui::Selectable((APIDefs->Localization.Translate(aLabel) + ("##" + std::to_string(aGameBind))).c_str()))
 	{
 		((ActionGameInputBind*)aAction)->Identifier = aGameBind;
+		HasChanges = true;
 	}
 
 	if (!isBound)
@@ -550,10 +553,15 @@ void CRadialContext::RenderEditorTab()
 			this->LoadInternal();
 		}
 		ImGui::SameLine();
+
+		bool showChangeInfo = HasChanges;
+
+		if (showChangeInfo) { ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 1, 0, 1)); }
 		if (ImGui::Button("Save changes"))
 		{
 			this->SaveInternal();
 		}
+		if (showChangeInfo) { ImGui::PopStyleColor(); }
 		ImGui::SameLine();
 		if (ImGui::Button("Open folder"))
 		{
@@ -595,6 +603,11 @@ void CRadialContext::RenderEditorTab()
 					}
 				}
 			}).detach();
+		}
+
+		if (showChangeInfo)
+		{
+			ImGui::TextColored(ImVec4(1, 1, 0, 1), "You might have unsaved changes.");
 		}
 
 		ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
@@ -644,11 +657,13 @@ void CRadialContext::RenderEditorTab()
 					if (ImGui::ArrowButtonCondDisabled(("up_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
 					{
 						radial->MoveItemUp(item->Identifier);
+						HasChanges = true;
 					}
 					ImGui::SameLine();
 					if (ImGui::ArrowButtonCondDisabled(("dn_radialitem##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == items.size() - 1))
 					{
 						radial->MoveItemDown(item->Identifier);
+						HasChanges = true;
 					}
 					ImGui::SameLine();
 					if (ImGui::CrossButton(("x_radialitem##" + std::to_string(i)).c_str()))
@@ -659,6 +674,7 @@ void CRadialContext::RenderEditorTab()
 						{
 							this->EditingItem = nullptr;
 						}
+						HasChanges = true;
 					}
 
 					i++;
@@ -667,6 +683,7 @@ void CRadialContext::RenderEditorTab()
 				if (ImGui::Button(("Add New Item##" + radial->GetName()).c_str(), ImVec2(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX(), 0)))
 				{
 					radial->AddItem(std::string(), NORMAL_ITEM_COLOR, NORMAL_ITEM_COLOR_HOVER, EIconType::None, "");
+					HasChanges = true;
 				}
 				if (capacity < items.size())
 				{
@@ -723,6 +740,7 @@ void CRadialContext::RenderEditorTab()
 							APIDefs->Localization.Set(radial->GetInputBind().c_str(), "en", radial->GetName().c_str());
 							APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", this->EditingMenu->GetName().c_str());
 							modifiedBinds = true;
+							HasChanges = true;
 						}
 					}
 				}
@@ -759,6 +777,7 @@ void CRadialContext::RenderEditorTab()
 					APIDefs->Localization.Set(this->EditingMenu->GetInputBind().c_str(), "en", newName.c_str());
 
 					editingName = false;
+					HasChanges = true;
 				}
 			}
 
@@ -782,10 +801,12 @@ void CRadialContext::RenderEditorTab()
 				if (ImGui::Selectable("Small"))
 				{
 					this->EditingMenu->SetType(ERadialType::Small);
+					HasChanges = true;
 				}
 				if (ImGui::Selectable("Normal"))
 				{
 					this->EditingMenu->SetType(ERadialType::Normal);
+					HasChanges = true;
 				}
 				ImGui::EndCombo();
 			}
@@ -794,6 +815,7 @@ void CRadialContext::RenderEditorTab()
 			if (ImGui::DragFloat("##radialscale", &this->EditingMenu->Scale, 0.01f, 0.1f, 5.0f, "%.2f"))
 			{
 				this->EditingMenu->Invalidate();
+				HasChanges = true;
 			}
 
 			ImGui::TextDisabled("Selection Mode");
@@ -819,24 +841,28 @@ void CRadialContext::RenderEditorTab()
 				if (ImGui::Selectable("Click"))
 				{
 					this->EditingMenu->SetSelectionMode(ESelectionMode::Click);
+					HasChanges = true;
 				}
 				ImGui::TooltipGeneric("Left mouse button will select the element.");
 
 				if (ImGui::Selectable("Release"))
 				{
 					this->EditingMenu->SetSelectionMode(ESelectionMode::Release);
+					HasChanges = true;
 				}
 				ImGui::TooltipGeneric("Releasing the input bind will select the element.");
 
 				if (ImGui::Selectable("Release / Click"))
 				{
 					this->EditingMenu->SetSelectionMode(ESelectionMode::ReleaseOrClick);
+					HasChanges = true;
 				}
 				ImGui::TooltipGeneric("Releasing the input bind or left mouse button will select the element.");
 
 				if (ImGui::Selectable("Hover"))
 				{
 					this->EditingMenu->SetSelectionMode(ESelectionMode::Hover);
+					HasChanges = true;
 				}
 				ImGui::TooltipGeneric("Hovering over an element will immediately select it.");
 
@@ -847,14 +873,20 @@ void CRadialContext::RenderEditorTab()
 			{
 				ImGui::TextDisabled("Hover Timeout (milliseconds)");
 				ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-				ImGui::InputInt("##radialhovertimeout", &this->EditingMenu->HoverTimeout);
+				if (ImGui::InputInt("##radialhovertimeout", &this->EditingMenu->HoverTimeout))
+				{
+					HasChanges = true;
+				}
 				ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
 			}
 
 			ImGui::TextDisabled("Items Rotation");
 			ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
 			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-			ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180);
+			if (ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180))
+			{
+				HasChanges = true;
+			}
 
 			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
@@ -881,6 +913,7 @@ void CRadialContext::RenderEditorTab()
 				{
 					editingName = false;
 					this->EditingItem->Identifier = inputBuff;
+					HasChanges = true;
 				}
 			}
 
@@ -889,21 +922,29 @@ void CRadialContext::RenderEditorTab()
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			ImGui::TextDisabled("Color");
-			ImGui::ColorEdit4U32("Color", &this->EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+			if (ImGui::ColorEdit4U32("Color", &this->EditingItem->Color, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel))
+			{
+				HasChanges = true;
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply to all##color"))
 			{
 				this->EditingMenu->ApplyColorToAll(this->EditingItem->Color, 1);
+				HasChanges = true;
 			}
 			ImGui::TooltipGeneric("Applies this item's Color to all items Color in this Radial Menu.");
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::TextDisabled("Color Hover");
-			ImGui::ColorEdit4U32("Color Hover", &this->EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel);
+			if (ImGui::ColorEdit4U32("Color Hover", &this->EditingItem->ColorHover, ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_NoLabel))
+			{
+				HasChanges = true;
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply to all##colorhover"))
 			{
 				this->EditingMenu->ApplyColorToAll(this->EditingItem->ColorHover, 2);
+				HasChanges = true;
 			}
 			ImGui::TooltipGeneric("Applies this item's Hover Color to all items Hover Color in this Radial Menu.");
 
@@ -926,10 +967,12 @@ void CRadialContext::RenderEditorTab()
 				if (ImGui::Selectable("File"))
 				{
 					this->EditingItem->Icon.Type = EIconType::File;
+					HasChanges = true;
 				}
 				if (ImGui::Selectable("URL"))
 				{
 					this->EditingItem->Icon.Type = EIconType::URL;
+					HasChanges = true;
 				}
 				ImGui::EndCombo();
 			}
@@ -968,6 +1011,7 @@ void CRadialContext::RenderEditorTab()
 								{
 									APIDefs->Textures.LoadFromFile(this->EditingItem->Icon.Value.c_str(), this->EditingItem->Icon.Value.c_str(), nullptr);
 								}
+								HasChanges = true;
 							}
 						}
 					}).detach();
@@ -996,6 +1040,7 @@ void CRadialContext::RenderEditorTab()
 							this->EditingItem->Icon.Texture = nullptr;
 							APIDefs->Textures.LoadFromURL(this->EditingItem->Icon.Value.c_str(), URL::GetBase(this->EditingItem->Icon.Value).c_str(), URL::GetEndpoint(this->EditingItem->Icon.Value).c_str(), nullptr);
 						}
+						HasChanges = true;
 					}
 				}
 			}
@@ -1006,6 +1051,7 @@ void CRadialContext::RenderEditorTab()
 			if (applyVisToAll > -1 || applyVisToAll == -99)
 			{
 				this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Visibility, 1, applyVisToAll);
+				HasChanges = true;
 			}
 			ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Visibility).c_str());
 
@@ -1015,17 +1061,22 @@ void CRadialContext::RenderEditorTab()
 			if (applyActToAll > -1 || applyActToAll == -99)
 			{
 				this->EditingMenu->ApplyConditionToAll(&this->EditingItem->Activation, 2, applyActToAll);
+				HasChanges = true;
 			}
 			ImGui::TooltipGeneric(ConditionsToString(&this->EditingItem->Activation).c_str());
 
 			ImGui::TextDisabled("Timeout (seconds)");
 			ImGui::HelpMarker("This timeout controls how long to wait for until the conditions are met before aborting.");
 			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-			ImGui::InputInt("##activationtimeout", &this->EditingItem->ActivationTimeout);
+			if (ImGui::InputInt("##activationtimeout", &this->EditingItem->ActivationTimeout))
+			{
+				HasChanges = true;
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Apply to all##applyallactivationtimeout"))
 			{
 				this->EditingMenu->ApplyActivationTimeoutToAll(this->EditingItem->ActivationTimeout);
+				HasChanges = true;
 			}
 
 			ImGui::TextDisabled("Actions");
@@ -1059,6 +1110,7 @@ void CRadialContext::RenderEditorTab()
 							delete this->EditingItem->Actions[i];
 							this->EditingItem->Actions[i] = new ActionGeneric();
 							this->EditingItem->Actions[i]->Type = EActionType::InputBind;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("InputBind (Game)"))
@@ -1078,6 +1130,7 @@ void CRadialContext::RenderEditorTab()
 							this->EditingItem->Actions[i] = new ActionGameInputBind();
 							this->EditingItem->Actions[i]->Type = EActionType::GameInputBind;
 							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("InputBind Press (Game)"))
@@ -1097,6 +1150,7 @@ void CRadialContext::RenderEditorTab()
 							this->EditingItem->Actions[i] = new ActionGameInputBind();
 							this->EditingItem->Actions[i]->Type = EActionType::GameInputBindPress;
 							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("InputBind Release (Game)"))
@@ -1116,6 +1170,7 @@ void CRadialContext::RenderEditorTab()
 							this->EditingItem->Actions[i] = new ActionGameInputBind();
 							this->EditingItem->Actions[i]->Type = EActionType::GameInputBindRelease;
 							((ActionGameInputBind*)this->EditingItem->Actions[i])->Identifier = persistBind;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("Event"))
@@ -1125,6 +1180,7 @@ void CRadialContext::RenderEditorTab()
 							delete this->EditingItem->Actions[i];
 							this->EditingItem->Actions[i] = new ActionGeneric();
 							this->EditingItem->Actions[i]->Type = EActionType::Event;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("Delay"))
@@ -1134,6 +1190,7 @@ void CRadialContext::RenderEditorTab()
 							delete this->EditingItem->Actions[i];
 							this->EditingItem->Actions[i] = new ActionDelay();
 							this->EditingItem->Actions[i]->Type = EActionType::Delay;
+							HasChanges = true;
 						}
 					}
 					if (ImGui::Selectable("Return"))
@@ -1143,6 +1200,7 @@ void CRadialContext::RenderEditorTab()
 							delete this->EditingItem->Actions[i];
 							this->EditingItem->Actions[i] = new ActionBase();
 							this->EditingItem->Actions[i]->Type = EActionType::Return;
+							HasChanges = true;
 						}
 					}
 					ImGui::TooltipGeneric("Return prevents the execution of any further actions.\nUseful when linked with previous conditional actions.");
@@ -1162,6 +1220,7 @@ void CRadialContext::RenderEditorTab()
 						if (ImGui::InputText(("##actionidentifier" + std::to_string(i)).c_str(), inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
 						{
 							((ActionGeneric*)action)->Identifier = _strdup(inputBuff);
+							HasChanges = true;
 						}
 						break;
 					}
@@ -1406,11 +1465,13 @@ void CRadialContext::RenderEditorTab()
 					case EActionType::Delay:
 					{
 						ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100);
+						HasChanges = true;
 						break;
 					}
 					case EActionType::Return:
 					{
 						/* there's no parameter */
+						HasChanges = true;
 						break;
 					}
 				}
@@ -1421,6 +1482,7 @@ void CRadialContext::RenderEditorTab()
 				if (applyActionActToAll > -1 || applyActionActToAll == -99)
 				{
 					this->EditingMenu->ApplyConditionToAll(this->EditingItem, &action->Activation, applyActionActToAll);
+					HasChanges = true;
 				}
 				ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
 
@@ -1430,6 +1492,7 @@ void CRadialContext::RenderEditorTab()
 					ActionBase* tmp = this->EditingItem->Actions[i - 1];
 					this->EditingItem->Actions[i - 1] = this->EditingItem->Actions[i];
 					this->EditingItem->Actions[i] = tmp;
+					HasChanges = true;
 				}
 				ImGui::SameLine();
 				if (ImGui::ArrowButtonCondDisabled(("dn_action##" + std::to_string(i)).c_str(), ImGuiDir_Down, i == this->EditingItem->Actions.size() - 1))
@@ -1437,11 +1500,13 @@ void CRadialContext::RenderEditorTab()
 					ActionBase* tmp = this->EditingItem->Actions[i + 1];
 					this->EditingItem->Actions[i + 1] = this->EditingItem->Actions[i];
 					this->EditingItem->Actions[i] = tmp;
+					HasChanges = true;
 				}
 				ImGui::SameLine();
 				if (ImGui::CrossButton(("x_action##" + std::to_string(i)).c_str()))
 				{
 					idxDel = i;
+					HasChanges = true;
 				}
 
 				i++;
@@ -1451,6 +1516,7 @@ void CRadialContext::RenderEditorTab()
 			if (ImGui::Button("Add Action"))
 			{
 				this->EditingMenu->AddItemAction(this->EditingItem->Identifier, EActionType::InputBind, "");
+				HasChanges = true;
 			}
 
 			if (idxDel != -1)
@@ -1463,8 +1529,6 @@ void CRadialContext::RenderEditorTab()
 		ImGui::EndTabItem();
 	}
 }
-
-#include "imgui_extensions.h"
 
 void CRadialContext::RenderSettingsTab()
 {
@@ -1742,6 +1806,8 @@ void CRadialContext::LoadInternal()
 			APIDefs->UI.SendAlert("Some Radial bindings might have changed due to ID conflicts.");
 		}
 	}
+
+	HasChanges = false;
 }
 void CRadialContext::SaveInternal()
 {
@@ -1751,6 +1817,8 @@ void CRadialContext::SaveInternal()
 	{
 		radial->Save();
 	}
+
+	HasChanges = false;
 }
 
 CRadialMenu* CRadialContext::Add(std::filesystem::path aPath, std::string aIdentifier, ERadialType aRadialMenuType, ESelectionMode aSelectionMode, int aID)
