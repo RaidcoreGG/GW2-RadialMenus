@@ -35,6 +35,9 @@ class CRadialMenu
 	int                         ItemRotationDegrees;
 	bool                        ShowItemNameTooltip;
 
+	/* runtime render values */
+	float                       RenderOpacity;
+
 	///----------------------------------------------------------------------------------------------------
 	/// ctor
 	///----------------------------------------------------------------------------------------------------

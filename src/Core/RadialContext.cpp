@@ -1464,6 +1464,8 @@ void CRadialContext::RenderEditorTab()
 	}
 }
 
+#include "imgui_extensions.h"
+
 void CRadialContext::RenderSettingsTab()
 {
 	if (ImGui::BeginTabItem("Settings##radialmenus"))

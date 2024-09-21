@@ -21,6 +21,9 @@ typedef struct RadialItem
 	Conditions               Activation;
 	int                      ActivationTimeout;
 	std::vector<ActionBase*> Actions;
+
+	/* runtime values */
+	float                    DisplayItemSize;
 } RadialMenuItem;
 
 #endif

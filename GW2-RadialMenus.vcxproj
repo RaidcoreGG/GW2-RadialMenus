@@ -67,6 +67,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -92,6 +93,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\thirdparty\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -119,6 +121,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\Core\ItemProcessor.h" />
     <ClInclude Include="src\Core\StateObserver.h" />
     <ClInclude Include="src\Language.h" />
+    <ClInclude Include="src\thirdparty\ImAnimate\ImAnimate.h" />
     <ClInclude Include="src\thirdparty\imgui\imconfig.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui.h" />
     <ClInclude Include="src\thirdparty\imgui\imgui_internal.h" />
@@ -144,6 +147,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClCompile Include="src\Core\StateObserver.cpp" />
     <ClCompile Include="src\entry.cpp" />
     <ClCompile Include="src\imgui_extensions.cpp" />
+    <ClCompile Include="src\thirdparty\ImAnimate\ImAnimate.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\thirdparty\imgui\imgui_draw.cpp" />

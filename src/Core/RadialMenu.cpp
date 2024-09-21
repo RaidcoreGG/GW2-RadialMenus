@@ -20,6 +20,8 @@ using json = nlohmann::json;
 #include "Shared.h"
 #include "StateObserver.h"
 
+#include "thirdparty/ImAnimate/ImAnimate.h"
+
 /* helper for window relative cursor pos */
 ImVec2 GetCursorPosWR(int x, int y)
 {
@@ -168,7 +170,18 @@ bool CRadialMenu::Render()
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	if (!this->IsActive) { return false; }
+	if (!this->IsActive)
+	{
+		ImGui::Animate(1, 0, 100, &this->RenderOpacity, ImAnimate::ECurve::InCubic);
+		if (this->RenderOpacity == 0)
+		{
+			return false;
+		}
+	}
+	else
+	{
+		ImGui::Animate(0, 1, 100, &this->RenderOpacity, ImAnimate::ECurve::InCubic);
+	}
 
 	this->DrawnItems.clear();
 	for (RadialItem* item : this->Items)
@@ -207,14 +220,14 @@ bool CRadialMenu::Render()
 
 		if (this->HoverIndex != hoverIndex)
 		{
-			this->HoverStartTime = Time::GetTimestampMillis();
+			this->HoverStartTime = hoverIndex != -1 ? Time::GetTimestampMillis() : 0;
 			this->HoverIndex = hoverIndex;
 		}
 
 		if (this->BaseTexture)
 		{
 			ImGui::SetCursorPos(initialPos);
-			ImGui::Image(this->BaseTexture->Resource, size);
+			ImGui::Image(this->BaseTexture->Resource, size, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, this->RenderOpacity));
 		}
 		else
 		{
@@ -234,7 +247,7 @@ bool CRadialMenu::Render()
 			{
 				for (size_t i = 0; i < this->DrawnItems.size(); i++)
 				{
-					ImGui::ImageRotated(this->DividerTexture->Resource, this->Origin, size, this->SegmentRadius * i);
+					ImGui::ImageRotated(this->DividerTexture->Resource, this->Origin, size, this->SegmentRadius * i, ImVec4(1, 1, 1, this->RenderOpacity));
 				}
 			}
 			else
@@ -248,10 +261,11 @@ bool CRadialMenu::Render()
 		center.y += sizeHalf.y;
 
 		float contentDistance = this->SegmentContentDistance * NexusLink->Scaling;
-		ImVec2 contentSize = ImVec2(this->SegmentContentSize.x * NexusLink->Scaling, this->SegmentContentSize.y * NexusLink->Scaling);
-		ImVec2 contentSizeHalf = ImVec2(contentSize.x / 2.0f, contentSize.y / 2.0f);
-		ImVec2 contentSizeHover = ImVec2(contentSize.x * 1.2f, contentSize.y * 1.2f);
 
+		static float contentSize = this->SegmentContentSize.x * NexusLink->Scaling;
+		static float contentSizeHalf = this->SegmentContentSize.x / 2.0f;
+		static float contentSizeHover = this->SegmentContentSize.x * 1.1f;
+		
 		if (this->SegmentTexture)
 		{
 			/* draw segment backgrounds */
@@ -260,7 +274,10 @@ bool CRadialMenu::Render()
 				RadialItem* item = this->DrawnItems[i];
 
 				float segmentStart = (SegmentRadius * i) + this->ItemRotationDegrees;
-				ImGui::ImageRotated(this->SegmentTexture->Resource, this->Origin, size, segmentStart, hoverIndex == i ? ImColor(item->ColorHover) : ImColor(item->Color));
+				ImVec4 segmentColor = hoverIndex == i ? (ImColor)item->ColorHover : (ImColor)item->Color;
+				if (this->RenderOpacity < 1) { segmentColor.w *= this->RenderOpacity; }
+
+				ImGui::ImageRotated(this->SegmentTexture->Resource, this->Origin, size, segmentStart, segmentColor);
 			}
 
 			/* draw icons */
@@ -269,8 +286,6 @@ bool CRadialMenu::Render()
 				RadialItem* item = this->DrawnItems[i];
 				float segmentStart = (this->SegmentRadius * i) + this->ItemRotationDegrees;
 
-				float szDiff = hoverIndex == i ? (contentSizeHover.x - contentSize.x) / 2.0f : 0;
-
 				if (item->Icon.Texture)
 				{
 					float deg = (segmentStart + (this->SegmentRadius / 2)) - 90.0f; // center of segment and correct for 0 up
@@ -278,15 +293,19 @@ bool CRadialMenu::Render()
 
 					float x = contentDistance * cos(degRad) + center.x;
 					float y = contentDistance * sin(degRad) + center.y;
+
 					if (hoverIndex == i)
 					{
-						ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x - szDiff, y - contentSizeHalf.y - szDiff));
+						ImGui::Animate(contentSize, contentSizeHover, 50, &item->DisplayItemSize, ImAnimate::ECurve::InCubic);
 					}
 					else
 					{
-						ImGui::SetCursorPos(ImVec2(x - contentSizeHalf.x, y - contentSizeHalf.y));
+						ImGui::Animate(contentSizeHover, contentSize, 50, &item->DisplayItemSize, ImAnimate::ECurve::OutCubic);
 					}
-					ImGui::Image(item->Icon.Texture->Resource, hoverIndex == i ? contentSizeHover : contentSize);
+
+					float szDiff = (item->DisplayItemSize - contentSize) / 2.0f;
+					ImGui::SetCursorPos(ImVec2(x - contentSizeHalf - szDiff, y - contentSizeHalf - szDiff));
+					ImGui::Image(item->Icon.Texture->Resource, ImVec2(item->DisplayItemSize, item->DisplayItemSize), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, this->RenderOpacity));
 				}
 				else
 				{
@@ -295,6 +314,7 @@ bool CRadialMenu::Render()
 			}
 		}
 
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, this->RenderOpacity);
 		if (this->ShowItemNameTooltip && this->HoverIndex > -1)
 		{
 			RadialItem* hovItem = this->DrawnItems[this->HoverIndex];
@@ -305,6 +325,7 @@ bool CRadialMenu::Render()
 			ImGui::EndTooltip();
 			ImGui::PopStyleVar();
 		}
+		ImGui::PopStyleVar();
 
 		ImGui::EndChild();
 	}
@@ -328,6 +349,9 @@ bool CRadialMenu::Activate()
 		if (StateObserver::IsMatch(&item->Visibility) && this->DrawnItems.size() < this->ItemsCapacity)
 		{
 			this->DrawnItems.push_back(item);
+
+			/* reset render values while we're here */
+			item->DisplayItemSize = this->SegmentContentSize.x * NexusLink->Scaling;
 		}
 	}
 
@@ -397,7 +421,7 @@ bool CRadialMenu::Activate()
 	this->Origin.y += 1.0f;
 
 	this->HoverIndex = -1;
-	this->HoverStartTime = -1;
+	this->HoverStartTime = 0;
 
 	this->IsActive = true;
 	return true;

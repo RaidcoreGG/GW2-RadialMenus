@@ -33,15 +33,9 @@ namespace Addon
 		ImGui::SetCurrentContext((ImGuiContext*)APIDefs->ImguiContext);
 		ImGui::SetAllocatorFunctions((void* (*)(size_t, void*))APIDefs->ImguiMalloc, (void(*)(void*, void*))APIDefs->ImguiFree);
 
-		APIDefs->Renderer.Register(ERenderType_Render, Addon::Render);
-		APIDefs->Renderer.Register(ERenderType_OptionsRender, Addon::RenderOptions);
-		APIDefs->WndProc.Register(Addon::WndProc);
-
 		MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 		NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
 		MumbleIdentity = (Mumble::Identity*)APIDefs->DataLink.Get("DL_MUMBLE_LINK_IDENTITY");
-
-		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
 
 		GW2Root = APIDefs->Paths.GetGameDirectory();
 		AddonDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus");
@@ -65,6 +59,13 @@ namespace Addon
 		{
 			RadialCtx->CreateDefaultMountRadial();
 		}
+
+		APIDefs->Renderer.Register(ERenderType_Render, Addon::Render);
+		APIDefs->Renderer.Register(ERenderType_OptionsRender, Addon::RenderOptions);
+		APIDefs->WndProc.Register(Addon::WndProc);
+
+		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
+
 	}
 
 	void Unload()
