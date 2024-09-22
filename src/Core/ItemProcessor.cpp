@@ -311,7 +311,7 @@ void CItemProcessor::ExecuteActiveActions()
 				ActionGameInputBind* action = (ActionGameInputBind*)act;
 
 				APIDefs->GameBinds.Press(action->Identifier);
-				Sleep(50);
+				Sleep(100);
 				APIDefs->GameBinds.Release(action->Identifier);
 
 				break;

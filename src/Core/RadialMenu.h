@@ -22,6 +22,7 @@
 #include "ESelectionMode.h"
 #include "ERadialType.h"
 #include "EInnerRadius.h"
+#include "ECenterBehavior.h"
 
 ///----------------------------------------------------------------------------------------------------
 /// CRadialMenu Class
@@ -35,6 +36,7 @@ class CRadialMenu
 	int                         HoverTimeout;
 	int                         ItemRotationDegrees;
 	bool                        ShowItemNameTooltip;
+	std::string                 SpecificCenterItemName;
 
 	/* runtime render values */
 	float                       RenderOpacity;
@@ -201,6 +203,18 @@ class CRadialMenu
 	void SetSelectionMode(ESelectionMode aSelectionMode);
 
 	///----------------------------------------------------------------------------------------------------
+	/// GetCenterBehavior:
+	/// 	Returns the center behavior.
+	///----------------------------------------------------------------------------------------------------
+	ECenterBehavior GetCenterBehavior();
+
+	///----------------------------------------------------------------------------------------------------
+	/// SetCenterBehavior:
+	/// 	Sets the center behavior.
+	///----------------------------------------------------------------------------------------------------
+	void SetCenterBehavior(ECenterBehavior aCenterBehavior);
+
+	///----------------------------------------------------------------------------------------------------
 	/// GetCapacity:
 	/// 	Returns the max capacity of items of this radial.
 	///----------------------------------------------------------------------------------------------------
@@ -262,7 +276,9 @@ class CRadialMenu
 	int                         ID;
 	std::string                 Identifier;
 	ERadialType                 Type;
+	EInnerRadius                InnerRadius = EInnerRadius::Big;
 	ESelectionMode              SelectionMode;
+	ECenterBehavior             CenterBehavior = ECenterBehavior::None;
 
 	std::mutex                  Mutex;
 	std::vector<RadialItem*>    Items;
@@ -274,7 +290,6 @@ class CRadialMenu
 	Texture*                    SegmentTexture;
 
 	ImVec2                      Size;
-	EInnerRadius                InnerRadius = EInnerRadius::Big;
 	float                       MinimalMouseMoveDistance;
 	float                       SegmentContentDistance;
 	ImVec2                      SegmentContentSize;

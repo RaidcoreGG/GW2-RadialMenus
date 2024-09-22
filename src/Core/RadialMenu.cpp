@@ -87,23 +87,33 @@ void CRadialMenu::Save()
 		{"ID", this->ID},
 		{"Name", this->Identifier},
 		{"Type", this->Type},
+		{"InnerRadius", this->InnerRadius},
 		{"SelectionMode", this->SelectionMode},
+		{"CenterBehavior", this->CenterBehavior},
 
 		{"DrawInCenter", this->DrawInCenter},
 		{"RestoreCursor", this->RestoreCursor},
 		{"Scale", this->Scale},
-		{"HoverTimeout", this->HoverTimeout},
 		{"ItemRotation", this->ItemRotationDegrees},
 		{"ShowItemNameTooltip", this->ShowItemNameTooltip},
-		{"InnerRadius", this->InnerRadius},
 
 		{"Items", json::array()}
 	};
+
+	if (this->CenterBehavior == ECenterBehavior::SpecificItem)
+	{
+		radialJSON["CenterItemName"] = this->SpecificCenterItemName;
+	}
+	if (this->CenterBehavior == ECenterBehavior::SpecificItem)
+	{
+		radialJSON["HoverTimeout"] = this->HoverTimeout;
+	}
 
 	for (RadialItem* item : this->Items)
 	{
 		json itemJSON = json{
 			{"Name", item->Identifier},
+			{"Priority", item->Priority},
 			{"Color", item->Color},
 			{"ColorHover", item->ColorHover},
 			{"IconType", item->Icon.Type},
@@ -475,6 +485,45 @@ void CRadialMenu::Release(ESelectionMode aReason)
 			RadialCtx->QueueItem(item);
 		}).detach();
 	}
+	else if (this->CenterBehavior == ECenterBehavior::FirstItemMatchingActivation)
+	{
+		RadialItem* activateItem = nullptr;
+
+		for (RadialItem* item : this->Items)
+		{
+			if (StateObserver::IsMatch(&item->Activation))
+			{
+				if (!activateItem)
+				{
+					activateItem = item;
+				}
+				else if (item->Priority > activateItem->Priority)
+				{
+					activateItem = item;
+				}
+			}
+		}
+
+		if (activateItem)
+		{
+			std::thread([activateItem]() {
+				RadialCtx->QueueItem(activateItem);
+			}).detach();
+		}
+	}
+	else if (this->CenterBehavior == ECenterBehavior::SpecificItem)
+	{
+		for (RadialItem* item : this->Items)
+		{
+			if (item->Identifier == this->SpecificCenterItemName)
+			{
+				std::thread([item]() {
+					RadialCtx->QueueItem(item);
+				}).detach();
+				break;
+			}
+		}
+	}
 }
 
 void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, Conditions aVisibility, Conditions aActivation, int aActivationTimeout)
@@ -773,6 +822,16 @@ ESelectionMode CRadialMenu::GetSelectionMode()
 void CRadialMenu::SetSelectionMode(ESelectionMode aSelectionMode)
 {
 	this->SelectionMode = aSelectionMode;
+}
+
+ECenterBehavior CRadialMenu::GetCenterBehavior()
+{
+	return this->CenterBehavior;
+}
+
+void CRadialMenu::SetCenterBehavior(ECenterBehavior aCenterBehavior)
+{
+	this->CenterBehavior = aCenterBehavior;
 }
 
 int CRadialMenu::GetCapacity()

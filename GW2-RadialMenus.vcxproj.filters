@@ -135,6 +135,9 @@
     <ClInclude Include="src\Core\EInnerRadius.h">
       <Filter>Core\Enums</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\ECenterBehavior.h">
+      <Filter>Core\Enums</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">

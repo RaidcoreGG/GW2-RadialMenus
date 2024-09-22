@@ -111,6 +111,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\Core\Addon.h" />
     <ClInclude Include="src\Core\Conditions.h" />
     <ClInclude Include="src\Core\EActionType.h" />
+    <ClInclude Include="src\Core\ECenterBehavior.h" />
     <ClInclude Include="src\Core\EIconType.h" />
     <ClInclude Include="src\Core\EInnerRadius.h" />
     <ClInclude Include="src\Core\ERadialType.h" />

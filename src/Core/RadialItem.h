@@ -14,6 +14,7 @@
 typedef struct RadialItem
 {
 	std::string              Identifier;
+	int                      Priority;
 	unsigned int             Color;
 	unsigned int             ColorHover;
 	Icon                     Icon;

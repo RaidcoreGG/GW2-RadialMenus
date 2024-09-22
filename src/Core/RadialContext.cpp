@@ -958,6 +958,67 @@ void CRadialContext::RenderEditorTab()
 			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
 			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
 			ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
+
+			ImGui::TextDisabled("Center Behavior");
+			ImGui::HelpMarker("This setting controls what to do if no item is selected.");
+			std::string centerbehavior;
+			switch (this->EditingMenu->GetCenterBehavior())
+			{
+				case ECenterBehavior::None:
+					centerbehavior = "Do nothing.";
+					break;
+				case ECenterBehavior::FirstItemMatchingActivation:
+					centerbehavior = "Activate the first item, matching conditions.";
+					break;
+				case ECenterBehavior::SpecificItem:
+					centerbehavior = "Execute a specific item.";
+					break;
+			}
+			if (ImGui::BeginCombo("##radialcenterbehavior", centerbehavior.c_str()))
+			{
+				if (ImGui::Selectable("Do nothing."))
+				{
+					this->EditingMenu->SetCenterBehavior(ECenterBehavior::None);
+					HasChanges = true;
+				}
+				if (ImGui::Selectable("Activate the first item, matching conditions."))
+				{
+					this->EditingMenu->SetCenterBehavior(ECenterBehavior::FirstItemMatchingActivation);
+					HasChanges = true;
+				}
+				if (ImGui::Selectable("Execute a specific item."))
+				{
+					this->EditingMenu->SetCenterBehavior(ECenterBehavior::SpecificItem);
+					HasChanges = true;
+				}
+				ImGui::EndCombo();
+			}
+
+			if (this->EditingMenu->GetCenterBehavior() == ECenterBehavior::SpecificItem)
+			{
+				ImGui::TextDisabled("Specific Item Name");
+				ImGui::HelpMarker("This is the item that will be executed when not selecting any.");
+
+				static bool editingSpecificItemName;
+				static char inputBuff[MAX_PATH];
+				if (!editingSpecificItemName)
+				{
+					if (ImGui::Button(this->EditingMenu->SpecificCenterItemName.empty() ? "(none)" : this->EditingMenu->SpecificCenterItemName.c_str()))
+					{
+						editingSpecificItemName = true;
+						strcpy_s(inputBuff, this->EditingMenu->SpecificCenterItemName.c_str());
+					}
+				}
+				else
+				{
+					if (ImGui::InputText("##radialcenteritemname", inputBuff, sizeof(inputBuff), ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						editingSpecificItemName = false;
+						this->EditingMenu->SpecificCenterItemName = inputBuff;
+						HasChanges = true;
+					}
+				}
+			}
 		}
 		else if (this->EditingItem) /* editing sub item */
 		{
@@ -982,6 +1043,14 @@ void CRadialContext::RenderEditorTab()
 					this->EditingItem->Identifier = inputBuff;
 					HasChanges = true;
 				}
+			}
+
+			ImGui::TextDisabled("Priority");
+			ImGui::HelpMarker("This setting controls which item to activate on center, if multiple items match the conditions. Higher means higher priority.");
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+			if (ImGui::InputInt("##priority", &this->EditingItem->Priority))
+			{
+				HasChanges = true;
 			}
 
 			ImGui::BeginTable("##radialcolours", 2, ImGuiTableFlags_SizingFixedFit);
@@ -1740,8 +1809,12 @@ void CRadialContext::LoadInternal()
 			name = this->GetUnusedName(name);
 			ERadialType type = ERadialType::None;
 			if (!radialData["Type"].is_null()) { radialData["Type"].get_to(type); }
+			EInnerRadius innerRadius = EInnerRadius::Big;
+			if (!radialData["InnerRadius"].is_null()) { radialData["InnerRadius"].get_to(innerRadius); }
 			ESelectionMode selMode = ESelectionMode::None;
 			if (!radialData["SelectionMode"].is_null()) { radialData["SelectionMode"].get_to(selMode); }
+			ECenterBehavior centerBehavior = ECenterBehavior::None;
+			if (!radialData["CenterBehavior"].is_null()) { radialData["CenterBehavior"].get_to(centerBehavior); }
 
 			bool drawInCenter = false;
 			if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
@@ -1755,12 +1828,10 @@ void CRadialContext::LoadInternal()
 			if (!radialData["ItemRotation"].is_null()) { radialData["ItemRotation"].get_to(itemRotation); }
 			bool showTooltip = false;
 			if (!radialData["ShowItemNameTooltip"].is_null()) { radialData["ShowItemNameTooltip"].get_to(showTooltip); }
-			EInnerRadius innerRadius = EInnerRadius::Big;
-			if (!radialData["InnerRadius"].is_null()) { radialData["InnerRadius"].get_to(innerRadius); }
+			std::string centerItemName;
+			if (!radialData["CenterItemName"].is_null()) { radialData["CenterItemName"].get_to(centerItemName); }
 
 			bool idCollision = this->IsIDInUse(id);
-
-			/* FIXME: also check the mapping, not just ID exists */
 
 			if (idCollision)
 			{
@@ -1769,12 +1840,15 @@ void CRadialContext::LoadInternal()
 			}
 
 			CRadialMenu* radial = this->Add(filePath, name, type, selMode, id);
+			radial->SetInnerRadius(innerRadius);
+			radial->SetCenterBehavior(centerBehavior);
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
 			radial->Scale = scale;
 			radial->HoverTimeout = hoverTimeout;
 			radial->ItemRotationDegrees = itemRotation;
 			radial->ShowItemNameTooltip = showTooltip;
+			radial->SpecificCenterItemName = centerItemName;
 
 			if (radialData["Items"].is_null())
 			{
@@ -1786,6 +1860,8 @@ void CRadialContext::LoadInternal()
 				std::string itemId;
 				if (!radialItemData["Name"].is_null()) { radialItemData["Name"].get_to(itemId); }
 				else { continue; }
+				int priority = 0;
+				if (!radialItemData["Priority"].is_null()) { radialItemData["Priority"].get_to(priority); }
 				unsigned int color = 0;
 				if (!radialItemData["Color"].is_null()) { radialItemData["Color"].get_to(color); }
 				unsigned int colorHover = 0;
