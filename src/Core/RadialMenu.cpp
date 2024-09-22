@@ -285,9 +285,8 @@ bool CRadialMenu::Render()
 
 		float contentDistance = this->SegmentContentDistance * NexusLink->Scaling;
 
-		static float contentSize = this->SegmentContentSize.x * NexusLink->Scaling;
-		static float contentSizeHalf = this->SegmentContentSize.x / 2.0f;
-		static float contentSizeHover = this->SegmentContentSize.x * 1.1f;
+		float contentSize = this->SegmentContentSize.x * NexusLink->Scaling;
+		float contentSizeHover = contentSize * 1.1f;
 		
 		if (this->SegmentTexture)
 		{
@@ -325,9 +324,8 @@ bool CRadialMenu::Render()
 					{
 						ImGui::Animate(contentSizeHover, contentSize, 50, &item->DisplayItemSize, ImAnimate::ECurve::OutCubic);
 					}
-
-					float szDiff = (item->DisplayItemSize - contentSize) / 2.0f;
-					ImGui::SetCursorPos(ImVec2(x - contentSizeHalf - szDiff, y - contentSizeHalf - szDiff));
+					float contentSizeHalf = item->DisplayItemSize / 2.0f;
+					ImGui::SetCursorPos(ImVec2(x - contentSizeHalf, y - contentSizeHalf));
 					ImGui::Image(item->Icon.Texture->Resource, ImVec2(item->DisplayItemSize, item->DisplayItemSize), ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, this->RenderOpacity));
 				}
 				else
