@@ -94,6 +94,7 @@ void CRadialMenu::Save()
 		{"DrawInCenter", this->DrawInCenter},
 		{"RestoreCursor", this->RestoreCursor},
 		{"Scale", this->Scale},
+		{"IconScale", this->IconScale},
 		{"ItemRotation", this->ItemRotationDegrees},
 		{"ShowItemNameTooltip", this->ShowItemNameTooltip},
 
@@ -285,7 +286,7 @@ bool CRadialMenu::Render()
 
 		float contentDistance = this->SegmentContentDistance * NexusLink->Scaling;
 
-		float contentSize = this->SegmentContentSize.x * NexusLink->Scaling;
+		float contentSize = this->SegmentContentSize.x * this->IconScale * NexusLink->Scaling;
 		float contentSizeHover = contentSize * 1.1f;
 		
 		if (this->SegmentTexture)

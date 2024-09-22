@@ -885,6 +885,13 @@ void CRadialContext::RenderEditorTab()
 				HasChanges = true;
 			}
 
+			ImGui::TextDisabled("Icon Scale");
+			if (ImGui::DragFloat("##radialiconscale", &this->EditingMenu->IconScale, 0.01f, 0.1f, 5.0f, "%.2f"))
+			{
+				this->EditingMenu->Invalidate();
+				HasChanges = true;
+			}
+
 			ImGui::TextDisabled("Selection Mode");
 			std::string selMode;
 			ESelectionMode selectionMode = this->EditingMenu->GetSelectionMode();
@@ -1822,6 +1829,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
 			float scale = 1.0f;
 			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
+			float iconScale = 1.0f;
+			if (!radialData["IconScale"].is_null()) { radialData["IconScale"].get_to(iconScale); }
 			int hoverTimeout = 0;
 			if (!radialData["HoverTimeout"].is_null()) { radialData["HoverTimeout"].get_to(hoverTimeout); }
 			int itemRotation = 0;
@@ -1845,6 +1854,7 @@ void CRadialContext::LoadInternal()
 			radial->DrawInCenter = drawInCenter;
 			radial->RestoreCursor = restoreCursor;
 			radial->Scale = scale;
+			radial->IconScale = iconScale;
 			radial->HoverTimeout = hoverTimeout;
 			radial->ItemRotationDegrees = itemRotation;
 			radial->ShowItemNameTooltip = showTooltip;

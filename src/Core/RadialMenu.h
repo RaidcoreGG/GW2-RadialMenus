@@ -33,6 +33,7 @@ class CRadialMenu
 	bool                        DrawInCenter;
 	bool                        RestoreCursor;
 	float                       Scale;
+	float                       IconScale = 1.0f;
 	int                         HoverTimeout;
 	int                         ItemRotationDegrees;
 	bool                        ShowItemNameTooltip;
