@@ -29,6 +29,7 @@ using json = nlohmann::json;
 
 /* helpers start */
 static bool HasChanges = false;
+static std::map<EGameBinds, std::vector<std::string>> UnboundKeys;
 
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
 {
@@ -608,6 +609,35 @@ void CRadialContext::RenderEditorTab()
 		if (showChangeInfo)
 		{
 			ImGui::TextColored(ImVec4(1, 1, 0, 1), "You might have unsaved changes.");
+		}
+		if (UnboundKeys.size() > 0)
+		{
+			ImGui::TextColored(ImVec4(1, 1, 0, 1), "Some radial menus may not function as intended. Some binds are missing. (?)");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text("Set the missing binds in the Nexus Game Keybinds settings.\nThey should match the bind you are using in-game.");
+				ImGui::Text("Missing binds:");
+				for (auto& [bindId, users] : UnboundKeys)
+				{
+					ImGui::Text(APIDefs->Localization.Translate(GameBindToString(bindId).c_str()));
+					ImGui::SameLine();
+					std::string usersStr = "used by ";
+					for (size_t i = 0; i < users.size(); i++)
+					{
+						if (i == users.size() - 1)
+						{
+							usersStr.append(users[i]);
+						}
+						else
+						{
+							usersStr.append(users[i] + ", ");
+						}
+					}
+					ImGui::TextDisabled(usersStr.c_str());
+				}
+				ImGui::EndTooltip();
+			}
 		}
 
 		ImGui::BeginChild("##radialeditor", ImVec2(width / 6 * 2, 0));
@@ -1464,14 +1494,15 @@ void CRadialContext::RenderEditorTab()
 					}
 					case EActionType::Delay:
 					{
-						ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100);
-						HasChanges = true;
+						if (ImGui::InputInt(("##delay" + std::to_string(i)).c_str(), &((ActionDelay*)action)->Duration, 1, 100))
+						{
+							HasChanges = true;
+						}
 						break;
 					}
 					case EActionType::Return:
 					{
 						/* there's no parameter */
-						HasChanges = true;
 						break;
 					}
 				}
@@ -1639,7 +1670,7 @@ void CRadialContext::LoadInternal()
 	}
 	this->RadialIBMap.clear();
 
-	/* FIXME: load mappings */
+	UnboundKeys.clear();
 
 	for (const std::filesystem::directory_entry entry : std::filesystem::directory_iterator(PacksDirectory))
 	{
@@ -1764,7 +1795,18 @@ void CRadialContext::LoadInternal()
 						case EActionType::GameInputBindRelease:
 						{
 							EGameBinds actionIdentifier = (EGameBinds)0;
+
 							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+
+							if (!APIDefs->GameBinds.IsBound(actionIdentifier))
+							{
+								auto& keyUsers = UnboundKeys[actionIdentifier];
+
+								if (std::find(keyUsers.begin(), keyUsers.end(), name) == keyUsers.end())
+								{
+									keyUsers.push_back(name);
+								}
+							}
 
 							radial->AddItemAction(itemId, actionType, actionIdentifier, actionActivation, execCond);
 							break;
@@ -1808,6 +1850,11 @@ void CRadialContext::LoadInternal()
 	}
 
 	HasChanges = false;
+
+	if (UnboundKeys.size() > 0)
+	{
+		APIDefs->UI.SendAlert("Some radial menus may not function as intended. Some binds are missing.");
+	}
 }
 void CRadialContext::SaveInternal()
 {
