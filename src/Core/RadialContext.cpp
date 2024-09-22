@@ -947,18 +947,6 @@ void CRadialContext::RenderEditorTab()
 				ImGui::HelpMarker("This timeout controls how long an item needs to be hovered before it gets activated.");
 			}
 
-			ImGui::TextDisabled("Items Rotation");
-			ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
-			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
-			if (ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180))
-			{
-				HasChanges = true;
-			}
-
-			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
-			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
-			ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
-
 			ImGui::TextDisabled("Center Behavior");
 			ImGui::HelpMarker("This setting controls what to do if no item is selected.");
 			std::string centerbehavior;
@@ -1019,6 +1007,18 @@ void CRadialContext::RenderEditorTab()
 					}
 				}
 			}
+
+			ImGui::TextDisabled("Items Rotation");
+			ImGui::HelpMarker("This controls the location of the items by rotating them.\nControl-Click to manually edit.");
+			ImGui::SetNextItemWidth(ImGui::CalcItemWidth() / 2);
+			if (ImGui::SliderInt("##radialitemrotation", &this->EditingMenu->ItemRotationDegrees, -180, 180))
+			{
+				HasChanges = true;
+			}
+
+			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
+			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
+			ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
 		}
 		else if (this->EditingItem) /* editing sub item */
 		{
