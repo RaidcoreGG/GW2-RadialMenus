@@ -21,6 +21,7 @@
 #include "RadialItem.h"
 #include "ESelectionMode.h"
 #include "ERadialType.h"
+#include "EInnerRadius.h"
 
 ///----------------------------------------------------------------------------------------------------
 /// CRadialMenu Class
@@ -176,6 +177,18 @@ class CRadialMenu
 	void SetType(ERadialType aType);
 
 	///----------------------------------------------------------------------------------------------------
+	/// GetInnerRadius:
+	/// 	Returns the inner radius.
+	///----------------------------------------------------------------------------------------------------
+	EInnerRadius GetGetInnerRadius();
+
+	///----------------------------------------------------------------------------------------------------
+	/// SetInnerRadius:
+	/// 	Sets the inner radius.
+	///----------------------------------------------------------------------------------------------------
+	void SetInnerRadius(EInnerRadius aRadius);
+
+	///----------------------------------------------------------------------------------------------------
 	/// GetSelectionMode:
 	/// 	Returns the SelectionMode.
 	///----------------------------------------------------------------------------------------------------
@@ -261,6 +274,7 @@ class CRadialMenu
 	Texture*                    SegmentTexture;
 
 	ImVec2                      Size;
+	EInnerRadius                InnerRadius = EInnerRadius::Big;
 	float                       MinimalMouseMoveDistance;
 	float                       SegmentContentDistance;
 	ImVec2                      SegmentContentSize;

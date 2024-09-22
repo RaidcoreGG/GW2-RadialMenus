@@ -1,9 +1,18 @@
-SELECTOR
-inner white -> fill -> 50/255 opacity
-outline -> fill white OUTSIDE of mask -> gaussian 5 -> 155/255 opacity
-
-
 SELECTOR BIG
 inner white -> fill -> 50/255 opacity
 outline -> fill white OUTSIDE of mask -> gaussian 30 -> 155/255 opacity
 outline highlight -> fill white OUTSIDE of mask -> gaussian 5 -> 255/255 opacity
+
+SELECTOR SMALL
+inner white -> fill -> 50/255 opacity
+outline -> fill white OUTSIDE of mask -> gaussian 5 -> 155/255 opacity
+
+BASE INFO
+mask inner/outer radius full black
+-> gaussian 120
+-> 155/255 opacity
+FADEOUT MASK
+-> 155/255 opacity again
+
+inner radius gaussian 70
+mask inner

@@ -95,6 +95,7 @@ void CRadialMenu::Save()
 		{"HoverTimeout", this->HoverTimeout},
 		{"ItemRotation", this->ItemRotationDegrees},
 		{"ShowItemNameTooltip", this->ShowItemNameTooltip},
+		{"InnerRadius", this->InnerRadius},
 
 		{"Items", json::array()}
 	};
@@ -233,7 +234,19 @@ bool CRadialMenu::Render()
 		{
 			if (this->Type == ERadialType::Normal)
 			{
-				this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_BASE", TEX_MW_BASE, this->Module);
+				switch (this->InnerRadius)
+				{
+					case EInnerRadius::Small:
+						this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_BASE", TEX_MW_1_BASE, this->Module);
+						break;
+					case EInnerRadius::Medium:
+						this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_BASE", TEX_MW_2_BASE, this->Module);
+						break;
+					default:
+					case EInnerRadius::Big:
+						this->BaseTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_BASE", TEX_MW_3_BASE, this->Module);
+						break;
+				}
 			}
 			else if (this->Type == ERadialType::Small)
 			{
@@ -741,6 +754,17 @@ void CRadialMenu::SetType(ERadialType aType)
 	this->Invalidate();
 }
 
+EInnerRadius CRadialMenu::GetGetInnerRadius()
+{
+	return this->InnerRadius;
+}
+
+void CRadialMenu::SetInnerRadius(EInnerRadius aRadius)
+{
+	this->InnerRadius = aRadius;
+	this->Invalidate();
+}
+
 ESelectionMode CRadialMenu::GetSelectionMode()
 {
 	return this->SelectionMode;
@@ -785,8 +809,22 @@ void CRadialMenu::Invalidate()
 		case ERadialType::Normal:
 			this->ItemsCapacity = 12;
 			this->Size = ImVec2(520.0f * this->Scale, 520.0f * this->Scale);
-			this->MinimalMouseMoveDistance = 150.0f * this->Scale;
-			this->SegmentContentDistance = 200.0f * this->Scale;
+			switch (this->InnerRadius)
+			{
+				case EInnerRadius::Small:
+					this->MinimalMouseMoveDistance = 70.0f * this->Scale;
+					this->SegmentContentDistance = 160.0f * this->Scale;
+					break;
+				case EInnerRadius::Medium:
+					this->MinimalMouseMoveDistance = 110.0f * this->Scale;
+					this->SegmentContentDistance = 170.0f * this->Scale;
+					break;
+				default:
+				case EInnerRadius::Big:
+					this->MinimalMouseMoveDistance = 150.0f * this->Scale;
+					this->SegmentContentDistance = 200.0f * this->Scale;
+					break;
+			}
 			this->SegmentContentSize = ImVec2(128.0f * this->Scale, 128.0f * this->Scale);
 			break;
 		case ERadialType::Small:
@@ -927,41 +965,129 @@ void CRadialMenu::LoadSegmentTexture()
 {
 	if (this->Type == ERadialType::Normal)
 	{
-		switch (this->DrawnItems.size())
+		switch (this->InnerRadius)
 		{
-		case 2:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR2", TEX_MW_SELECTOR2, this->Module);
-			break;
-		case 3:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR3", TEX_MW_SELECTOR3, this->Module);
-			break;
-		case 4:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR4", TEX_MW_SELECTOR4, this->Module);
-			break;
-		case 5:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR5", TEX_MW_SELECTOR5, this->Module);
-			break;
-		case 6:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR6", TEX_MW_SELECTOR6, this->Module);
-			break;
-		case 7:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR7", TEX_MW_SELECTOR7, this->Module);
-			break;
-		case 8:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR8", TEX_MW_SELECTOR8, this->Module);
-			break;
-		case 9:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR9", TEX_MW_SELECTOR9, this->Module);
-			break;
-		case 10:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR10", TEX_MW_SELECTOR10, this->Module);
-			break;
-		case 11:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR11", TEX_MW_SELECTOR11, this->Module);
-			break;
-		case 12:
-			this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_SELECTOR12", TEX_MW_SELECTOR12, this->Module);
-			break;
+			case EInnerRadius::Small:
+			{
+				switch (this->DrawnItems.size())
+				{
+					case 2:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR2", TEX_MW_1_SELECTOR2, this->Module);
+						break;
+					case 3:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR3", TEX_MW_1_SELECTOR3, this->Module);
+						break;
+					case 4:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR4", TEX_MW_1_SELECTOR4, this->Module);
+						break;
+					case 5:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR5", TEX_MW_1_SELECTOR5, this->Module);
+						break;
+					case 6:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR6", TEX_MW_1_SELECTOR6, this->Module);
+						break;
+					case 7:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR7", TEX_MW_1_SELECTOR7, this->Module);
+						break;
+					case 8:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR8", TEX_MW_1_SELECTOR8, this->Module);
+						break;
+					case 9:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR9", TEX_MW_1_SELECTOR9, this->Module);
+						break;
+					case 10:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR10", TEX_MW_1_SELECTOR10, this->Module);
+						break;
+					case 11:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR11", TEX_MW_1_SELECTOR11, this->Module);
+						break;
+					case 12:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_1_SELECTOR12", TEX_MW_1_SELECTOR12, this->Module);
+						break;
+				}
+				break;
+			}
+			case EInnerRadius::Medium:
+			{
+				switch (this->DrawnItems.size())
+				{
+					case 2:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR2", TEX_MW_2_SELECTOR2, this->Module);
+						break;
+					case 3:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR3", TEX_MW_2_SELECTOR3, this->Module);
+						break;
+					case 4:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR4", TEX_MW_2_SELECTOR4, this->Module);
+						break;
+					case 5:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR5", TEX_MW_2_SELECTOR5, this->Module);
+						break;
+					case 6:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR6", TEX_MW_2_SELECTOR6, this->Module);
+						break;
+					case 7:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR7", TEX_MW_2_SELECTOR7, this->Module);
+						break;
+					case 8:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR8", TEX_MW_2_SELECTOR8, this->Module);
+						break;
+					case 9:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR9", TEX_MW_2_SELECTOR9, this->Module);
+						break;
+					case 10:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR10", TEX_MW_2_SELECTOR10, this->Module);
+						break;
+					case 11:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR11", TEX_MW_2_SELECTOR11, this->Module);
+						break;
+					case 12:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_2_SELECTOR12", TEX_MW_2_SELECTOR12, this->Module);
+						break;
+				}
+				break;
+			}
+			default:
+			case EInnerRadius::Big:
+			{
+				switch (this->DrawnItems.size())
+				{
+					case 2:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR2", TEX_MW_3_SELECTOR2, this->Module);
+						break;
+					case 3:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR3", TEX_MW_3_SELECTOR3, this->Module);
+						break;
+					case 4:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR4", TEX_MW_3_SELECTOR4, this->Module);
+						break;
+					case 5:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR5", TEX_MW_3_SELECTOR5, this->Module);
+						break;
+					case 6:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR6", TEX_MW_3_SELECTOR6, this->Module);
+						break;
+					case 7:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR7", TEX_MW_3_SELECTOR7, this->Module);
+						break;
+					case 8:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR8", TEX_MW_3_SELECTOR8, this->Module);
+						break;
+					case 9:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR9", TEX_MW_3_SELECTOR9, this->Module);
+						break;
+					case 10:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR10", TEX_MW_3_SELECTOR10, this->Module);
+						break;
+					case 11:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR11", TEX_MW_3_SELECTOR11, this->Module);
+						break;
+					case 12:
+						this->SegmentTexture = this->API->Textures.GetOrCreateFromResource("TEX_MW_3_SELECTOR12", TEX_MW_3_SELECTOR12, this->Module);
+						break;
+				}
+				break;
+			}
 		}
 	}
 	else if (this->Type == ERadialType::Small)

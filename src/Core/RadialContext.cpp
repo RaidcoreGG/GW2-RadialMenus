@@ -817,13 +817,9 @@ void CRadialContext::RenderEditorTab()
 			{
 				case ERadialType::Small:
 					type = "Small";
-					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR, 1);
-					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR_HOVER, 2);
 					break;
 				case ERadialType::Normal:
 					type = "Normal";
-					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR, 1);
-					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR_HOVER, 2);
 					break;
 			}
 			if (ImGui::BeginCombo("##radialtype", type.c_str()))
@@ -831,14 +827,55 @@ void CRadialContext::RenderEditorTab()
 				if (ImGui::Selectable("Small"))
 				{
 					this->EditingMenu->SetType(ERadialType::Small);
+					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR, 1);
+					this->EditingMenu->ApplyColorToAll(SMALL_ITEM_COLOR_HOVER, 2);
 					HasChanges = true;
 				}
 				if (ImGui::Selectable("Normal"))
 				{
 					this->EditingMenu->SetType(ERadialType::Normal);
+					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR, 1);
+					this->EditingMenu->ApplyColorToAll(NORMAL_ITEM_COLOR_HOVER, 2);
 					HasChanges = true;
 				}
 				ImGui::EndCombo();
+			}
+
+			if (this->EditingMenu->GetType() == ERadialType::Normal)
+			{
+				ImGui::TextDisabled("Inner Radius");
+				std::string radius;
+				switch (this->EditingMenu->GetGetInnerRadius())
+				{
+					case EInnerRadius::Small:
+						radius = "Small";
+						break;
+					case EInnerRadius::Medium:
+						radius = "Medium";
+						break;
+					case EInnerRadius::Big:
+						radius = "Big";
+						break;
+				}
+				if (ImGui::BeginCombo("##radialradius", radius.c_str()))
+				{
+					if (ImGui::Selectable("Small"))
+					{
+						this->EditingMenu->SetInnerRadius(EInnerRadius::Small);
+						HasChanges = true;
+					}
+					if (ImGui::Selectable("Medium"))
+					{
+						this->EditingMenu->SetInnerRadius(EInnerRadius::Medium);
+						HasChanges = true;
+					}
+					if (ImGui::Selectable("Big"))
+					{
+						this->EditingMenu->SetInnerRadius(EInnerRadius::Big);
+						HasChanges = true;
+					}
+					ImGui::EndCombo();
+				}
 			}
 
 			ImGui::TextDisabled("Scale");
@@ -1718,6 +1755,8 @@ void CRadialContext::LoadInternal()
 			if (!radialData["ItemRotation"].is_null()) { radialData["ItemRotation"].get_to(itemRotation); }
 			bool showTooltip = false;
 			if (!radialData["ShowItemNameTooltip"].is_null()) { radialData["ShowItemNameTooltip"].get_to(showTooltip); }
+			EInnerRadius innerRadius = EInnerRadius::Big;
+			if (!radialData["InnerRadius"].is_null()) { radialData["InnerRadius"].get_to(innerRadius); }
 
 			bool idCollision = this->IsIDInUse(id);
 

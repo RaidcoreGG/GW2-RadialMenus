@@ -132,6 +132,9 @@
     <ClInclude Include="src\thirdparty\ImAnimate\ImAnimate.h">
       <Filter>_EXTERNAL\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="src\Core\EInnerRadius.h">
+      <Filter>Core\Enums</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\thirdparty\imgui\imgui.cpp">
@@ -184,42 +187,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="src\Resources\MW_5_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_6_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_7_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_8_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_9_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_10_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_11_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_12_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_BASE.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_2_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_3_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
-    <Image Include="src\Resources\MW_4_SELECTOR.png">
-      <Filter>Resource Files\MW</Filter>
-    </Image>
     <Image Include="src\Resources\MWS_2_SELECTOR.png">
       <Filter>Resource Files\MWS</Filter>
     </Image>
@@ -273,6 +240,114 @@
     </Image>
     <Image Include="src\Resources\ICON_ROLLERBEETLE.png">
       <Filter>Resource Files\MountIcons</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_7_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_8_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_9_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_10_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_11_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_12_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_BASE.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_2_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_3_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_4_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_5_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_6_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_7_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_8_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_9_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_10_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_11_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_12_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_1_BASE.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_2_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_3_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_4_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_5_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_6_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_7_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_8_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_9_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_10_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_11_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_12_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_2_BASE.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_2_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_3_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_4_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_5_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
+    </Image>
+    <Image Include="src\Resources\MW_3_6_SELECTOR.png">
+      <Filter>Resource Files\MW</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
