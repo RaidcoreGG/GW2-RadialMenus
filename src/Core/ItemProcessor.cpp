@@ -217,7 +217,7 @@ void CItemProcessor::Process()
 	for (;;)
 	{
 		std::unique_lock<std::mutex> lockThread(this->ThreadMutex);
-		this->ConVar.wait(lockThread, [this] { return this->KillThread; });
+		this->ConVar.wait(lockThread);
 
 		if (this->KillThread) { return; }
 
