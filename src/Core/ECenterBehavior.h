@@ -8,7 +8,8 @@ enum class ECenterBehavior
 {
 	None,
 	FirstItemMatchingActivation,
-	SpecificItem
+	SpecificItem,
+	LastUsed
 };
 
 #endif

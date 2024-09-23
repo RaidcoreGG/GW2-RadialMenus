@@ -80,7 +80,7 @@ class CRadialMenu
 	/// AddItem:
 	/// 	Adds a selector to the radial menu.
 	///----------------------------------------------------------------------------------------------------
-	void AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue,
+	void AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, int aPriority = 0,
 				 Conditions aVisibility = {}, Conditions aActivation = {}, int aActivationTimeout = 30);
 
 	///----------------------------------------------------------------------------------------------------

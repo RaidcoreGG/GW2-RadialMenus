@@ -479,55 +479,65 @@ void CRadialMenu::Release(ESelectionMode aReason)
 	if (idx > -1)
 	{
 		RadialItem* item = this->DrawnItems[idx];
-		
+
+		if (this->CenterBehavior == ECenterBehavior::LastUsed)
+		{
+			this->SpecificCenterItemName = item->Identifier;
+		}
+
 		std::thread([item]() {
 			RadialCtx->QueueItem(item);
 		}).detach();
 	}
-	else if (this->CenterBehavior == ECenterBehavior::FirstItemMatchingActivation)
+	else if (aReason != ESelectionMode::Escape)
 	{
-		RadialItem* activateItem = nullptr;
-
-		for (RadialItem* item : this->Items)
+		if (this->CenterBehavior == ECenterBehavior::FirstItemMatchingActivation)
 		{
-			if (StateObserver::IsMatch(&item->Activation))
+			RadialItem* activateItem = nullptr;
+
+			for (RadialItem* item : this->Items)
 			{
-				if (!activateItem)
+				if (StateObserver::IsMatch(&item->Activation))
 				{
-					activateItem = item;
-				}
-				else if (item->Priority > activateItem->Priority)
-				{
-					activateItem = item;
+					if (!activateItem)
+					{
+						activateItem = item;
+					}
+					else if (item->Priority > activateItem->Priority)
+					{
+						activateItem = item;
+					}
 				}
 			}
-		}
 
-		if (activateItem)
-		{
-			std::thread([activateItem]() {
-				RadialCtx->QueueItem(activateItem);
-			}).detach();
-		}
-	}
-	else if (this->CenterBehavior == ECenterBehavior::SpecificItem)
-	{
-		for (RadialItem* item : this->Items)
-		{
-			if (item->Identifier == this->SpecificCenterItemName)
+			if (activateItem)
 			{
-				std::thread([item]() {
-					RadialCtx->QueueItem(item);
+				std::thread([activateItem]() {
+					RadialCtx->QueueItem(activateItem);
 				}).detach();
-				break;
+			}
+		}
+		else if (this->CenterBehavior == ECenterBehavior::SpecificItem ||
+				 this->CenterBehavior == ECenterBehavior::LastUsed)
+		{
+			for (RadialItem* item : this->Items)
+			{
+				if (item->Identifier == this->SpecificCenterItemName)
+				{
+					std::thread([item]() {
+						RadialCtx->QueueItem(item);
+					}).detach();
+					break;
+				}
 			}
 		}
 	}
 }
 
-void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, Conditions aVisibility, Conditions aActivation, int aActivationTimeout)
+void CRadialMenu::AddItem(std::string aName, unsigned int aColor, unsigned int aColorHover, EIconType aIconType, std::string aIconValue, int aPriority, Conditions aVisibility, Conditions aActivation, int aActivationTimeout)
 {
 	RadialItem* item = new RadialItem();
+	item->Priority = aPriority;
 	item->Color = aColor;
 	item->ColorHover = aColorHover;
 	item->Icon.Type = aIconType;
