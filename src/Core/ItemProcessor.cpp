@@ -235,7 +235,7 @@ void CItemProcessor::Process()
 				this->ActiveItem.Identifier        = this->QueuedItem->Identifier;
 				this->ActiveItem.Icon              = this->QueuedItem->Icon;
 				this->ActiveItem.Activation        = this->QueuedItem->Activation;
-				this->ActiveItem.ActivationTimeout = this->QueuedItem->ActivationTimeout;
+				this->ActiveItem.ActivationTimeout = this->QueuedItem->ActivationTimeout > 0 ? this->QueuedItem->ActivationTimeout : 1;
 			}
 			this->ActiveItem.Actions.swap(this->QueuedItem->Actions);
 
