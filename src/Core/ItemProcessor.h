@@ -38,7 +38,6 @@ class CItemProcessor
 	std::mutex              ThreadMutex;
 	std::thread             ProcessorThread;
 
-	std::mutex              ActionsMutex;
 	RadialItem              ActiveItem         = {};
 	int                     ElapsedTime        = 0;
 	bool                    IsCancelled        = false;

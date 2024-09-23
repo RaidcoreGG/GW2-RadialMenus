@@ -51,6 +51,8 @@ namespace Addon
 		std::filesystem::create_directory(PacksDirectory);
 		std::filesystem::create_directory(IconsDirectory);
 
+		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
+
 		Lang::Init(APIDefs->Localization.Set);
 		RadialCtx = new CRadialContext();
 		RadialCtx->Load();
@@ -63,9 +65,6 @@ namespace Addon
 		APIDefs->Renderer.Register(ERenderType_Render, Addon::Render);
 		APIDefs->Renderer.Register(ERenderType_OptionsRender, Addon::RenderOptions);
 		APIDefs->WndProc.Register(Addon::WndProc);
-
-		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
-
 	}
 
 	void Unload()

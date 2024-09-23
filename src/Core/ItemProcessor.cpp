@@ -24,7 +24,7 @@ CItemProcessor::~CItemProcessor()
 {
 	this->IsCancelled = true;
 	this->KillThread = true;
-	this->ConVar.notify_all();
+	this->ConVar.notify_one();
 	this->ProcessorThread.join();
 }
 
@@ -209,7 +209,7 @@ void CItemProcessor::QueueItem(RadialItem* aItem)
 	}
 
 	this->QueuedItem = newItem;
-	this->ConVar.notify_all();
+	this->ConVar.notify_one();
 }
 
 void CItemProcessor::Process()
@@ -217,7 +217,7 @@ void CItemProcessor::Process()
 	for (;;)
 	{
 		std::unique_lock<std::mutex> lockThread(this->ThreadMutex);
-		this->ConVar.wait(lockThread, [this] { return this->KillThread || this->QueuedItem != nullptr; });
+		this->ConVar.wait(lockThread, [this] { return this->KillThread; });
 
 		if (this->KillThread) { return; }
 
@@ -226,21 +226,22 @@ void CItemProcessor::Process()
 			Sleep(1);
 		}
 
-		const std::lock_guard<std::mutex> lock(this->ActionsMutex);
 		{
 			/* lock as we're accessing the queue item */
-			const std::lock_guard<std::mutex> lock(this->QueueMutex);
-
+			const std::lock_guard<std::mutex> lockqueue(this->QueueMutex);
 			/* set data */
-			this->ActiveItem.Identifier        = this->QueuedItem->Identifier;
-			this->ActiveItem.Icon              = this->QueuedItem->Icon;
-			this->ActiveItem.Activation        = this->QueuedItem->Activation;
-			this->ActiveItem.ActivationTimeout = this->QueuedItem->ActivationTimeout;
+			{
+				const std::lock_guard<std::mutex> lock(this->Mutex);
+				this->ActiveItem.Identifier        = this->QueuedItem->Identifier;
+				this->ActiveItem.Icon              = this->QueuedItem->Icon;
+				this->ActiveItem.Activation        = this->QueuedItem->Activation;
+				this->ActiveItem.ActivationTimeout = this->QueuedItem->ActivationTimeout;
+			}
 			this->ActiveItem.Actions.swap(this->QueuedItem->Actions);
 
 			/* unset queued */
 			delete this->QueuedItem;
-			this->QueuedItem                   = nullptr;
+			this->QueuedItem = nullptr;
 		}
 
 		/* set states */
