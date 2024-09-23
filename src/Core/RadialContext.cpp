@@ -29,6 +29,8 @@ using json = nlohmann::json;
 
 /* helpers start */
 static bool HasChanges = false;
+
+static std::mutex UnboundKeysMutex;
 static std::map<EGameBinds, std::vector<std::string>> UnboundKeys;
 
 void GameBindSelectable(ActionBase* aAction, const char* aLabel, EGameBinds aGameBind)
@@ -613,6 +615,27 @@ void CRadialContext::RenderEditorTab()
 		{
 			ImGui::TextColored(ImVec4(1, 1, 0, 1), "You might have unsaved changes.");
 		}
+
+		std::lock_guard<std::mutex> uklock(UnboundKeysMutex);
+		{
+			std::vector<EGameBinds> ukerase;
+
+			/* check all binds again */
+			for (auto& [bind, users] : UnboundKeys)
+			{
+				if (APIDefs->GameBinds.IsBound(bind))
+				{
+					ukerase.push_back(bind);
+				}
+			}
+
+			/* erase those that are now tracked */
+			for (EGameBinds bind : ukerase)
+			{
+				UnboundKeys.erase(bind);
+			}
+		}
+
 		if (UnboundKeys.size() > 0)
 		{
 			ImGui::TextColored(ImVec4(1, 1, 0, 1), "Some radial menus may not function as intended. Some binds are missing. (?)");
@@ -1800,6 +1823,7 @@ void CRadialContext::LoadInternal()
 	}
 	this->RadialIBMap.clear();
 
+	std::lock_guard<std::mutex> uklock(UnboundKeysMutex);
 	UnboundKeys.clear();
 
 	for (const std::filesystem::directory_entry entry : std::filesystem::directory_iterator(PacksDirectory))
@@ -1992,11 +2016,6 @@ void CRadialContext::LoadInternal()
 	}
 
 	HasChanges = false;
-
-	if (UnboundKeys.size() > 0)
-	{
-		APIDefs->UI.SendAlert("Some radial menus may not function as intended. Some binds are missing.");
-	}
 }
 void CRadialContext::SaveInternal()
 {
