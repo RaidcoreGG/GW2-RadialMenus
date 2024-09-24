@@ -60,6 +60,10 @@ namespace ImGui
 	/// 	Shows a help marker with a formatted text tooltip.
 	///----------------------------------------------------------------------------------------------------
 	void HelpMarker(const char* aFmt, ...);
+
+	void AddUnderLine(ImColor col_);
+
+	bool TextURL(const char* name_, bool SameLineBefore_, bool SameLineAfter_);
 }
 
 #endif

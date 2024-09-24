@@ -1412,6 +1412,14 @@ void CRadialContext::RenderEditorTab()
 			ImGui::TextDisabled("Actions");
 			ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
 
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1, 0, 0, 1));
+			ImGui::TextWrapped("By using this editor you acknowledge to have read and understood the official Macro Policy.");
+			if (ImGui::TextURL("You can read it here.", false, false))
+			{
+				ShellExecuteA(0, 0, "https://help.guildwars2.com/hc/en-us/articles/360013762153-Policy-Macros-and-Macro-Use", 0, 0, SW_SHOW);
+			}
+			ImGui::PopStyleColor();
+
 			int idxDel = -1;
 			if (ImGui::BeginTable("##radialitemactions", 4))
 			{

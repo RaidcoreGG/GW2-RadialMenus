@@ -37,13 +37,13 @@ extern "C" __declspec(dllexport) AddonDefinition* GetAddonDef()
 {
 	AddonDef.Signature = 67000002;
 	AddonDef.APIVersion = NEXUS_API_VERSION;
-	AddonDef.Name = "Radial Menus (Alpha)";
+	AddonDef.Name = "Radial Menus";
 	AddonDef.Version.Major = V_MAJOR;
 	AddonDef.Version.Minor = V_MINOR;
 	AddonDef.Version.Build = V_BUILD;
 	AddonDef.Version.Revision = V_REVISION;
 	AddonDef.Author = "Raidcore";
-	AddonDef.Description = "Adds highly customisable radial menus.";
+	AddonDef.Description = "Highly customisable radial menus.";
 	AddonDef.Load = Addon::Load;
 	AddonDef.Unload = Addon::Unload;
 

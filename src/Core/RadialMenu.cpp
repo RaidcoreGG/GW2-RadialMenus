@@ -322,7 +322,7 @@ bool CRadialMenu::Render()
 					{
 						ImGui::Animate(contentSize, contentSizeHover, 50, &item->DisplayItemSize, ImAnimate::ECurve::InCubic);
 					}
-					else
+					else if (this->RenderOpacity == 1)
 					{
 						ImGui::Animate(contentSizeHover, contentSize, 50, &item->DisplayItemSize, ImAnimate::ECurve::OutCubic);
 					}
@@ -374,7 +374,7 @@ bool CRadialMenu::Activate()
 			this->DrawnItems.push_back(item);
 
 			/* reset render values while we're here */
-			item->DisplayItemSize = this->SegmentContentSize.x * NexusLink->Scaling;
+			item->DisplayItemSize = this->SegmentContentSize.x * this->IconScale * NexusLink->Scaling * 0.9f;
 		}
 	}
 
