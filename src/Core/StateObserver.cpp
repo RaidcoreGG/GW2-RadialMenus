@@ -146,7 +146,7 @@ namespace StateObserver
 		WasMounted = MumbleLink->Context.MountIndex != Mumble::EMountIndex::None;
 
 		CurrentState.IsCombat         = MumbleLink->Context.IsInCombat                                                              ? EObserveBoolean::True : EObserveBoolean::False;
-		CurrentState.IsMounted        = (EObserveMount)MumbleLink->Context.MountIndex;
+		CurrentState.IsMounted        = MumbleLink->Context.MountIndex > Mumble::EMountIndex::None                                  ? (EObserveMount)MumbleLink->Context.MountIndex : EObserveMount::NotMounted;
 		CurrentState.IsCommander      = MumbleIdentity->IsCommander                                                                 ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsCompetitive    = MumbleLink->Context.IsCompetitive                                                           ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsMapOpen        = MumbleLink->Context.IsMapOpen                                                               ? EObserveBoolean::True : EObserveBoolean::False;
@@ -160,9 +160,9 @@ namespace StateObserver
 		CurrentState.IsUnderwater     = MumbleLink->AvatarPosition.Y < -1.2f                                                        ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsOnWaterSurface = (MumbleLink->AvatarPosition.Y >= -1.2f && MumbleLink->AvatarPosition.Y <= -1.0f)/* ||
 		                                (MumbleLink->Context.MountIndex == Mumble::EMountIndex::Skimmer &&
-		                                MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/             ? EObserveBoolean::True : EObserveBoolean::False;
+		                                MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/ ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsAirborne       = (IsFalling || IsGliding || IsAscending || IsJumping || IsDismounting) &&
-		                                CurrentState.IsUnderwater == EObserveBoolean::False                                           ? EObserveBoolean::True : EObserveBoolean::False;
+		                                CurrentState.IsUnderwater == EObserveBoolean::False                                         ? EObserveBoolean::True : EObserveBoolean::False;
 	}
 
 	bool IsMatch(Conditions* aConditions)
@@ -248,8 +248,6 @@ namespace StateObserver
 				state = "Any Mount";
 				break;
 			case EObserveMount::Either:
-				state = "Either";
-				break;
 			case EObserveMount::NotMounted:
 				state = "Not Mounted";
 				break;
