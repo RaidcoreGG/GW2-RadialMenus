@@ -9,9 +9,31 @@ using json = nlohmann::json;
 ///----------------------------------------------------------------------------------------------------
 enum class EObserveBoolean
 {
-	None,
+	Either,
 	False,
 	True
+};
+
+///----------------------------------------------------------------------------------------------------
+/// EObserveMount Enumeration
+///----------------------------------------------------------------------------------------------------
+enum class EObserveMount
+{
+	Any = -2,
+	NotMounted = -1,
+
+	Either = 0,
+	
+	Jackal,
+	Griffon,
+	Springer,
+	Skimmer,
+	Raptor,
+	RollerBeetle,
+	Warclaw,
+	Skyscale,
+	Skiff,
+	SiegeTurtle
 };
 
 ///----------------------------------------------------------------------------------------------------
@@ -20,7 +42,7 @@ enum class EObserveBoolean
 struct Conditions
 {
 	EObserveBoolean IsCombat;
-	EObserveBoolean IsMounted;
+	EObserveMount   IsMounted;
 	EObserveBoolean IsCommander;
 	EObserveBoolean IsCompetitive;
 	EObserveBoolean IsMapOpen;
@@ -35,8 +57,8 @@ struct Conditions
 	EObserveBoolean IsOnWaterSurface;
 	EObserveBoolean IsAirborne;
 
-	void SetIndex(int aIndex, EObserveBoolean aState);
-	EObserveBoolean GetIndex(int aIndex);
+	void SetValue(int aIndex, int aState);
+	int GetValue(int aIndex);
 };
 
 void to_json(json& j, const Conditions& c);

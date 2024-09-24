@@ -146,7 +146,7 @@ namespace StateObserver
 		WasMounted = MumbleLink->Context.MountIndex != Mumble::EMountIndex::None;
 
 		CurrentState.IsCombat         = MumbleLink->Context.IsInCombat                                                              ? EObserveBoolean::True : EObserveBoolean::False;
-		CurrentState.IsMounted        = MumbleLink->Context.MountIndex != Mumble::EMountIndex::None                                 ? EObserveBoolean::True : EObserveBoolean::False;
+		CurrentState.IsMounted        = (EObserveMount)MumbleLink->Context.MountIndex;
 		CurrentState.IsCommander      = MumbleIdentity->IsCommander                                                                 ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsCompetitive    = MumbleLink->Context.IsCompetitive                                                           ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsMapOpen        = MumbleLink->Context.IsMapOpen                                                               ? EObserveBoolean::True : EObserveBoolean::False;
@@ -169,21 +169,36 @@ namespace StateObserver
 	{
 		int isMatch = 0;
 
-		isMatch += aConditions->IsCombat         == EObserveBoolean::None ? true : aConditions->IsCombat         == CurrentState.IsCombat;
-		isMatch += aConditions->IsMounted        == EObserveBoolean::None ? true : aConditions->IsMounted        == CurrentState.IsMounted;
-		isMatch += aConditions->IsCommander      == EObserveBoolean::None ? true : aConditions->IsCommander      == CurrentState.IsCommander;
-		isMatch += aConditions->IsCompetitive    == EObserveBoolean::None ? true : aConditions->IsCompetitive    == CurrentState.IsCompetitive;
-		isMatch += aConditions->IsMapOpen        == EObserveBoolean::None ? true : aConditions->IsMapOpen        == CurrentState.IsMapOpen;
-		isMatch += aConditions->IsTextboxActive  == EObserveBoolean::None ? true : aConditions->IsTextboxActive  == CurrentState.IsTextboxActive;
-		isMatch += aConditions->IsInstance       == EObserveBoolean::None ? true : aConditions->IsInstance       == CurrentState.IsInstance;
+		isMatch += aConditions->IsCombat         == EObserveBoolean::Either ? true : aConditions->IsCombat         == CurrentState.IsCombat;
+		if (aConditions->IsMounted == EObserveMount::Any)
+		{
+			isMatch += CurrentState.IsMounted >= EObserveMount::Jackal; /* jackal is 1 */
+		}
+		else if (aConditions->IsMounted == EObserveMount::Either)
+		{
+			isMatch += true;
+		}
+		else if (aConditions->IsMounted == EObserveMount::NotMounted)
+		{
+			isMatch += CurrentState.IsMounted == EObserveMount::NotMounted;
+		}
+		else
+		{
+			isMatch += CurrentState.IsMounted == aConditions->IsMounted;
+		}
+		isMatch += aConditions->IsCommander      == EObserveBoolean::Either ? true : aConditions->IsCommander      == CurrentState.IsCommander;
+		isMatch += aConditions->IsCompetitive    == EObserveBoolean::Either ? true : aConditions->IsCompetitive    == CurrentState.IsCompetitive;
+		isMatch += aConditions->IsMapOpen        == EObserveBoolean::Either ? true : aConditions->IsMapOpen        == CurrentState.IsMapOpen;
+		isMatch += aConditions->IsTextboxActive  == EObserveBoolean::Either ? true : aConditions->IsTextboxActive  == CurrentState.IsTextboxActive;
+		isMatch += aConditions->IsInstance       == EObserveBoolean::Either ? true : aConditions->IsInstance       == CurrentState.IsInstance;
 
 		/* derived game states */
-		isMatch += aConditions->IsGameplay       == EObserveBoolean::None ? true : aConditions->IsGameplay       == CurrentState.IsGameplay;
+		isMatch += aConditions->IsGameplay       == EObserveBoolean::Either ? true : aConditions->IsGameplay       == CurrentState.IsGameplay;
 
 		/* derived positional states */
-		isMatch += aConditions->IsUnderwater     == EObserveBoolean::None ? true : aConditions->IsUnderwater     == CurrentState.IsUnderwater;
-		isMatch += aConditions->IsOnWaterSurface == EObserveBoolean::None ? true : aConditions->IsOnWaterSurface == CurrentState.IsOnWaterSurface;
-		isMatch += aConditions->IsAirborne       == EObserveBoolean::None ? true : aConditions->IsAirborne       == CurrentState.IsAirborne;
+		isMatch += aConditions->IsUnderwater     == EObserveBoolean::Either ? true : aConditions->IsUnderwater     == CurrentState.IsUnderwater;
+		isMatch += aConditions->IsOnWaterSurface == EObserveBoolean::Either ? true : aConditions->IsOnWaterSurface == CurrentState.IsOnWaterSurface;
+		isMatch += aConditions->IsAirborne       == EObserveBoolean::Either ? true : aConditions->IsAirborne       == CurrentState.IsAirborne;
 
 		return isMatch == 11; /* 11 conditions */
 	}
@@ -210,8 +225,8 @@ namespace StateObserver
 		std::string state;
 		switch (aState)
 		{
-			case EObserveBoolean::None:
-				state = "WTF?";
+			case EObserveBoolean::Either:
+				state = "Either";
 				break;
 			case EObserveBoolean::False:
 				state = "false";
@@ -221,6 +236,54 @@ namespace StateObserver
 				break;
 		}
 
+		return state;
+	}
+	std::string StateToString(EObserveMount aState)
+	{
+		std::string state;
+		switch (aState)
+		{
+			default:
+			case EObserveMount::Any:
+				state = "Any Mount";
+				break;
+			case EObserveMount::Either:
+				state = "Either";
+				break;
+			case EObserveMount::NotMounted:
+				state = "Not Mounted";
+				break;
+			case EObserveMount::Jackal:
+				state = "Jackal";
+				break;
+			case EObserveMount::Griffon:
+				state = "Griffon";
+				break;
+			case EObserveMount::Springer:
+				state = "Springer";
+				break;
+			case EObserveMount::Skimmer:
+				state = "Skimmer";
+				break;
+			case EObserveMount::Raptor:
+				state = "Raptor";
+				break;
+			case EObserveMount::RollerBeetle:
+				state = "Roller Beetle";
+				break;
+			case EObserveMount::Warclaw:
+				state = "Warclaw";
+				break;
+			case EObserveMount::Skyscale:
+				state = "Skyscale";
+				break;
+			case EObserveMount::Skiff:
+				state = "Skiff";
+				break;
+			case EObserveMount::SiegeTurtle:
+				state = "SiegeTurtle";
+				break;
+		}
 		return state;
 	}
 

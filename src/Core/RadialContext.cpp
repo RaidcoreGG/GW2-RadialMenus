@@ -269,30 +269,53 @@ std::string GameBindToString(EGameBinds aGameBind)
 	return LookupTable[aGameBind];
 }
 
-std::string ConditionsToString(Conditions* aConditions)
+std::string ConditionsToString(Conditions* aConditions, bool* aLinkWithPrevious = nullptr)
 {
 	std::string str;
-	if (aConditions->IsCombat         != EObserveBoolean::None) { str.append(aConditions->IsCombat == EObserveBoolean::True ? "- Is in combat\n" : "- Is out of combat\n"); }
-	if (aConditions->IsMounted        != EObserveBoolean::None) { str.append(aConditions->IsMounted == EObserveBoolean::True ? "- Is mounted\n" : "- Is not mounted\n"); }
-	if (aConditions->IsCommander      != EObserveBoolean::None) { str.append(aConditions->IsCommander == EObserveBoolean::True ? "- Has commander tag\n" : "- Does not have commander tag\n"); }
-	if (aConditions->IsCompetitive    != EObserveBoolean::None) { str.append(aConditions->IsCompetitive == EObserveBoolean::True ? "- Is in WvW/PvP\n" : "- Is in PvE\n"); }
-	if (aConditions->IsMapOpen        != EObserveBoolean::None) { str.append(aConditions->IsMapOpen == EObserveBoolean::True ? "- Map is open\n" : "- Map is closed\n"); }
-	if (aConditions->IsTextboxActive  != EObserveBoolean::None) { str.append(aConditions->IsTextboxActive == EObserveBoolean::True ? "- Textbox focused\n" : "- Textbox not focused\n"); }
-	if (aConditions->IsInstance       != EObserveBoolean::None) { str.append(aConditions->IsInstance == EObserveBoolean::True ? "- Is in instance\n" : "- Is not in instance\n"); }
+	if (aConditions->IsCombat         != EObserveBoolean::Either) { str.append(aConditions->IsCombat == EObserveBoolean::True ? "- Is in combat\n" : "- Is out of combat\n"); }
+	if (aConditions->IsMounted == EObserveMount::Any)
+	{
+		str.append("- Is mounted\n");
+	}
+	else if (aConditions->IsMounted == EObserveMount::Either)
+	{
+		/* nop */
+	}
+	else if (aConditions->IsMounted == EObserveMount::NotMounted)
+	{
+		str.append("- Is not mounted\n");
+	}
+	else
+	{
+		str.append("- Is on " + StateObserver::StateToString(aConditions->IsMounted) + "\n");
+	}
+	if (aConditions->IsCommander      != EObserveBoolean::Either) { str.append(aConditions->IsCommander == EObserveBoolean::True ? "- Has commander tag\n" : "- Does not have commander tag\n"); }
+	if (aConditions->IsCompetitive    != EObserveBoolean::Either) { str.append(aConditions->IsCompetitive == EObserveBoolean::True ? "- Is in WvW/PvP\n" : "- Is in PvE\n"); }
+	if (aConditions->IsMapOpen        != EObserveBoolean::Either) { str.append(aConditions->IsMapOpen == EObserveBoolean::True ? "- Map is open\n" : "- Map is closed\n"); }
+	if (aConditions->IsTextboxActive  != EObserveBoolean::Either) { str.append(aConditions->IsTextboxActive == EObserveBoolean::True ? "- Textbox focused\n" : "- Textbox not focused\n"); }
+	if (aConditions->IsInstance       != EObserveBoolean::Either) { str.append(aConditions->IsInstance == EObserveBoolean::True ? "- Is in instance\n" : "- Is not in instance\n"); }
 
 	/* derived game states */
-	if (aConditions->IsGameplay       != EObserveBoolean::None) { str.append(aConditions->IsGameplay == EObserveBoolean::True ? "- Is gameplay\n" : "- Is loading screen/cutscene/character select\n"); }
+	if (aConditions->IsGameplay       != EObserveBoolean::Either) { str.append(aConditions->IsGameplay == EObserveBoolean::True ? "- Is gameplay\n" : "- Is loading screen/cutscene/character select\n"); }
 
 	/* derived positional states */
-	if (aConditions->IsUnderwater     != EObserveBoolean::None) { str.append(aConditions->IsUnderwater == EObserveBoolean::True ? "- Is underwater\n" : "- Is terrestrial\n"); }
-	if (aConditions->IsOnWaterSurface != EObserveBoolean::None) { str.append(aConditions->IsOnWaterSurface == EObserveBoolean::True ? "- Is on water surface\n" : "- Is not on water surface\n"); }
-	if (aConditions->IsAirborne       != EObserveBoolean::None) { str.append(aConditions->IsAirborne == EObserveBoolean::True ? "- Is airborne" : "- Is not airborne"); }
+	if (aConditions->IsUnderwater     != EObserveBoolean::Either) { str.append(aConditions->IsUnderwater == EObserveBoolean::True ? "- Is underwater\n" : "- Is terrestrial\n"); }
+	if (aConditions->IsOnWaterSurface != EObserveBoolean::Either) { str.append(aConditions->IsOnWaterSurface == EObserveBoolean::True ? "- Is on water surface\n" : "- Is not on water surface\n"); }
+	if (aConditions->IsAirborne       != EObserveBoolean::Either) { str.append(aConditions->IsAirborne == EObserveBoolean::True ? "- Is airborne" : "- Is not airborne"); }
 
 	if (!str.empty())
 	{
 		str = "Required conditions:\n" + str;
 	}
 
+	if (aLinkWithPrevious != nullptr && *aLinkWithPrevious)
+	{
+		if (!str.empty())
+		{
+			str.append("\n");
+		}
+		str.append("Linked with previous.");
+	}
 	return str;
 }
 /* helpers end */
@@ -312,7 +335,7 @@ bool ConditionSelectable(std::string aName, EObserveBoolean* aState, const char*
 	std::string state;
 	switch (*aState)
 	{
-		case EObserveBoolean::None:
+		case EObserveBoolean::Either:
 			state = "Either";
 			break;
 		case EObserveBoolean::False:
@@ -327,7 +350,7 @@ bool ConditionSelectable(std::string aName, EObserveBoolean* aState, const char*
 	{
 		if (ImGui::Selectable("Either"))
 		{
-			*aState = EObserveBoolean::None;
+			*aState = EObserveBoolean::Either;
 		}
 		if (ImGui::Selectable("Must be false"))
 		{
@@ -336,6 +359,132 @@ bool ConditionSelectable(std::string aName, EObserveBoolean* aState, const char*
 		if (ImGui::Selectable("Must be true"))
 		{
 			*aState = EObserveBoolean::True;
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::TableSetColumnIndex(2);
+	if (ImGui::Button(("Apply to all##applyallcondsel" + aName).c_str()))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool ConditionSelectable(std::string aName, EObserveMount* aState, const char* aHelpTooltip = nullptr)
+{
+	ImGui::TableNextRow();
+	ImGui::TableSetColumnIndex(0);
+	float width = ImGui::GetColumnWidth();
+	ImGui::Text(aName.c_str());
+	if (aHelpTooltip)
+	{
+		ImGui::HelpMarker(aHelpTooltip);
+	}
+
+	ImGui::TableSetColumnIndex(1);
+	std::string state;
+	switch (*aState)
+	{
+		default:
+		case EObserveMount::Any:
+			state = "Any Mount";
+			break;
+		case EObserveMount::Either:
+			state = "Either";
+			break;
+		case EObserveMount::NotMounted:
+			state = "Not Mounted";
+			break;
+		case EObserveMount::Jackal:
+			state = "Jackal";
+			break;
+		case EObserveMount::Griffon:
+			state = "Griffon";
+			break;
+		case EObserveMount::Springer:
+			state = "Springer";
+			break;
+		case EObserveMount::Skimmer:
+			state = "Skimmer";
+			break;
+		case EObserveMount::Raptor:
+			state = "Raptor";
+			break;
+		case EObserveMount::RollerBeetle:
+			state = "Roller Beetle";
+			break;
+		case EObserveMount::Warclaw:
+			state = "Warclaw";
+			break;
+		case EObserveMount::Skyscale:
+			state = "Skyscale";
+			break;
+		case EObserveMount::Skiff:
+			state = "Skiff";
+			break;
+		case EObserveMount::SiegeTurtle:
+			state = "Siege Turtle";
+			break;
+	}
+	ImGui::PushItemWidth(width);
+	if (ImGui::BeginCombo(("##observestate" + aName).c_str(), state.c_str()))
+	{
+		if (ImGui::Selectable("Either"))
+		{
+			*aState = EObserveMount::Either;
+		}
+
+		if (ImGui::Selectable("Any Mount"))
+		{
+			*aState = EObserveMount::Any;
+		}
+
+		if (ImGui::Selectable("Not Mounted"))
+		{
+			*aState = EObserveMount::NotMounted;
+		}
+		
+		if (ImGui::Selectable("Raptor"))
+		{
+			*aState = EObserveMount::Raptor;
+		}
+		if (ImGui::Selectable("Springer"))
+		{
+			*aState = EObserveMount::Springer;
+		}
+		if (ImGui::Selectable("Skimmer"))
+		{
+			*aState = EObserveMount::Skimmer;
+		}
+		if (ImGui::Selectable("Jackal"))
+		{
+			*aState = EObserveMount::Jackal;
+		}
+		if (ImGui::Selectable("Griffon"))
+		{
+			*aState = EObserveMount::Griffon;
+		}
+		if (ImGui::Selectable("Roller Beetle"))
+		{
+			*aState = EObserveMount::RollerBeetle;
+		}
+		if (ImGui::Selectable("Warclaw"))
+		{
+			*aState = EObserveMount::Warclaw;
+		}
+		if (ImGui::Selectable("Skyscale"))
+		{
+			*aState = EObserveMount::Skyscale;
+		}
+		if (ImGui::Selectable("Skiff"))
+		{
+			*aState = EObserveMount::Skiff;
+		}
+		if (ImGui::Selectable("Siege Turtle"))
+		{
+			*aState = EObserveMount::SiegeTurtle;
 		}
 		ImGui::EndCombo();
 	}
@@ -386,7 +535,10 @@ int ConditionEditor(std::string aName, Conditions* aConditions, std::string aApp
 
 		if (aPreviousReq)
 		{
-			ImGui::Checkbox("Link with previous action", aPreviousReq);
+			if (ImGui::Checkbox("Link with previous action", aPreviousReq))
+			{
+				HasChanges = true;
+			}
 			ImGui::HelpMarker("Besides the set conditions, setting this means that the previous action must have executed for this one to be able to.");
 		}
 
@@ -1261,12 +1413,17 @@ void CRadialContext::RenderEditorTab()
 			ImGui::HelpMarker("This sequence of actions will be executed in order when selecting the item.\nSelecting another item cancels execution.");
 
 			int idxDel = -1;
-
 			if (ImGui::BeginTable("##radialitemactions", 4))
 			{
 				int i = 0;
+				bool previousLinked = true;
 				for (ActionBase* action : this->EditingItem->Actions)
 				{
+					if (!action->OnlyExecuteIfPrevious && previousLinked)
+					{
+						ImGui::Separator();
+					}
+					previousLinked = action->OnlyExecuteIfPrevious;
 					std::string actionType;
 					switch (action->Type)
 					{
@@ -1665,7 +1822,7 @@ void CRadialContext::RenderEditorTab()
 						this->EditingMenu->ApplyConditionToAll(this->EditingItem, &action->Activation, applyActionActToAll);
 						HasChanges = true;
 					}
-					ImGui::TooltipGeneric(ConditionsToString(&action->Activation).c_str());
+					ImGui::TooltipGeneric(ConditionsToString(&action->Activation, &action->OnlyExecuteIfPrevious).c_str());
 
 					ImGui::TableSetColumnIndex(3);
 					if (ImGui::ArrowButtonCondDisabled(("up_action##" + std::to_string(i)).c_str(), ImGuiDir_Up, i == 0))
@@ -1848,6 +2005,9 @@ void CRadialContext::LoadInternal()
 
 			json radialData = json::parse(file);
 			
+			int revision = 1;
+			if (!radialData["FormatRevision"].is_null()) { radialData["FormatRevision"].get_to(revision); }
+
 			int id = -1;
 			if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
 			else { continue; }
@@ -1925,6 +2085,19 @@ void CRadialContext::LoadInternal()
 				if (!radialItemData["Visibility"].is_null()) { radialItemData["Visibility"].get_to(visibility); }
 				Conditions activation{};
 				if (!radialItemData["Activation"].is_null()) { radialItemData["Activation"].get_to(activation); }
+
+				/* correct mount conditions if rev 1*/
+				if (revision == 1)
+				{
+					if ((int)visibility.IsMounted == 0)      { visibility.IsMounted = EObserveMount::Either; }
+					else if ((int)visibility.IsMounted == 1) { visibility.IsMounted = EObserveMount::NotMounted; }
+					else if ((int)visibility.IsMounted == 2) { visibility.IsMounted = EObserveMount::Any; }
+
+					if ((int)activation.IsMounted == 0)      { activation.IsMounted = EObserveMount::Either; }
+					else if ((int)activation.IsMounted == 1) { activation.IsMounted = EObserveMount::NotMounted; }
+					else if ((int)activation.IsMounted == 2) { activation.IsMounted = EObserveMount::Any; }
+				}
+
 				int activationTimeout = 0;
 				if (!radialItemData["ActivationTimeout"].is_null()) { radialItemData["ActivationTimeout"].get_to(activationTimeout); }
 
@@ -1942,6 +2115,14 @@ void CRadialContext::LoadInternal()
 					else { continue; }
 					Conditions actionActivation{};
 					if (!radialActionData["Activation"].is_null()) { radialActionData["Activation"].get_to(actionActivation); }
+
+					if (revision == 1)
+					{
+						if ((int)actionActivation.IsMounted == 0)      { actionActivation.IsMounted = EObserveMount::Either; }
+						else if ((int)actionActivation.IsMounted == 1) { actionActivation.IsMounted = EObserveMount::NotMounted; }
+						else if ((int)actionActivation.IsMounted == 2) { actionActivation.IsMounted = EObserveMount::Any; }
+					}
+
 					bool execCond = false;
 					if (!radialActionData["OnlyExecuteIfPrevious"].is_null()) { radialActionData["OnlyExecuteIfPrevious"].get_to(execCond); }
 
@@ -1987,7 +2168,7 @@ void CRadialContext::LoadInternal()
 						}
 						case EActionType::Return:
 						{
-							radial->AddItemAction(itemId, EActionType::Return);
+							radial->AddItemAction(itemId, EActionType::Return, actionActivation, execCond);
 							break;
 						}
 					}

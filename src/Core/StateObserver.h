@@ -33,6 +33,9 @@ namespace StateObserver
 	///----------------------------------------------------------------------------------------------------
 	UINT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
+	std::string StateToString(EObserveBoolean aState);
+	std::string StateToString(EObserveMount aState);
+
 	///----------------------------------------------------------------------------------------------------
 	/// WndProc:
 	/// 	Handles raw input.

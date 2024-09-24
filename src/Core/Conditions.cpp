@@ -1,46 +1,45 @@
 #include "Conditions.h"
 
-
-void Conditions::SetIndex(int aIndex, EObserveBoolean aState)
+void Conditions::SetValue(int aIndex, int aState)
 {
 	switch (aIndex)
 	{
-		case 0: this->IsCombat = aState; break;
-		case 1: this->IsMounted = aState; break;
-		case 2: this->IsCommander = aState; break;
-		case 3: this->IsCompetitive = aState; break;
-		case 4: this->IsMapOpen = aState; break;
-		case 5: this->IsTextboxActive = aState; break;
-		case 6: this->IsInstance = aState; break;
+		case 0: this->IsCombat = (EObserveBoolean)aState; break;
+		case 1: this->IsMounted = (EObserveMount)aState; break;
+		case 2: this->IsCommander = (EObserveBoolean)aState; break;
+		case 3: this->IsCompetitive = (EObserveBoolean)aState; break;
+		case 4: this->IsMapOpen = (EObserveBoolean)aState; break;
+		case 5: this->IsTextboxActive = (EObserveBoolean)aState; break;
+		case 6: this->IsInstance = (EObserveBoolean)aState; break;
 
-		case 7: this->IsGameplay = aState; break;
+		case 7: this->IsGameplay = (EObserveBoolean)aState; break;
 
-		case 8: this->IsUnderwater = aState; break;
-		case 9: this->IsOnWaterSurface = aState; break;
-		case 10: this->IsAirborne = aState; break;
+		case 8: this->IsUnderwater = (EObserveBoolean)aState; break;
+		case 9: this->IsOnWaterSurface = (EObserveBoolean)aState; break;
+		case 10: this->IsAirborne = (EObserveBoolean)aState; break;
 	}
 }
 
-EObserveBoolean Conditions::GetIndex(int aIndex)
+int Conditions::GetValue(int aIndex)
 {
 	switch (aIndex)
 	{
-		case 0: return this->IsCombat;
-		case 1: return this->IsMounted;
-		case 2: return this->IsCommander;
-		case 3: return this->IsCompetitive;
-		case 4: return this->IsMapOpen;
-		case 5: return this->IsTextboxActive;
-		case 6: return this->IsInstance;
+		case 0: return (int)this->IsCombat;
+		case 1: return (int)this->IsMounted;
+		case 2: return (int)this->IsCommander;
+		case 3: return (int)this->IsCompetitive;
+		case 4: return (int)this->IsMapOpen;
+		case 5: return (int)this->IsTextboxActive;
+		case 6: return (int)this->IsInstance;
 
-		case 7: return this->IsGameplay;
+		case 7: return (int)this->IsGameplay;
 
-		case 8: return this->IsUnderwater;
-		case 9: return this->IsOnWaterSurface;
-		case 10: return this->IsAirborne;
+		case 8: return (int)this->IsUnderwater;
+		case 9: return (int)this->IsOnWaterSurface;
+		case 10: return (int)this->IsAirborne;
 	}
 
-	return EObserveBoolean::None;
+	return 0;
 }
 
 void to_json(json& j, const Conditions& c)

@@ -84,6 +84,7 @@ void CRadialMenu::Save()
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
 	json radialJSON = json{
+		{"FormatRevision", 2},
 		{"ID", this->ID},
 		{"Name", this->Identifier},
 		{"Type", this->Type},
@@ -949,7 +950,7 @@ void CRadialMenu::ApplyConditionToAll(Conditions* aOrigin, int aConditionIndex, 
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	EObserveBoolean targetState = aOrigin->GetIndex(aStateIndex);
+	int targetState = aOrigin->GetValue(aStateIndex);
 	Conditions fullCopy = *aOrigin;
 
 	for (RadialItem* item : this->Items)
@@ -970,7 +971,7 @@ void CRadialMenu::ApplyConditionToAll(Conditions* aOrigin, int aConditionIndex, 
 		}
 		else
 		{
-			conditions->SetIndex(aStateIndex, targetState);
+			conditions->SetValue(aStateIndex, targetState);
 		}
 	}
 }
@@ -981,7 +982,7 @@ void CRadialMenu::ApplyConditionToAll(RadialItem* aItem, Conditions* aOrigin, in
 
 	const std::lock_guard<std::mutex> lock(this->Mutex);
 
-	EObserveBoolean targetState = aOrigin->GetIndex(aStateIndex);
+	int targetState = aOrigin->GetValue(aStateIndex);
 	Conditions fullCopy = *aOrigin;
 
 	for (ActionBase* action : aItem->Actions)
@@ -994,7 +995,7 @@ void CRadialMenu::ApplyConditionToAll(RadialItem* aItem, Conditions* aOrigin, in
 		}
 		else
 		{
-			conditions->SetIndex(aStateIndex, targetState);
+			conditions->SetValue(aStateIndex, targetState);
 		}
 	}
 }
