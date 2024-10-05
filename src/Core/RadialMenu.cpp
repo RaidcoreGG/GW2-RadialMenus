@@ -27,15 +27,16 @@ ImVec2 GetCursorPosWR(int x, int y)
 {
 	LONG style = GetWindowLong(WindowHandle, GWL_STYLE);
 
-	int xOffset = 0;
-	int yOffset = 0;
+	RECT windowRect{};
+	GetWindowRect(WindowHandle, &windowRect);
+
+	int xOffset = windowRect.left;
+	int yOffset = windowRect.top;
 
 	if (style & WS_CAPTION)
 	{
-		RECT windowRect{};
-		GetWindowRect(WindowHandle, &windowRect);
-		xOffset += windowRect.left + GetSystemMetrics(SM_CXSIZEFRAME);
-		yOffset += windowRect.top + GetSystemMetrics(SM_CYSIZEFRAME) + GetSystemMetrics(SM_CYSIZE);
+		xOffset += GetSystemMetrics(SM_CXSIZEFRAME);
+		yOffset += GetSystemMetrics(SM_CYSIZEFRAME) + GetSystemMetrics(SM_CYSIZE);
 	}
 
 	return ImVec2(x + xOffset, y + yOffset);
