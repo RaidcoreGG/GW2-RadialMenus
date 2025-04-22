@@ -13,3 +13,6 @@
 [submodule "src/thirdparty/ImAnimate"]
 	path = src/thirdparty/ImAnimate
 	url = https://github.com/RaidcoreGG/ImAnimate
+[submodule "src/thirdparty/RTAPI"]
+	path = src/thirdparty/RTAPI
+	url = https://github.com/RaidcoreGG/GW2-RealTime-API-Releases

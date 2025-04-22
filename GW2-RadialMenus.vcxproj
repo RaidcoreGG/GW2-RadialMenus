@@ -138,6 +138,7 @@ CALL $(SolutionDir)Scripts\version.bat</Command>
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Shared.h" />
     <ClInclude Include="src\thirdparty\nlohmann\json.hpp" />
+    <ClInclude Include="src\thirdparty\RTAPI\RTAPI.hpp" />
     <ClInclude Include="src\Util.h" />
     <ClInclude Include="src\Version.h" />
   </ItemGroup>

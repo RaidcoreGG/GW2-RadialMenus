@@ -6,6 +6,7 @@
 
 #include "Nexus/Nexus.h"
 #include "Mumble/Mumble.h"
+#include "RTAPI/RTAPI.hpp"
 #include "Core/RadialContext.h"
 
 extern HMODULE SelfModule;
@@ -16,6 +17,7 @@ extern HWND WindowHandle;
 extern Mumble::Data* MumbleLink;
 extern Mumble::Identity* MumbleIdentity;
 extern NexusLinkData* NexusLink;
+extern RTAPI::RealTimeData* RTAPIData;
 
 extern CRadialContext* RadialCtx;
 extern std::filesystem::path GW2Root;

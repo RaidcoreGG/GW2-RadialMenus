@@ -10,6 +10,8 @@
 
 #include "imgui/imgui.h"
 
+#include "RTAPI/RTAPI.hpp"
+
 #include "Language.h"
 #include "Shared.h"
 #include "StateObserver.h"
@@ -36,6 +38,12 @@ namespace Addon
 		MumbleLink = (Mumble::Data*)APIDefs->DataLink.Get("DL_MUMBLE_LINK");
 		NexusLink = (NexusLinkData*)APIDefs->DataLink.Get("DL_NEXUS_LINK");
 		MumbleIdentity = (Mumble::Identity*)APIDefs->DataLink.Get("DL_MUMBLE_LINK_IDENTITY");
+		RTAPIData = (RTAPI::RealTimeData*)APIDefs->DataLink.Get(DL_RTAPI);
+
+		if (RTAPIData && RTAPIData->GameBuild == 0)
+		{
+			RTAPIData = nullptr;
+		}
 
 		GW2Root = APIDefs->Paths.GetGameDirectory();
 		AddonDirectory = APIDefs->Paths.GetAddonDirectory("RadialMenus");
@@ -52,6 +60,8 @@ namespace Addon
 		std::filesystem::create_directory(IconsDirectory);
 
 		APIDefs->Events.Subscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
+		APIDefs->Events.Subscribe("EV_ADDON_LOADED", (EVENT_CONSUME)OnAddonLoaded);
+		APIDefs->Events.Subscribe("EV_ADDON_UNLOADED", (EVENT_CONSUME)OnAddonUnloaded);
 
 		Lang::Init(APIDefs->Localization.Set);
 		RadialCtx = new CRadialContext();
@@ -69,6 +79,10 @@ namespace Addon
 
 	void Unload()
 	{
+		APIDefs->Events.Unsubscribe("EV_MUMBLE_IDENTITY_UPDATED", OnMumbleIdentityUpdated);
+		APIDefs->Events.Unsubscribe("EV_ADDON_LOADED", (EVENT_CONSUME)OnAddonLoaded);
+		APIDefs->Events.Unsubscribe("EV_ADDON_UNLOADED", (EVENT_CONSUME)OnAddonUnloaded);
+
 		APIDefs->Renderer.Deregister(Addon::Render);
 		APIDefs->Renderer.Deregister(Addon::RenderOptions);
 		APIDefs->WndProc.Deregister(Addon::WndProc);
@@ -87,6 +101,25 @@ namespace Addon
 	{
 		assert(RadialCtx);
 		RadialCtx->RenderOptions();
+	}
+
+	void OnAddonLoaded(int* aSignature)
+	{
+		if (!aSignature) { return; }
+
+		if (*aSignature == RTAPI_SIG)
+		{
+			RTAPIData = (RTAPI::RealTimeData*)APIDefs->DataLink.Get(DL_RTAPI);
+		}
+	}
+	void OnAddonUnloaded(int* aSignature)
+	{
+		if (!aSignature) { return; }
+
+		if (*aSignature == RTAPI_SIG)
+		{
+			RTAPIData = nullptr;
+		}
 	}
 
 	void OnInputBind(const char* aIdentifier, bool aIsRelease)

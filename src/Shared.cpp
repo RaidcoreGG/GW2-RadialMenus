@@ -8,6 +8,7 @@ HWND WindowHandle                    = nullptr;
 Mumble::Data* MumbleLink             = nullptr;
 Mumble::Identity* MumbleIdentity     = nullptr;
 NexusLinkData* NexusLink             = nullptr;
+RTAPI::RealTimeData* RTAPIData       = nullptr;
 
 CRadialContext* RadialCtx            = nullptr;
 std::filesystem::path GW2Root        = {};

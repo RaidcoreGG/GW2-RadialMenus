@@ -14,6 +14,8 @@
 #define JUMP_DURATION_MS 800
 #define DISMOUNT_DURATION_MS 700
 
+DEFINE_ENUM_FLAG_OPERATORS(RTAPI::ECharacterState)
+
 namespace StateObserver
 {
 	static Conditions CurrentState;
@@ -163,6 +165,19 @@ namespace StateObserver
 		                                MumbleLink->AvatarPosition.Y >= 0.0f && MumbleLink->AvatarPosition.Y < 1.40f)*/ ? EObserveBoolean::True : EObserveBoolean::False;
 		CurrentState.IsAirborne       = (IsFalling || IsGliding || IsAscending || IsJumping || IsDismounting) &&
 		                                CurrentState.IsUnderwater == EObserveBoolean::False                                         ? EObserveBoolean::True : EObserveBoolean::False;
+	
+		/* RTAPI overrides. */
+		if (RTAPIData != nullptr)
+		{
+			CurrentState.IsGameplay   = (RTAPIData->GameState == RTAPI::EGameState::Gameplay) ? EObserveBoolean::True : EObserveBoolean::False;
+			CurrentState.IsUnderwater = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsUnderwater) == RTAPI::ECharacterState::IsUnderwater ? EObserveBoolean::True : EObserveBoolean::False;
+			CurrentState.IsOnWaterSurface = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsSwimming) == RTAPI::ECharacterState::IsSwimming ? EObserveBoolean::True : EObserveBoolean::False;
+			bool isGliding = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsGliding) == RTAPI::ECharacterState::IsGliding;
+			bool isFlying = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsFlying) == RTAPI::ECharacterState::IsFlying;
+
+			CurrentState.IsAirborne = (IsFalling || isGliding || isFlying || IsAscending || IsJumping || IsDismounting) &&
+				CurrentState.IsUnderwater == EObserveBoolean::False ? EObserveBoolean::True : EObserveBoolean::False;
+		}
 	}
 
 	bool IsMatch(Conditions* aConditions)
