@@ -69,9 +69,8 @@ std::string GameBindToString(EGameBinds aGameBind)
 		{ EGameBinds_MoveDodge, "((MoveDodge))" },
 		{ EGameBinds_MoveAutoRun, "((MoveAutoRun))" },
 		{ EGameBinds_MoveWalk, "((MoveWalk))" },
-		{ EGameBinds_MoveJump, "((MoveJump))"},
-		{ EGameBinds_MoveSwimUp, "((MoveSwimUp))" },
-		{ EGameBinds_MoveSwimDown, "((MoveSwimDown))" },
+		{ EGameBinds_MoveJump_SwimUp_FlyUp, "((MoveJump))"},
+		{ EGameBinds_MoveSwimDown_FlyDown, "((MoveSwimDown))" },
 		{ EGameBinds_MoveAboutFace, "((MoveAboutFace))" },
 
 		// Skills
@@ -254,6 +253,7 @@ std::string GameBindToString(EGameBinds aGameBind)
 		{ EGameBinds_Loadout6, "((Loadout6))" },
 		{ EGameBinds_Loadout7, "((Loadout7))" },
 		{ EGameBinds_Loadout8, "((Loadout8))" },
+		{ EGameBinds_Loadout9, "((Loadout9))" },
 
 		// Equipment Templates
 		{ EGameBinds_GearLoadout1, "((GearLoadout1))" },
@@ -263,7 +263,8 @@ std::string GameBindToString(EGameBinds aGameBind)
 		{ EGameBinds_GearLoadout5, "((GearLoadout5))" },
 		{ EGameBinds_GearLoadout6, "((GearLoadout6))" },
 		{ EGameBinds_GearLoadout7, "((GearLoadout7))" },
-		{ EGameBinds_GearLoadout8, "((GearLoadout8))" }
+		{ EGameBinds_GearLoadout8, "((GearLoadout8))" },
+		{ EGameBinds_GearLoadout9, "((GearLoadout9))" }
 	};
 
 	return LookupTable[aGameBind];
@@ -1586,9 +1587,8 @@ void CRadialContext::RenderEditorTab()
 									GameBindSelectable(action, "((MoveDodge))", EGameBinds_MoveDodge);
 									GameBindSelectable(action, "((MoveAutoRun))", EGameBinds_MoveAutoRun);
 									GameBindSelectable(action, "((MoveWalk))", EGameBinds_MoveWalk);
-									GameBindSelectable(action, "((MoveJump))", EGameBinds_MoveJump);
-									GameBindSelectable(action, "((MoveSwimUp))", EGameBinds_MoveSwimUp);
-									GameBindSelectable(action, "((MoveSwimDown))", EGameBinds_MoveSwimDown);
+									GameBindSelectable(action, "((MoveJump))", EGameBinds_MoveJump_SwimUp_FlyUp);
+									GameBindSelectable(action, "((MoveSwimDown))", EGameBinds_MoveSwimDown_FlyDown);
 									GameBindSelectable(action, "((MoveAboutFace))", EGameBinds_MoveAboutFace);
 									ImGui::EndMenu();
 								}
@@ -1792,6 +1792,7 @@ void CRadialContext::RenderEditorTab()
 									GameBindSelectable(action, "((Loadout6))", EGameBinds_Loadout6);
 									GameBindSelectable(action, "((Loadout7))", EGameBinds_Loadout7);
 									GameBindSelectable(action, "((Loadout8))", EGameBinds_Loadout8);
+									GameBindSelectable(action, "((Loadout9))", EGameBinds_Loadout9);
 									GameBindSelectable(action, "((GearLoadout1))", EGameBinds_GearLoadout1);
 									GameBindSelectable(action, "((GearLoadout2))", EGameBinds_GearLoadout2);
 									GameBindSelectable(action, "((GearLoadout3))", EGameBinds_GearLoadout3);
@@ -1800,6 +1801,7 @@ void CRadialContext::RenderEditorTab()
 									GameBindSelectable(action, "((GearLoadout6))", EGameBinds_GearLoadout6);
 									GameBindSelectable(action, "((GearLoadout7))", EGameBinds_GearLoadout7);
 									GameBindSelectable(action, "((GearLoadout8))", EGameBinds_GearLoadout8);
+									GameBindSelectable(action, "((GearLoadout9))", EGameBinds_GearLoadout9);
 									ImGui::EndMenu();
 								}
 								ImGui::EndCombo();
@@ -2152,6 +2154,12 @@ void CRadialContext::LoadInternal()
 							EGameBinds actionIdentifier = (EGameBinds)0;
 
 							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+
+							/* Migrate legacy gamebind that the game removed. */
+							if (actionIdentifier == (EGameBinds)10)
+							{
+								actionIdentifier = EGameBinds_MoveJump_SwimUp_FlyUp;
+							}
 
 							if (!APIDefs->GameBinds.IsBound(actionIdentifier))
 							{
