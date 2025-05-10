@@ -2013,43 +2013,25 @@ void CRadialContext::LoadInternal()
 		{
 			std::ifstream file(filePath);
 
-			json radialData = json::parse(file);
+			const json radialData = json::parse(file);
 			
-			int revision = 1;
-			if (!radialData["FormatRevision"].is_null()) { radialData["FormatRevision"].get_to(revision); }
+			auto revision = radialData.value("FormatRevision", 1);
 
-			int id = -1;
-			if (!radialData["ID"].is_null()) { radialData["ID"].get_to(id); }
-			else { continue; }
-			std::string name;
-			if (!radialData["Name"].is_null()) { radialData["Name"].get_to(name); }
-			else { continue; }
-			name = this->GetUnusedName(name);
-			ERadialType type = ERadialType::None;
-			if (!radialData["Type"].is_null()) { radialData["Type"].get_to(type); }
-			EInnerRadius innerRadius = EInnerRadius::Big;
-			if (!radialData["InnerRadius"].is_null()) { radialData["InnerRadius"].get_to(innerRadius); }
-			ESelectionMode selMode = ESelectionMode::None;
-			if (!radialData["SelectionMode"].is_null()) { radialData["SelectionMode"].get_to(selMode); }
-			ECenterBehavior centerBehavior = ECenterBehavior::None;
-			if (!radialData["CenterBehavior"].is_null()) { radialData["CenterBehavior"].get_to(centerBehavior); }
+			auto id = radialData.at("ID").get<int>();
+			auto name = this->GetUnusedName(radialData.at("Name").get<std::string>());
+			auto type = radialData.value("Type", ERadialType::None);
+			auto innerRadius = radialData.value("InnerRadius", EInnerRadius::Big);
+			auto selMode = radialData.value("SelectionMode", ESelectionMode::None);
+			auto centerBehavior = radialData.value("CenterBehavior", ECenterBehavior::None);
 
-			bool drawInCenter = false;
-			if (!radialData["DrawInCenter"].is_null()) { radialData["DrawInCenter"].get_to(drawInCenter); }
-			bool restoreCursor = false;
-			if (!radialData["RestoreCursor"].is_null()) { radialData["RestoreCursor"].get_to(restoreCursor); }
-			float scale = 1.0f;
-			if (!radialData["Scale"].is_null()) { radialData["Scale"].get_to(scale); }
-			float iconScale = 1.0f;
-			if (!radialData["IconScale"].is_null()) { radialData["IconScale"].get_to(iconScale); }
-			int hoverTimeout = 0;
-			if (!radialData["HoverTimeout"].is_null()) { radialData["HoverTimeout"].get_to(hoverTimeout); }
-			int itemRotation = 0;
-			if (!radialData["ItemRotation"].is_null()) { radialData["ItemRotation"].get_to(itemRotation); }
-			bool showTooltip = false;
-			if (!radialData["ShowItemNameTooltip"].is_null()) { radialData["ShowItemNameTooltip"].get_to(showTooltip); }
-			std::string centerItemName;
-			if (!radialData["CenterItemName"].is_null()) { radialData["CenterItemName"].get_to(centerItemName); }
+			auto drawInCenter = radialData.value("DrawInCenter", false);
+			auto restoreCursor = radialData.value("RestoreCursor", false);
+			auto scale = radialData.value("Scale", 1.0f);
+			auto iconScale = radialData.value("IconScale", 1.0f);
+			auto hoverTimeout = radialData.value("HoverTimeout", 0);
+			auto itemRotation = radialData.value("ItemRotation", 0);
+			auto showTooltip = radialData.value("ShowItemNameTooltip", false);
+			auto centerItemName = radialData.value("CenterItemName", "");
 
 			bool idCollision = this->IsIDInUse(id);
 
@@ -2071,30 +2053,22 @@ void CRadialContext::LoadInternal()
 			radial->ShowItemNameTooltip = showTooltip;
 			radial->SpecificCenterItemName = centerItemName;
 
-			if (radialData["Items"].is_null())
+			for (const json& radialItemData : radialData.value("Items", json::array()))
 			{
-				continue;
-			}
+				if (!radialItemData.contains("Name"))
+				{
+					continue;
+				}
 
-			for (json radialItemData : radialData["Items"])
-			{
-				std::string itemId;
-				if (!radialItemData["Name"].is_null()) { radialItemData["Name"].get_to(itemId); }
-				else { continue; }
-				int priority = 0;
-				if (!radialItemData["Priority"].is_null()) { radialItemData["Priority"].get_to(priority); }
-				unsigned int color = 0;
-				if (!radialItemData["Color"].is_null()) { radialItemData["Color"].get_to(color); }
-				unsigned int colorHover = 0;
-				if (!radialItemData["ColorHover"].is_null()) { radialItemData["ColorHover"].get_to(colorHover); }
-				EIconType iconType = EIconType::None;
-				if (!radialItemData["IconType"].is_null()) { radialItemData["IconType"].get_to(iconType); }
-				std::string iconValue;
-				if (!radialItemData["IconValue"].is_null()) { radialItemData["IconValue"].get_to(iconValue); }
-				Conditions visibility{};
-				if (!radialItemData["Visibility"].is_null()) { radialItemData["Visibility"].get_to(visibility); }
-				Conditions activation{};
-				if (!radialItemData["Activation"].is_null()) { radialItemData["Activation"].get_to(activation); }
+				auto itemId = radialItemData.at("Name").get<std::string>();
+				auto priority = radialItemData.value("Priority", 0);
+				auto color = radialItemData.value("Color", 0u);
+				auto colorHover = radialItemData.value("ColorHover", 0u);
+				auto iconType = radialItemData.value("IconType", EIconType::None);
+				auto iconValue = radialItemData.value("IconValue", "");
+				auto visibility = radialItemData.value("Visibility", Conditions{});
+				auto activation = radialItemData.value("Activation", Conditions{});
+				auto activationTimeout = radialItemData.value("ActivationTimeout", 0);
 
 				/* correct mount conditions if rev 1*/
 				if (revision == 1)
@@ -2108,23 +2082,13 @@ void CRadialContext::LoadInternal()
 					else if ((int)activation.IsMounted == 2) { activation.IsMounted = EObserveMount::Any; }
 				}
 
-				int activationTimeout = 0;
-				if (!radialItemData["ActivationTimeout"].is_null()) { radialItemData["ActivationTimeout"].get_to(activationTimeout); }
-
 				radial->AddItem(itemId, color, colorHover, iconType, iconValue, priority, visibility, activation, activationTimeout);
 
-				if (radialItemData["Actions"].is_null())
+				for (const json& radialActionData : radialItemData.value("Actions", json::array()))
 				{
-					continue;
-				}
-
-				for (json radialActionData : radialItemData["Actions"])
-				{
-					EActionType actionType = EActionType::None;
-					if (!radialActionData["Type"].is_null()) { radialActionData["Type"].get_to(actionType); }
-					else { continue; }
-					Conditions actionActivation{};
-					if (!radialActionData["Activation"].is_null()) { radialActionData["Activation"].get_to(actionActivation); }
+					auto actionType = radialActionData.value("Type", EActionType::None);
+					auto actionActivation = radialActionData.value("Activation", Conditions{});
+					bool execCond = radialActionData.value("OnlyExecuteIfPrevious", false);
 
 					if (revision == 1)
 					{
@@ -2133,16 +2097,12 @@ void CRadialContext::LoadInternal()
 						else if ((int)actionActivation.IsMounted == 2) { actionActivation.IsMounted = EObserveMount::Any; }
 					}
 
-					bool execCond = false;
-					if (!radialActionData["OnlyExecuteIfPrevious"].is_null()) { radialActionData["OnlyExecuteIfPrevious"].get_to(execCond); }
-
 					switch (actionType)
 					{
 						case EActionType::InputBind:
 						case EActionType::Event:
 						{
-							std::string actionIdentifier;
-							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+							auto actionIdentifier = radialActionData.value("Identifier", "");
 
 							radial->AddItemAction(itemId, actionType, actionIdentifier, actionActivation, execCond);
 							break;
@@ -2151,9 +2111,7 @@ void CRadialContext::LoadInternal()
 						case EActionType::GameInputBindPress:
 						case EActionType::GameInputBindRelease:
 						{
-							EGameBinds actionIdentifier = (EGameBinds)0;
-
-							if (!radialActionData["Identifier"].is_null()) { radialActionData["Identifier"].get_to(actionIdentifier); }
+							auto actionIdentifier = radialActionData.value("Identifier", (EGameBinds)0);
 
 							/* Migrate legacy gamebind that the game removed. */
 							if (actionIdentifier == (EGameBinds)10)
@@ -2176,8 +2134,7 @@ void CRadialContext::LoadInternal()
 						}
 						case EActionType::Delay:
 						{
-							int actionDuration = 0;
-							if (!radialActionData["Duration"].is_null()) { radialActionData["Duration"].get_to(actionDuration); }
+							auto actionDuration = radialActionData.value("Duration", 0);
 
 							radial->AddItemAction(itemId, actionDuration, actionActivation, execCond);
 							break;
@@ -2191,7 +2148,7 @@ void CRadialContext::LoadInternal()
 				}
 			}
 		}
-		catch (json::parse_error& ex)
+		catch (const json::exception& ex)
 		{
 			APIDefs->Log(ELogLevel_WARNING, "Radial Menus", String::Format("%s could not be parsed. Error: %s", filePath.filename().string().c_str(), ex.what()).c_str());
 		}

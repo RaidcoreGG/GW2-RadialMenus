@@ -65,19 +65,19 @@ void to_json(json& j, const Conditions& c)
 
 void from_json(const json& j, Conditions& c)
 {
-	if (!j["IsCombat"].is_null()) { j["IsCombat"].get_to(c.IsCombat); }
-	if (!j["IsMounted"].is_null()) { j["IsMounted"].get_to(c.IsMounted); }
-	if (!j["IsCommander"].is_null()) { j["IsCommander"].get_to(c.IsCommander); }
-	if (!j["IsCompetitive"].is_null()) { j["IsCompetitive"].get_to(c.IsCompetitive); }
-	if (!j["IsMapOpen"].is_null()) { j["IsMapOpen"].get_to(c.IsMapOpen); }
-	if (!j["IsTextboxActive"].is_null()) { j["IsTextboxActive"].get_to(c.IsTextboxActive); }
-	if (!j["IsInstance"].is_null()) { j["IsInstance"].get_to(c.IsInstance); }
+	c.IsCombat = j.value("IsCombat", EObserveBoolean::Either);
+	c.IsMounted = j.value("IsMounted", EObserveMount::Either);
+	c.IsCommander = j.value("IsCommander", EObserveBoolean::Either);
+	c.IsCompetitive = j.value("IsCompetitive", EObserveBoolean::Either);
+	c.IsMapOpen = j.value("IsMapOpen", EObserveBoolean::Either);
+	c.IsTextboxActive = j.value("IsTextboxActive", EObserveBoolean::Either);
+	c.IsInstance = j.value("IsInstance", EObserveBoolean::Either);
 
 	/* derived game states */
-	if (!j["IsGameplay"].is_null()) { j["IsGameplay"].get_to(c.IsGameplay); }
+	c.IsGameplay = j.value("IsGameplay", EObserveBoolean::Either);
 
 	/* derived positional states */
-	if (!j["IsUnderwater"].is_null()) { j["IsUnderwater"].get_to(c.IsUnderwater); }
-	if (!j["IsOnWaterSurface"].is_null()) { j["IsOnWaterSurface"].get_to(c.IsOnWaterSurface); }
-	if (!j["IsAirborne"].is_null()) { j["IsAirborne"].get_to(c.IsAirborne); }
+	c.IsUnderwater = j.value("IsUnderwater", EObserveBoolean::Either);
+	c.IsOnWaterSurface = j.value("IsOnWaterSurface", EObserveBoolean::Either);
+	c.IsAirborne = j.value("IsAirborne", EObserveBoolean::Either);
 }
