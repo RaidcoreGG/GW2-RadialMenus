@@ -56,8 +56,6 @@ namespace StateObserver
 
 		unsigned long long timestampNow = Time::GetTimestampMillis();
 
-		/* only when the position is updated */
-		if (MumbleLink->AvatarPosition != LastPosition)
 		{
 			float deltaY = MumbleLink->AvatarPosition.Y - LastPosition.Y;
 			if (MumbleLink->Context.MapID != LastMap)
@@ -169,6 +167,33 @@ namespace StateObserver
 		/* RTAPI overrides. */
 		if (RTAPIData != nullptr)
 		{
+			struct PosSnap
+			{
+				long long Timestamp;
+				Vector3   Position;
+			};
+			static std::vector<PosSnap> positions{};
+
+			PosSnap pos{};
+			pos.Timestamp = timestampNow;
+			pos.Position = MumbleLink->AvatarPosition;
+
+			positions.push_back(pos);
+
+			if (positions.size() > 30)
+			{
+				positions.erase(positions.begin());
+			}
+
+			auto first = positions.begin();
+			auto last = positions.end()--;
+
+			float avgVY = (last->Position.Y - first->Position.Y) / (last->Timestamp - first->Timestamp) * 1000;
+
+			IsFalling = avgVY <= -22.f;
+			IsAscending = avgVY >= 22.f;
+			LastDeltaY = avgVY;
+
 			CurrentState.IsGameplay   = (RTAPIData->GameState == RTAPI::EGameState::Gameplay) ? EObserveBoolean::True : EObserveBoolean::False;
 			CurrentState.IsUnderwater = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsUnderwater) == RTAPI::ECharacterState::IsUnderwater ? EObserveBoolean::True : EObserveBoolean::False;
 			CurrentState.IsOnWaterSurface = (RTAPIData->CharacterState & RTAPI::ECharacterState::IsSwimming) == RTAPI::ECharacterState::IsSwimming ? EObserveBoolean::True : EObserveBoolean::False;
