@@ -1211,6 +1211,13 @@ void CRadialContext::RenderEditorTab()
 			}
 
 			ImGui::Checkbox("Draw in Center", &this->EditingMenu->DrawInCenter);
+			if (this->EditingMenu->DrawInCenter)
+			{
+				ImGui::BeginGroup();
+				ImGui::Indent();
+				ImGui::Checkbox("Do not set cursor to center on activation", &this->EditingMenu->DoNotCenterCursor);
+				ImGui::EndGroup();
+			}
 			ImGui::Checkbox("Restore Cursor Position", &this->EditingMenu->RestoreCursor);
 			ImGui::Checkbox("Show Item Name Tooltips", &this->EditingMenu->ShowItemNameTooltip);
 		}
@@ -2025,6 +2032,7 @@ void CRadialContext::LoadInternal()
 			auto centerBehavior = radialData.value("CenterBehavior", ECenterBehavior::None);
 
 			auto drawInCenter = radialData.value("DrawInCenter", false);
+			auto doNotCenterCursor = radialData.value("DoNotCenterCursor", false);
 			auto restoreCursor = radialData.value("RestoreCursor", false);
 			auto scale = radialData.value("Scale", 1.0f);
 			auto iconScale = radialData.value("IconScale", 1.0f);
@@ -2045,6 +2053,7 @@ void CRadialContext::LoadInternal()
 			radial->SetInnerRadius(innerRadius);
 			radial->SetCenterBehavior(centerBehavior);
 			radial->DrawInCenter = drawInCenter;
+			radial->DoNotCenterCursor = doNotCenterCursor;
 			radial->RestoreCursor = restoreCursor;
 			radial->Scale = scale;
 			radial->IconScale = iconScale;

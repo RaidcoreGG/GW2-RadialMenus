@@ -94,6 +94,7 @@ void CRadialMenu::Save()
 		{"CenterBehavior", this->CenterBehavior},
 
 		{"DrawInCenter", this->DrawInCenter},
+		{"DoNotCenterCursor", this->DoNotCenterCursor},
 		{"RestoreCursor", this->RestoreCursor},
 		{"Scale", this->Scale},
 		{"IconScale", this->IconScale},
@@ -403,9 +404,12 @@ bool CRadialMenu::Activate()
 		this->Origin.x = NexusLink->Width / 2;
 		this->Origin.y = NexusLink->Height / 2;
 
-		/* winapi set cursor */
-		this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
-		this->SetCursor = true;
+		if (!this->DoNotCenterCursor)
+		{
+			/* winapi set cursor */
+			this->SetCursorPosition = GetCursorPosWR(this->Origin.x, this->Origin.y);
+			this->SetCursor = true;
+		}
 	}
 
 	if (this->WasActionCamActive)
